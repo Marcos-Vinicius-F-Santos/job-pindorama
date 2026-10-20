@@ -2,7 +2,8 @@
 name: scrape
 description: >
   Encontra vagas novas compatíveis com o seu perfil pelas CLIs de busca de portais
-  instaladas (Gupy, LinkedIn e qualquer portal acrescentado com /add-portal).
+  instaladas (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, LinkedIn, freehire e
+  qualquer portal acrescentado com /add-portal).
   Deduplica entre execuções. Ativa com: buscar vagas, procurar vagas, vagas novas,
   tem vaga nova?, rodar a busca, varrer portais, /scrape. English: job scrape,
   find jobs, search jobs, new jobs.
@@ -78,7 +79,7 @@ Se uma CLI sair com código diferente de zero, registre a mensagem de erro e sig
 #### 1c. WebSearch como plano B
 
 Use o `WebSearch` para:
-- Portais listados em `search-queries.md` que **não** têm pasta correspondente em `.agents/skills/` (no Brasil: Vagas.com, Catho, InfoJobs, Indeed Brasil e outros)
+- Portais listados em `search-queries.md` que **não** têm pasta correspondente em `.agents/skills/` (no Brasil: Catho, Indeed Brasil, Trampos e outros)
 - Qualquer portal cuja CLI falhe na execução
 - Quando o bun não estiver disponível (o Passo 1a falhou)
 

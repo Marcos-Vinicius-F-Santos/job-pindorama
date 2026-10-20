@@ -218,7 +218,6 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
             "https://jobs.ashbyhq.com/startup/abc-123",
             "https://jobs.smartrecruiters.com/Enterprise/456",
             "https://apply.workable.com/tech-corp/j/789/",
-            "https://empresa.vagas.solides.com.br/vaga/123456",
         ]
         for url in urls:
             tier, host = classify_posting_host(url)
@@ -233,6 +232,14 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
             "https://afya.gupy.io/jobs/12749301",
             "https://portal.gupy.io/job-search/term=analista",
             "https://freehire.me/jobs/golang-zensar-2bxu6dxm",
+            # Sólides: a portal skill now, so a company's own Sólides page
+            # (empresa.vagas.solides.com.br) classifies as installed_portal, which
+            # is checked before official_ats.
+            "https://vagas.solides.com.br/vaga/939473",
+            "https://empresa.vagas.solides.com.br/vaga/123456",
+            "https://www.vagas.com.br/vagas/v2837357/gerente-de-produto",
+            "https://www.infojobs.com.br/vaga-de-product-manager-em-minas-gerais__12133581.aspx",
+            "https://remotar.com.br/job/166921/stone/product-manager",
         ]
         for url in urls:
             tier, host = classify_posting_host(url)

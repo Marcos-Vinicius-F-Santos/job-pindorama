@@ -96,7 +96,7 @@ pela tabela de Idiomas acima - não repita aqui. Regimes não aceitos (ex.: "nã
 - `cv/` - Variantes de currículo em LaTeX (modelo moderncv, estilo banking)
 - `cover_letters/` - Cartas de apresentação em LaTeX (modelo próprio cover.cls)
 - `.claude/skills/` - Definições das skills de IA do fluxo de candidatura
-- `.agents/skills/` - CLIs de busca de vagas (Gupy, LinkedIn, freehire)
+- `.agents/skills/` - CLIs de busca de vagas (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, LinkedIn, freehire)
 
 ## Fluxo para uma candidatura nova
 1. A pessoa envia uma vaga (URL ou texto)

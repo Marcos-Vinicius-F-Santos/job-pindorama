@@ -83,7 +83,7 @@ python3 tools/install_portal_clis.py   # Windows: python tools\install_portal_cl
 
 Ele roda `bun install` em toda CLI de portal em `.agents/skills/*/cli/` — descobertas, não listadas, então um portal que você acrescentar com o `/add-portal` ou copiar de outro fork entra num clone novo. Uma CLI cujo `package.json` declare um script de ciclo de vida na instalação (lifecycle script) é pulada e informada, em vez de executada. `--dry-run` mostra o que seria instalado.
 
-Para o `gupy-search`, o `linkedin-search` e o `freehire-search` a instalação é opcional: os três não têm dependências de execução e rodam só com o `bun`; o `bun install` só traz os tipos do TypeScript.
+Para todas as CLIs de portal que vêm no projeto a instalação é opcional: nenhuma tem dependências de execução e rodam só com o `bun`; o `bun install` só traz os tipos do TypeScript.
 
 ### 3. Configurar o seu perfil
 
@@ -101,7 +101,7 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 /scrape
 ```
 
-Busca vagas compatíveis com o seu perfil em vários portais (Gupy, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
+Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
 
 ### 5. Candidatar-se a uma vaga
 
@@ -174,6 +174,10 @@ job-pindorama/
 │   └── settings.json                  # Permissões do Claude Code (compartilhadas, restritas)
 ├── .agents/skills/                    # CLIs de busca em portais
 │   ├── gupy-search/                   # Portal Gupy (Brasil)
+│   ├── solides-search/                # Sólides Vagas (Brasil, empresas pequenas e médias)
+│   ├── vagas-search/                  # VAGAS.com (Brasil, generalista)
+│   ├── infojobs-search/               # InfoJobs Brasil (generalista; uso pessoal)
+│   ├── remotar-search/                # Remotar (Brasil, só remotas; uso pessoal)
 │   ├── linkedin-search/               # Vagas públicas do LinkedIn (qualquer país)
 │   └── freehire-search/               # Agregador freehire.me (tecnologia, vários mercados)
 ├── cv/
@@ -258,13 +262,17 @@ O comando entrevista você sobre as instruções do modelo — extensão do font
 
 ### Ferramentas de busca
 
-O projeto vem com três skills de portal em `.agents/skills/`:
+O projeto vem com sete skills de portal em `.agents/skills/`:
 
 - **`gupy-search`** — busca no [Portal Gupy](https://portal.gupy.io) pela mesma rota pública que a página de busca do portal usa, e lê o detalhe na página pública de cada vaga. Filtra por cidade, UF, modelo de trabalho (remoto, híbrido, presencial) e regime (CLT, PJ, estágio, trainee e outros). **Sem dependências de execução.** Veja `.agents/skills/gupy-search/SKILL.md` e, para os detalhes técnicos, o `url-reference.md` ao lado.
+- **`solides-search`** — busca na [Sólides Vagas](https://vagas.solides.com.br) pela rota JSON pública do portal: vagas de empresas pequenas e médias, com modelo de trabalho, regime, senioridade e "exclusiva PcD" já informados. Filtra por modelo, regime e senioridade. **Sem dependências de execução.**
+- **`vagas-search`** — busca na [VAGAS.com](https://www.vagas.com.br) pela página pública de resultados, com filtro de 100% home office; o detalhe traz regime e salário. **Sem dependências de execução.**
+- **`infojobs-search`** — busca na [InfoJobs Brasil](https://www.infojobs.com.br) pela página pública de resultados, com salário e modelo de trabalho no cartão. **Só para uso pessoal**: os termos da InfoJobs proíbem acesso automatizado, então mantenha o volume baixo.
+- **`remotar-search`** — busca na [Remotar](https://remotar.com.br), portal só de vagas remotas, pela API pública do site, com filtro de categoria e opção de tirar as vagas internacionais. **Só para uso pessoal**: os termos da Remotar proíbem acesso automatizado.
 - **`linkedin-search`** — usa as rotas públicas e sem login do LinkedIn (`jobs-guest`). Funciona para qualquer mercado (`-l "São Paulo, Brasil"`, `-l "Remoto"`), sem dependências de execução. **Só para uso pessoal** — acesso automatizado vai contra os Termos de Serviço do LinkedIn, então mantenha o volume baixo.
 - **`freehire-search`** — consulta a API pública do agregador [freehire.me](https://freehire.me) (JSON, sem chave). Focado em tecnologia, vários mercados (`--country BR`, `--region latam`, `--remote`), sem dependências de execução.
 
-Para acrescentar outro portal brasileiro (Vagas.com, Catho, InfoJobs, Indeed Brasil, Trampos, Programathor...), rode:
+Para acrescentar outro portal brasileiro (Catho, Indeed Brasil, Trampos, Programathor...), rode:
 
 ```
 /add-portal

@@ -28,7 +28,7 @@ No Windows, `py --version` costuma ser a checagem mais confiável. Se o seu sist
 
 ### Bun (para as ferramentas de busca)
 
-As CLIs dos portais de vagas (`gupy-search`, `linkedin-search` e `freehire-search`) são escritas em TypeScript e rodam com o Bun.
+As CLIs dos portais de vagas (`gupy-search`, `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `linkedin-search` e `freehire-search`) são escritas em TypeScript e rodam com o Bun.
 
 - Windows (o jeito mais simples):
 
@@ -208,7 +208,7 @@ python3 tools/install_portal_clis.py   # Windows: python tools\install_portal_cl
 
 Ele roda `bun install` em toda CLI de portal em `.agents/skills/*/cli/` — descobertas, não listadas, então um portal que você acrescentar com o `/add-portal` ou copiar de outro fork entra num clone novo. Uma CLI cujo `package.json` declare um script de ciclo de vida na instalação (lifecycle script) é pulada e informada, em vez de executada. `--dry-run` mostra o que seria instalado.
 
-Para o `gupy-search`, o `linkedin-search` e o `freehire-search` a instalação é opcional: os três não têm dependências de execução e rodam só com o `bun`; o `bun install` só traz os tipos do TypeScript.
+Para todas as CLIs de portal que vêm no projeto a instalação é opcional: nenhuma tem dependências de execução e rodam só com o `bun`; o `bun install` só traz os tipos do TypeScript.
 
 Teste rápido da Gupy:
 
