@@ -98,6 +98,15 @@ class OtherSignals(unittest.TestCase):
         self.assertTrue(analyse("Nosso cliente, empresa do segmento de varejo, busca PM.")["intermediary"])
         self.assertFalse(analyse("Foco em encantar o nosso cliente todos os dias.")["intermediary"])
 
+    def test_recruiting_firm_hiring_for_its_clients(self):
+        # Missed in a real /scrape run: a recruiting firm's posting on InfoJobs.
+        text = ("As oportunidades são em empresas que atendemos: startups em altíssimo "
+                "crescimento, com IA no centro do negócio.")
+        self.assertTrue(analyse(text)["intermediary"])
+        self.assertTrue(analyse("Vaga para uma de nossos clientes do setor financeiro.")["intermediary"])
+        self.assertTrue(analyse("We are hiring for one of our clients in fintech.")["intermediary"])
+        self.assertFalse(analyse("Atendemos clientes de todo o Brasil com excelência.")["intermediary"])
+
 
 class Seniority(unittest.TestCase):
     def test_levels_from_titles(self):
