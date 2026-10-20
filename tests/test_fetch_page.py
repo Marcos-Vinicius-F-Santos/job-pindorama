@@ -227,9 +227,57 @@ class CurlArgvShape(unittest.TestCase):
         self.assertIn("-A", argv)
         self.assertEqual(argv[argv.index("-A") + 1], fetch_page.BROWSER)
 
+    def test_compressed_flag_is_omitted_when_curl_cannot_decode(self):
+        argv = fetch_page.build_curl_argv("https://example.com/x", Path("out.html"), compressed=False)
+        self.assertNotIn("--compressed", argv)
+        self.assertEqual(argv[-2:], ["--", "https://example.com/x"])
+        self.assertIn("--compressed", fetch_page.build_curl_argv("https://example.com/x", Path("out.html")))
+
     def test_user_agent_is_the_one_robots_check_uses(self):
         import robots_check
         self.assertEqual(fetch_page.BROWSER, robots_check.BROWSER)
+
+
+class CurlCompressionProbe(unittest.TestCase):
+    """`--compressed` is only passed to a curl build that can decode.
+
+    The curl.exe Windows ships in System32 has no decoders and rejects the flag
+    with exit 2, so every fetch failed there - and a bare `curl` argv resolves to
+    System32 before PATH, so installing a fuller curl did not help.
+    """
+
+    # Real `Features:` lines: the System32 build (curl 8.0.1, Schannel) and a
+    # winget cURL build (8.23.0, mingw).
+    WINDOWS_SYSTEM32 = (
+        "curl 8.0.1 (Windows) libcurl/8.0.1 Schannel WinIDN\n"
+        "Protocols: dict file ftp ftps http https imap imaps pop3 pop3s smtp smtps telnet tftp\n"
+        "Features: AsynchDNS HSTS HTTPS-proxy IDN IPv6 Kerberos Largefile NTLM SPNEGO SSL SSPI "
+        "threadsafe Unicode UnixSockets\n"
+    )
+    FULL_BUILD = (
+        "curl 8.23.0 (x86_64-w64-mingw32) libcurl/8.23.0 LibreSSL/4.3.3 zlib/1.3.1.zlib-ng\n"
+        "Features: alt-svc AsynchDNS brotli HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Kerberos "
+        "Largefile libz NativeCA SPNEGO SSL SSPI threadsafe UnixSockets zstd\n"
+    )
+
+    def test_build_without_decoders_is_detected(self):
+        self.assertFalse(fetch_page.curl_supports_compression(self.WINDOWS_SYSTEM32))
+
+    def test_build_with_decoders_is_detected(self):
+        self.assertTrue(fetch_page.curl_supports_compression(self.FULL_BUILD))
+        self.assertTrue(fetch_page.curl_supports_compression("Features: SSL zstd\n"))
+
+    def test_unreadable_version_output_means_no_flag(self):
+        self.assertFalse(fetch_page.curl_supports_compression(""))
+        self.assertFalse(fetch_page.curl_supports_compression("curl: command failed\n"))
+
+    def test_probe_failure_means_no_flag(self):
+        def boom(*args, **kwargs):
+            raise OSError("curl vanished")
+        orig = fetch_page.subprocess.run
+        fetch_page.subprocess.run = boom
+        self.addCleanup(setattr, fetch_page.subprocess, "run", orig)
+        self.assertFalse(fetch_page.probe_curl_compression())
 
 
 if __name__ == "__main__":
