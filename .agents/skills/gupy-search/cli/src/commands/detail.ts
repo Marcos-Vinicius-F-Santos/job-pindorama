@@ -14,7 +14,7 @@ function renderPlain(job: JobDetailResult): string {
   field("Inscrições até", job.deadline)
   field("Regime", job.contract)
   field("Endereço", job.address)
-  if (job.pcd) lines.push("Vaga afirmativa para pessoas com deficiência (PcD)")
+  if (job.pcd) lines.push("Vaga também para PcD (aberta a todas as pessoas)")
   if (job.steps.length) lines.push(`Etapas: ${job.steps.join(" → ")}`)
 
   const section = (title: string, text: string | null) => {
