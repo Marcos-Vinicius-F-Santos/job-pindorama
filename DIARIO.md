@@ -27,14 +27,6 @@ Também instalei as 6 ferramentas de busca de portais que vêm no projeto, com `
 - `job-pindorama`: fork **público**, só com o framework. Nunca recebe dados pessoais.
 - `minha-busca`: repositório **privado** novo, que não é um fork. Fork de repositório público não pode ser privado. O `job-pindorama` está configurado como `upstream` só para receber atualizações, e o envio para ele foi bloqueado.
 
-### Problemas e como foram resolvidos
-
-1. **O Python "não existia", mas existia.** Os comandos `python` e `python3` abriam a Microsoft Store. Esses atalhos falsos vêm com o Windows. O Python 3.12 já estava instalado e o PATH estava certo, mas o terminal do VS Code tinha sido aberto antes e guardava a lista antiga. *Solução:* reabrir o VS Code, ou recarregar o PATH no terminal.
-2. **A instalação do gh parou em "Iniciando a instalação".** A janela de permissão de administrador do Windows ficou escondida atrás do VS Code. *Solução:* achar o ícone piscando na barra de tarefas e clicar em "Sim".
-3. **O login no GitHub (`gh auth login`) não aparecia o código.** O assistente interativo de perguntas confundiu. *Solução:* usar a versão direta, sem perguntas: `gh auth login --hostname github.com --git-protocol https --web`.
-4. **Risco de abrir issues no repositório errado.** Por padrão, o gh aponta para o repositório original, que é público. *Solução:* `gh repo set-default` apontando cada pasta para o próprio repositório, como recomenda a seção 2 do SETUP.md.
-5. **Privacidade do e-mail nos commits.** *Solução:* usar o e-mail anônimo do GitHub (`@users.noreply.github.com`) nos dois repositórios.
-
 ### Próxima sessão
 
 - Rodar o `/setup` **só** no `minha-busca`, que é o privado.
