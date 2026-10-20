@@ -517,3 +517,29 @@ class CompoundCategoryPairingTests(unittest.TestCase):
             companies[0]["categories"]["salary_index"],
             {"index": 1234.56},
         )
+
+
+class BrazilianHeaderTests(unittest.TestCase):
+    """Planilhas brasileiras: cabeçalhos acentuados e número no formato 1.234,56."""
+
+    def test_accented_headers_are_whole_tokens(self):
+        # Antes, "Salário" se partia em "sal" + "rio" e nunca era reconhecido.
+        self.assertEqual(detect_column_type("Salário médio"), "index")
+        self.assertEqual(detect_column_type("Média salarial"), "index")
+        self.assertEqual(detect_column_type("Qtd. funcionários"), "count")
+        self.assertTrue(header_matches("Empresa", COMPANY_PATTERNS))
+
+    def test_parse_sheet_pairs_brazilian_category_columns(self):
+        ws = FakeWorksheet([
+            ("Empresa", "Cidade", "Qtd. funcionários TI", "Salário médio TI", "CPF"),
+            ("Exemplo Tecnologia Ltda.", "São Paulo", 40, "12.345,67", "000.000.000-00"),
+        ])
+
+        companies = parse_sheet(ws)
+
+        self.assertEqual(companies[0]["company"], "Exemplo Tecnologia Ltda.")
+        self.assertEqual(companies[0]["city"], "São Paulo")
+        self.assertEqual(
+            companies[0]["categories"],
+            {"ti": {"count": 40, "index": 12345.67}},
+        )

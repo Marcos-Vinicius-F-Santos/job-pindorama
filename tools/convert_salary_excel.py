@@ -38,22 +38,35 @@ except ImportError:
     openpyxl = None
 
 
-# Column name patterns for auto-detection
-COMPANY_PATTERNS = {"firma", "company", "virksomhed", "employer", "arbejdsgiver"}
-CITY_PATTERNS = {"by", "city", "kommune", "location", "lokation", "sted"}
-COUNT_PATTERNS = {"antal", "count", "number", "n", "employees", "medarbejdere"}
-INDEX_PATTERNS = {"indeks", "index", "idx", "salary", "løn", "median", "average", "gennemsnit"}
+# Column name patterns for auto-detection. Português (Brasil) primeiro; os
+# termos dinamarqueses continuam para planilhas no formato do projeto original.
+COMPANY_PATTERNS = {
+    "empresa", "empregador", "companhia",
+    "firma", "company", "virksomhed", "employer", "arbejdsgiver",
+}
+CITY_PATTERNS = {
+    "cidade", "município", "municipio",
+    "by", "city", "kommune", "location", "lokation", "sted",
+}
+COUNT_PATTERNS = {
+    "quantidade", "qtd", "qtde", "funcionários", "funcionarios", "colaboradores", "respondentes",
+    "antal", "count", "number", "n", "employees", "medarbejdere",
+}
+INDEX_PATTERNS = {
+    "salário", "salario", "remuneração", "remuneracao", "média", "media", "médio", "medio", "mediana",
+    "índice", "indice",
+    "indeks", "index", "idx", "salary", "løn", "median", "average", "gennemsnit",
+}
 # "Compound" tokens: pattern words allowed to match as a substring of a larger
 # header token, for languages that glue words together (e.g. Danish "lønindeks"
-# -> løn + indeks). Languages that write headers as separate words need none.
-# Ships populated for this repo's Danish demonstration data; a fork targeting
-# another locale edits this constant. "firma" is here because the IDA workbook
-# heads its company column "Firmanavn og by" (firma + navn glued together).
+# -> løn + indeks). Português escreve cabeçalhos com palavras separadas e não
+# precisa de entradas aqui. "firma" is here because the IDA workbook heads its
+# company column "Firmanavn og by" (firma + navn glued together).
 COMPOUND_PATTERNS = {"firma", "antal", "indeks", "løn", "gennemsnit", "medarbejdere"}
-# Identifier columns (employee id, Danish "personnummer", etc.) are never salary
-# data. They are dropped at classification so they are not mistaken for a salary
-# category. Matched as whole tokens only, like other pattern sets.
-ID_PATTERNS = {"id", "personnummer"}
+# Identifier columns (employee id, CPF, matrícula, Danish "personnummer") are
+# never salary data. They are dropped at classification so they are not
+# mistaken for a salary category. Matched as whole tokens only.
+ID_PATTERNS = {"id", "cpf", "matrícula", "matricula", "personnummer"}
 # Category name for a count/index pair whose headers carry no category word at
 # all ("Count" + "Index"). Matches the top-level category in README_SALARY_TOOL.md.
 DEFAULT_CATEGORY = "all_employees"
@@ -103,7 +116,7 @@ def header_matches(header, patterns):
     languages that form compound words.
     """
     h = header.lower().strip()
-    tokens = set(re.findall(r"[a-zæøåöäü0-9]+", h))
+    tokens = set(re.findall(r"[^\W_]+", h))
 
     for p in patterns:
         if p in tokens:
@@ -123,10 +136,10 @@ def strip_type_patterns(header, patterns):
     """
     name = header.lower()
     for p in patterns:
-        name = re.sub(rf"(?<![a-zæøåöäü0-9]){re.escape(p)}(?![a-zæøåöäü0-9])", "", name)
+        name = re.sub(rf"(?<![^\W_]){re.escape(p)}(?![^\W_])", "", name)
         if p in COMPOUND_PATTERNS:
             name = name.replace(p, "")
-    return name.strip(" _-")
+    return name.strip(" _-.:")
 
 
 def detect_column_type(header):

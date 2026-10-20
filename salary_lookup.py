@@ -12,7 +12,7 @@ instructions on the expected format and how to convert from Excel.
 
 Usage:
     python salary_lookup.py "Company Name"
-    python salary_lookup.py "Company Name" --city "København"
+    python salary_lookup.py "Company Name" --city "São Paulo"
     python salary_lookup.py "Company Name" --json
     python salary_lookup.py --list-all
 """
@@ -27,20 +27,24 @@ from pathlib import Path
 
 DATA_FILE = Path(__file__).parent / "salary_data.json"
 
-# Common Danish <-> anglicized spelling variants
-SPELLING_VARIANTS = {
-    "ø": "o", "æ": "ae", "å": "aa",
-    "ö": "o", "ä": "ae", "ü": "u",
-}
+# Grafias que a remoção de acentos (NFKD) não resolve sozinha. No português
+# a normalização Unicode já cobre ç, ã, é, ô etc., então o mapa começa vazio;
+# acrescente aqui variantes de outros idiomas se a sua base de dados precisar.
+SPELLING_VARIANTS = {}
 
-# Legal suffixes and noise to strip when matching company names
+# Sufixos societários e ruídos removidos ao comparar nomes de empresas.
+# "Brasil" NÃO entra na lista de propósito: "Banco do Brasil" viraria "Banco"
+# e colidiria com qualquer outro banco da base.
 STRIP_PATTERNS = [
-    r"\ba/s\b", r"\baps\b", r"\bi/s\b", r"\bp/s\b", r"\bk/s\b",
-    r"\bivs\b", r"\bamba\b", r"\ba\.m\.b\.a\.?\b",
-    r"\(vg\)", r"\(.*?\)",  # (VG) and other parentheticals
-    r"\bdanmark\b", r"\bdenmark\b", r"\bscandinavia\b", r"\bnordic\b",
-    r"\bgroup\b", r"\bholding\b",
-    r",\s*.*$",  # everything after comma (sub-entities)
+    r"\bltda\b\.?",                  # Ltda / Ltda.
+    r"\bs\s*[./]\s*a\b\.?",          # S.A. / S/A / S. A.
+    r"\bsa$",                        # "Natura Cosméticos SA" (só no fim)
+    r"\beireli\b", r"\bslu\b",       # EIRELI e a SLU que a substituiu
+    r"\bepp\b", r"\bme$", r"\bmei$", # porte: EPP, ME, MEI
+    r"\(.*?\)",                      # parênteses: "(Brasil)", "(matriz)"
+    r"\bgrupo\b", r"\bgroup\b", r"\bholding\b",
+    r"\bparticipa[cç][oõ]es\b",      # "Itaúsa Participações"
+    r",\s*.*$",                      # tudo depois da vírgula (filiais)
 ]
 
 
@@ -184,10 +188,10 @@ def normalize(s):
 
 
 def anglicize(s):
-    """Fold Nordic spellings first, then accents for ASCII-typed queries."""
+    """Remove acentos (e variantes do mapa) para buscas digitadas sem acento."""
     s = s.lower()
-    for danish, english in SPELLING_VARIANTS.items():
-        s = s.replace(danish, english)
+    for variant, plain in SPELLING_VARIANTS.items():
+        s = s.replace(variant, plain)
     return "".join(
         char for char in unicodedata.normalize("NFKD", s)
         if not unicodedata.combining(char)
@@ -463,7 +467,7 @@ def main():
         if args.city:
             print(f"  (filtered by city: {args.city})")
         print("\nTry a shorter or different name. Company names in the dataset")
-        print("may include legal suffixes like 'A/S' or 'ApS'.")
+        print("may include legal suffixes like 'Ltda.' or 'S.A.'.")
         sys.exit(1)
 
     if args.json:
