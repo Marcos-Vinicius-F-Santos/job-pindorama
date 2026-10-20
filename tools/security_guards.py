@@ -92,6 +92,11 @@ ALLOWED_PERMISSIONS = {
     # Reads a file or stdin, prints findings, writes nothing, never fetches.
     "Bash(python tools/posting_signals.py:*)",
     "Bash(python3 tools/posting_signals.py:*)",
+    # The mechanical half of /scrape. Runs only the installed portal CLIs (fixed
+    # argv per query line), writes its results outside the repo and appends to
+    # job_scraper/seen_jobs.json; never fetches anything else.
+    "Bash(python tools/scrape_run.py:*)",
+    "Bash(python3 tools/scrape_run.py:*)",
 }
 
 # Rules that must stay in .claude/settings.json permissions.ask. An ask rule
@@ -247,6 +252,8 @@ ALLOWED_SKILL_TOOLS = {
     "Bash(bun --version)",
     "Bash(python tools/job_key.py:*)",
     "Bash(python3 tools/job_key.py:*)",
+    "Bash(python tools/scrape_run.py:*)",
+    "Bash(python3 tools/scrape_run.py:*)",
     "Bash(python tools/posting_signals.py:*)",
     "Bash(python3 tools/posting_signals.py:*)",
 }

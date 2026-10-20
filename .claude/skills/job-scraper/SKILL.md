@@ -7,7 +7,7 @@ description: >
   Deduplica entre execuções. Ativa com: buscar vagas, procurar vagas, vagas novas,
   tem vaga nova?, rodar a busca, varrer portais, /scrape. English: job scrape,
   find jobs, search jobs, new jobs.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun --version), Bash(python tools/job_key.py:*), Bash(python3 tools/job_key.py:*), Bash(python tools/posting_signals.py:*), Bash(python3 tools/posting_signals.py:*), WebFetch, WebSearch, Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun --version), Bash(python tools/job_key.py:*), Bash(python3 tools/job_key.py:*), Bash(python tools/scrape_run.py:*), Bash(python3 tools/scrape_run.py:*), Bash(python tools/posting_signals.py:*), Bash(python3 tools/posting_signals.py:*), WebFetch, WebSearch, Agent, AskUserQuestion
 ---
 
 # Busca de vagas
@@ -37,6 +37,32 @@ Argumentos opcionais:
 ---
 
 ## Passos de execução
+
+### Atalho: `tools/scrape_run.py` faz a parte mecânica
+
+Os Passos 1b, 2 (deduplicação e sinais do texto, em lote) e 4 abaixo são a especificação; o
+`tools/scrape_run.py` os executa do mesmo jeito em toda rodada, sem scripts improvisados:
+
+```bash
+python3 tools/scrape_run.py search --out "$SCRATCHPAD/scrape.json"        # prioridades 1-3; --all para todas, --priority 1,2
+python3 tools/scrape_run.py record --in "$SCRATCHPAD/classificadas.json"   # Passo 4, depois de você dar o encaixe
+```
+
+- `search` lê as linhas `<portal>-search: <args>` das seções "### Prioridade N" de
+  `search-queries.md` (pula linhas com marcadores `[YOUR_...]`), roda cada portal ligado com
+  `--jobage 14` (ou o da própria linha) e `--format json`, descarta o que já foi visto (por URL
+  ou empresa+título, no `job_scraper/seen_jobs.json` e no `job_search_tracker.csv`), junta a
+  mesma vaga vista em dois portais (`also_on`) e anexa a cada vaga nova os `signals` do
+  `tools/posting_signals.py`, com a `Senioridade-alvo` do CLAUDE.md. O resumo impresso traz o
+  que o Passo 4.75 e o Passo 5 precisam: buscas e resultados por portal, erros, portais com
+  zero resultados, portais pulados (`enabled: false`) e linhas de portal não instalado.
+- Você continua fazendo o que exige julgamento: o `detail` com `posting_signals` no texto
+  completo das vagas promissoras (Passo 2), o encaixe (Passo 3) e a apresentação (Passo 5).
+- `record` recebe a lista com `fit` (`high`/`medium`/`low`) e, se quiser, `status` em cada
+  vaga, e grava no `job_scraper/seen_jobs.json` com a chave do `tools/job_key.py` e os campos do
+  esquema do Passo 4. Nunca sobrescreve uma entrada existente.
+- O arquivo do `search` é conteúdo de terceiros: fica fora do repositório (scratchpad ou pasta
+  temporária); a ferramenta recusa um `--out` dentro dele.
 
 ### Passo 0: Carregar o estado
 
