@@ -1,32 +1,46 @@
-# Setup Guide
+# Guia de instalação
 
-Step-by-step instructions for getting the AI Job Search framework running.
+Passo a passo para colocar o job-pindorama para funcionar.
 
-## 1. Prerequisites
+## 1. Pré-requisitos
 
 ### Claude Code
 
-Install Claude Code (Anthropic's CLI for Claude):
+Instale o Claude Code (a CLI da Anthropic para o Claude):
 
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-You'll need an Anthropic API key or a Claude Pro/Team subscription. See the [Claude Code docs](https://docs.anthropic.com/en/docs/claude-code) for details.
+Você vai precisar de uma chave de API da Anthropic ou de uma assinatura Claude Pro/Team. Veja a [documentação do Claude Code](https://docs.anthropic.com/en/docs/claude-code) para os detalhes. No Windows, também dá para usar a extensão do Claude Code no VS Code.
 
 ### Python
 
-Python 3.10+ is required for the salary lookup tool. Check with:
+O Python 3.10 ou mais novo é necessário para as ferramentas de apoio. Confira com:
 
 ```bash
 python3 --version
 ```
 
-On Windows, `py --version` is often the most reliable check. If your system exposes Python as `python` instead of `python3`, use `python` in the commands below.
+No Windows, `py --version` costuma ser a checagem mais confiável. Se o seu sistema chama o Python de `python` em vez de `python3`, use `python` nos comandos abaixo.
 
-### Bun (for job search tools)
+> **Windows: `python` abre a Microsoft Store?** O Windows vem com atalhos falsos de `python` e `python3` que abrem a loja. Se o Python já estiver instalado, o problema costuma ser um terminal aberto antes da instalação, com o PATH antigo: feche e abra o terminal (ou o VS Code inteiro). Também dá para desligar os atalhos em Configurações → Aplicativos → Aliases de execução de aplicativo.
 
-The job portal CLIs (four Danish portals plus the country-agnostic `linkedin-search` and `freehire-search` tools) are written in TypeScript and run with Bun.
+### Bun (para as ferramentas de busca)
+
+As CLIs dos portais de vagas (`gupy-search`, `linkedin-search` e `freehire-search`) são escritas em TypeScript e rodam com o Bun.
+
+- Windows (o jeito mais simples):
+
+```powershell
+winget install Oven-sh.Bun
+```
+
+- Windows PowerShell, sem o winget:
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"
+```
 
 - macOS/Linux:
 
@@ -34,29 +48,21 @@ The job portal CLIs (four Danish portals plus the country-agnostic `linkedin-sea
 curl -fsSL https://bun.sh/install | bash
 ```
 
-- Windows PowerShell:
+### LaTeX (para compilar currículos e cartas)
 
-```powershell
-powershell -ExecutionPolicy Bypass -c "irm https://bun.sh/install.ps1 | iex"
-```
+Instale uma distribuição LaTeX para compilar os arquivos `.tex` gerados em PDF:
 
-If you prefer a package manager, `winget install Oven-sh.Bun` also works on Windows.
-
-### LaTeX (for compiling CVs and cover letters)
-
-Install a LaTeX distribution to compile the generated `.tex` files to PDF:
-
-- **Windows:** [MiKTeX](https://miktex.org/download)
+- **Windows:** [MiKTeX](https://miktex.org/download) (ou `winget install MiKTeX.MiKTeX`)
 - **macOS:** [MacTeX](https://tug.org/mactex/)
-- **Linux:** `sudo apt install texlive-full` or `sudo dnf install texlive-scheme-full`
+- **Linux:** `sudo apt install texlive-full` ou `sudo dnf install texlive-scheme-full`
 
-The CV compiles with `lualatex` (pdflatex often fails on modern MiKTeX installs with `fontawesome5` font-expansion errors). The cover letter compiles with `xelatex` because `cover.cls` requires `fontspec` for its custom Lato/Raleway fonts.
+O currículo compila com `lualatex` (o pdflatex costuma falhar no MiKTeX recente com erros de expansão de fonte do `fontawesome5`). A carta compila com `xelatex`, porque o `cover.cls` exige `fontspec` para as fontes Lato e Raleway.
 
-#### Minimal TeX install: TinyTeX/BasicTeX
+#### Instalação mínima de TeX: TinyTeX/BasicTeX
 
-Full TeX distributions work out of the box, but minimal distributions need a few extra packages before the stock templates compile.
+Distribuições TeX completas funcionam de primeira, mas as mínimas precisam de alguns pacotes extras antes de os modelos padrão compilarem.
 
-On macOS, a user-level TinyTeX install avoids a system-wide installer and does not require `sudo`:
+No macOS, uma instalação do TinyTeX só para o seu usuário evita um instalador para o sistema todo e não exige `sudo`:
 
 ```bash
 curl -fsSL https://yihui.org/tinytex/install-bin-unix.sh -o /tmp/tinytex-install-bin-unix.sh
@@ -64,17 +70,17 @@ sh /tmp/tinytex-install-bin-unix.sh /tmp --no-path
 export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"
 ```
 
-The `export` above only lasts for the current terminal window. Persist it, or every new window reports `zsh: command not found: lualatex` (or `xelatex`) even though TinyTeX installed fine:
+O `export` acima só vale para a janela de terminal atual. Torne-o permanente, ou cada janela nova vai dizer `zsh: command not found: lualatex` (ou `xelatex`) mesmo com o TinyTeX instalado:
 
 ```bash
 echo 'export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
-lualatex --version   # should print a version, not "command not found"
+lualatex --version   # deve imprimir uma versão, não "command not found"
 ```
 
-(Bash users: append to `~/.bash_profile` instead.)
+(Quem usa Bash: acrescente ao `~/.bash_profile`.)
 
-Then install the template dependencies:
+Depois instale as dependências dos modelos:
 
 ```bash
 tlmgr install \
@@ -82,9 +88,9 @@ tlmgr install \
   titlesec textpos xltxtra xunicode cite realscripts needspace
 ```
 
-For BasicTeX/MacTeX, make sure the TeX binary directory is on `PATH` first (for example via `/Library/TeX/texbin`), then run the same `tlmgr install ...` command.
+No BasicTeX/MacTeX, garanta primeiro que a pasta de binários do TeX está no `PATH` (por exemplo, via `/Library/TeX/texbin`) e rode o mesmo `tlmgr install ...`.
 
-Quick smoke tests after setup:
+Testes rápidos depois da instalação:
 
 ```bash
 cd cv && lualatex -interaction=nonstopmode -halt-on-error main_example.tex && cd ..
@@ -94,41 +100,43 @@ cp -R cover_letters/cover.cls cover_letters/OpenFonts "$SMOKE_DIR/"
 cat >"$SMOKE_DIR/cover_smoke.tex" <<'EOF'
 \documentclass[]{cover}
 \begin{document}
-\namesection{Test}{Candidate}{test@example.com}
-\companyname{Example Company}
-\companyaddress{123 Hiring Street\\Example City}
-\currentdate{\today}
-\lettercontent{Dear Hiring Manager,}
-\lettercontent{This smoke test verifies that xelatex can load cover.cls and the bundled fonts.}
-\closing{Sincerely,}
-\signature{Test Candidate}
+\namesection{Teste}{Candidata}{test@example.com}
+\companyname{Empresa Exemplo}
+\companyaddress{Rua da Contratação, 123\\Cidade Exemplo - SP}
+\currentdate{São Paulo, 19 de outubro de 2026}
+\lettercontent{Prezada equipe de recrutamento,}
+\lettercontent{Este teste confere se o xelatex carrega o cover.cls, as fontes incluídas e os acentos (ç, ã, é).}
+\closing{Atenciosamente,}
+\signature{Teste Candidata}
 \end{document}
 EOF
 (cd "$SMOKE_DIR" && xelatex -interaction=nonstopmode -halt-on-error cover_smoke.tex)
 ```
 
-#### Windows: Basic MiKTeX
+#### Windows: MiKTeX básico
 
-The full MiKTeX installer bundles every CTAN package and works out of the box, but the smaller [Basic MiKTeX](https://miktex.org/download) installer (`basic-miktex-*.exe`) only ships a minimal package set and needs a couple of one-time settings before the stock templates compile.
+O instalador completo do MiKTeX traz todos os pacotes do CTAN e funciona de primeira, mas o instalador [Basic MiKTeX](https://miktex.org/download) (`basic-miktex-*.exe`), menor, só traz um conjunto mínimo de pacotes e precisa de umas configurações únicas antes de os modelos padrão compilarem.
 
-By default, MiKTeX installs missing packages on demand but pops up a GUI prompt for each one — which blocks non-interactive terminals (including Claude Code's Bash tool). Turn that into a silent auto-install instead:
+Por padrão, o MiKTeX instala os pacotes que faltam sob demanda, mas abre uma janela de confirmação para cada um — o que trava terminais não interativos (inclusive a ferramenta Bash do Claude Code). Troque isso por uma instalação automática silenciosa:
 
 ```powershell
 initexmf --admin --set-config-value=[MPM]AutoInstall=1
 initexmf --set-config-value=[MPM]AutoInstall=1
 ```
 
-(Run the first line from an elevated/Admin PowerShell if you installed MiKTeX for all users; the second line covers a per-user install. Only one will apply depending on how you installed it — running both is harmless.)
+(Rode a primeira linha num PowerShell de administrador se instalou o MiKTeX para todos os usuários; a segunda cobre uma instalação só do seu usuário. Só uma vai valer, conforme a instalação — rodar as duas não faz mal.)
 
-If you'd rather not rely on on-the-fly installs at all (for example, for a fully offline compile later), pre-install the same package set the macOS TinyTeX section above lists, using MiKTeX's package manager:
+> **Janela de permissão escondida.** Instaladores no Windows às vezes param em "Iniciando a instalação" porque a janela de permissão de administrador ficou atrás do VS Code. Procure o ícone piscando na barra de tarefas e clique em "Sim".
+
+Se preferir não depender da instalação sob demanda (por exemplo, para compilar sem internet depois), instale de antemão o mesmo conjunto de pacotes da seção do TinyTeX acima, com o gerenciador de pacotes do MiKTeX:
 
 ```powershell
 mpm --admin --install=moderncv --install=fontawesome5 --install=fontawesome6 --install=academicons --install=import --install=luatexbase --install=pgf --install=titlesec --install=textpos --install=xltxtra --install=xunicode --install=cite --install=realscripts --install=needspace
 ```
 
-Drop `--admin` if MiKTeX is installed for the current user only. If a package name doesn't resolve, `mpm --find=<name>` searches the repository for the correct name.
+Tire o `--admin` se o MiKTeX estiver instalado só para o seu usuário. Se o nome de um pacote não for encontrado, `mpm --find=<nome>` procura o nome certo no repositório.
 
-Quick smoke tests after setup (PowerShell):
+Testes rápidos depois da instalação (PowerShell):
 
 ```powershell
 Set-Location cv; lualatex -interaction=nonstopmode -halt-on-error main_example.tex; Set-Location ..
@@ -138,108 +146,117 @@ Copy-Item cover_letters\cover.cls, cover_letters\OpenFonts -Destination $SmokeDi
 @'
 \documentclass[]{cover}
 \begin{document}
-\namesection{Test}{Candidate}{test@example.com}
-\companyname{Example Company}
-\companyaddress{123 Hiring Street\\Example City}
-\currentdate{\today}
-\lettercontent{Dear Hiring Manager,}
-\lettercontent{This smoke test verifies that xelatex can load cover.cls and the bundled fonts.}
-\closing{Sincerely,}
-\signature{Test Candidate}
+\namesection{Teste}{Candidata}{test@example.com}
+\companyname{Empresa Exemplo}
+\companyaddress{Rua da Contratação, 123\\Cidade Exemplo - SP}
+\currentdate{São Paulo, 19 de outubro de 2026}
+\lettercontent{Prezada equipe de recrutamento,}
+\lettercontent{Este teste confere se o xelatex carrega o cover.cls, as fontes incluídas e os acentos (ç, ã, é).}
+\closing{Atenciosamente,}
+\signature{Teste Candidata}
 \end{document}
-'@ | Set-Content (Join-Path $SmokeDir "cover_smoke.tex")
+'@ | Set-Content -Encoding utf8 (Join-Path $SmokeDir "cover_smoke.tex")
 Push-Location $SmokeDir; xelatex -interaction=nonstopmode -halt-on-error cover_smoke.tex; Pop-Location
 ```
 
-### Optional: ATS text extraction (pypdf, then pdftotext)
+(O `-Encoding utf8` importa: sem ele, o Windows PowerShell 5.1 grava o arquivo na página de código do sistema e os acentos chegam errados ao xelatex.)
 
-`/apply` runs an ATS parseability check on the compiled CV: it extracts the PDF's text layer and verifies contact details, reading order, and keyword coverage the way an applicant-tracking system sees them.
+### Opcional: extração de texto para ATS (pypdf, depois pdftotext)
 
-The default extractor is **pypdf** (BSD, `pip install pypdf`). Poppler `pdftotext` remains an optional fallback:
+O `/apply` roda uma checagem de leitura por ATS no currículo compilado: extrai a camada de texto do PDF e confere contatos, ordem de leitura e cobertura de palavras-chave como um sistema de recrutamento (ATS) os vê.
 
+O extrator padrão é o **pypdf** (BSD, `pip install pypdf`). O `pdftotext` do Poppler continua como plano B opcional:
+
+- **Windows:** `choco install poppler`
 - **macOS:** `brew install poppler`
 - **Debian/Ubuntu:** `sudo apt install poppler-utils`
-- **Windows:** `choco install poppler`
 
-If a command still uses `pdftotext -layout`, it must pass `-enc UTF-8` as well. If **neither** extractor is available, `/apply` skips the mechanical check with a warning and falls back to a visual keyword review — everything else works normally.
+Se algum comando ainda usar `pdftotext -layout`, ele precisa passar também `-enc UTF-8`. Se **nenhum** extrator estiver disponível, o `/apply` pula a checagem mecânica com um aviso e faz uma revisão visual das palavras-chave — todo o resto funciona normalmente.
 
-## 2. Fork and clone
+## 2. Fork e clone
 
 ```bash
-gh repo fork MadsLorentzen/ai-job-search --clone
-cd ai-job-search
-gh repo set-default <your-github-username>/ai-job-search
+gh repo fork rosanapegasgodoy/job-pindorama --clone
+cd job-pindorama
+gh repo set-default <seu-usuario-no-github>/job-pindorama
 ```
 
-Or manually: fork on GitHub, then clone your fork.
+Ou à mão: faça o fork no GitHub e depois clone o seu fork.
 
-> **The `set-default` line is not optional.** `gh repo fork --clone` sets the
-> **upstream** repo as gh's default repository ("The `upstream` remote will be set as
-> the default remote repository" — `gh repo fork --help`), and gh uses the default for
-> **creating issues and PRs**. Without it, any later `gh issue create` run from this
-> clone — by you or by an agent you have asked to track your applications — silently
-> files on the upstream **public** tracker, publishing whatever the issue contains
-> under your GitHub identity, on a repo where you cannot delete it (#389).
+> **A linha `set-default` não é opcional.** O `gh repo fork --clone` define o repositório
+> de **upstream** como o repositório padrão do gh ("The `upstream` remote will be set as
+> the default remote repository" — `gh repo fork --help`), e o gh usa o padrão para
+> **criar issues e PRs**. Sem ela, qualquer `gh issue create` rodado depois a partir deste
+> clone — por você ou por um agente a quem você pediu para acompanhar candidaturas — cai
+> em silêncio no rastreador **público** do upstream, publicando o conteúdo da issue com a
+> sua identidade do GitHub, num repositório em que você não consegue apagá-la (#389).
 
-> **Before you go further: forks are public.** GitHub cannot make a fork of a public
-> repository private, and `/setup` (section 6) writes your personal data into **tracked**
-> files — pushing those commits to a fork publishes them. If this copy is for your own
-> job search rather than for contributing, prefer a **private repository** with this repo
-> as `upstream`: see section 8, step 1 for the exact commands and why committing your
-> personalization there is still the right move. Everything else in this guide works
-> identically either way.
+> **Antes de seguir: forks são públicos.** O GitHub não deixa tornar privado um fork de
+> um repositório público, e o `/setup` (seção 4) grava os seus dados pessoais em arquivos
+> **rastreados pelo git** — fazer push desses commits para um fork os publica. Se esta cópia
+> é para a sua própria busca de emprego, e não para contribuir, prefira um **repositório
+> privado** com este como `upstream`: veja a seção 8, passo 1, para os comandos exatos e
+> para o motivo de ainda valer a pena versionar a sua personalização ali. Todo o resto
+> deste guia funciona igual nos dois casos.
 
-## 3. Install job search CLI dependencies
-Run these from the repository root.
+## 3. Instalar as dependências das CLIs de busca
+Rode a partir da raiz do repositório.
 
 ```bash
 python3 tools/install_portal_clis.py   # Windows: python tools\install_portal_clis.py
 ```
 
-It runs `bun install` in every portal CLI under `.agents/skills/*/cli/` - discovered, not listed, so a portal you add with `/add-portal` or copy from another fork is included on a fresh clone. A CLI whose `package.json` declares an install-time lifecycle script is skipped and reported rather than run. `--dry-run` shows what it would install.
+Ele roda `bun install` em toda CLI de portal em `.agents/skills/*/cli/` — descobertas, não listadas, então um portal que você acrescentar com o `/add-portal` ou copiar de outro fork entra num clone novo. Uma CLI cujo `package.json` declare um script de ciclo de vida na instalação (lifecycle script) é pulada e informada, em vez de executada. `--dry-run` mostra o que seria instalado.
 
-For `linkedin-search` and `freehire-search` the install is optional: both have zero runtime dependencies and run with plain `bun`; `bun install` only pulls TypeScript dev types.
+Para o `gupy-search`, o `linkedin-search` e o `freehire-search` a instalação é opcional: os três não têm dependências de execução e rodam só com o `bun`; o `bun install` só traz os tipos do TypeScript.
 
-If you're outside Denmark, you can generate an equivalent search skill for your local job board with `/add-portal` — it scaffolds the same CLI structure for any public portal and test-runs a live query before registering. See the "Job search tools" section in the README.
+Teste rápido da Gupy:
 
-## 4. Run the setup interview
+```bash
+bun run .agents/skills/gupy-search/cli/src/cli.ts search -q "analista de dados" --state SP --limit 5 --format table
+```
 
-Start Claude Code in the repository:
+Para outro portal brasileiro, gere uma skill equivalente com o `/add-portal` — ele monta a mesma estrutura de CLI para qualquer portal público e testa uma busca ao vivo antes de registrar. Veja a seção "Ferramentas de busca" do README.
+
+## 4. Rodar a configuração do perfil
+
+Abra o Claude Code no repositório:
 
 ```bash
 claude
 ```
 
-Then run the onboarding:
+Depois rode a configuração:
 
 ```
 /setup
 ```
 
-Claude will offer three paths:
+O Claude vai oferecer três caminhos:
 
-- **Path A (documents folder):** Add your CV, LinkedIn export, diplomas, references, or past applications under `documents/`. Claude reads and cross-references them before proposing profile updates. This is best when you have several source files.
-- **Path B (single CV import):** Share one CV/resume by mentioning the file with `@` or pasting the text. Claude extracts it and asks follow-up questions for anything missing.
-- **Path C (interview mode):** Answer structured interview questions section by section.
+- **Caminho A (pasta de documentos):** coloque o currículo, a exportação do LinkedIn, diplomas, cartas de recomendação ou candidaturas anteriores em `documents/`. O Claude lê e cruza as informações antes de propor atualizações do perfil. É o melhor quando você tem vários arquivos.
+- **Caminho B (importar um currículo):** compartilhe um currículo mencionando o arquivo com `@` ou colando o texto. O Claude extrai e pergunta o que faltar.
+- **Caminho C (entrevista):** responda perguntas organizadas, seção por seção.
 
-All three paths produce the same result: fully populated profile files.
+Os três caminhos produzem o mesmo resultado: os arquivos de perfil preenchidos. Em todos, o Claude vai perguntar também os **regimes que você aceita** (CLT, PJ, estágio), a **pretensão salarial** e o **gênero gramatical** para os textos.
 
-### What gets populated
+### O que é preenchido
 
-| File | Content |
-|------|---------|
-| `CLAUDE.md` | Your full candidate profile |
-| `01-candidate-profile.md` | Structured education, experience, skills |
-| `02-behavioral-profile.md` | Behavioral assessment |
-| `04-job-evaluation.md` | Personalized skill match areas and career goals |
-| `05-cv-templates.md` | Profile statement templates for your background |
-| `07-interview-prep.md` | STAR examples from your experience |
-| `cv/main_example.tex` | Your LaTeX CV with actual details |
-| `search-queries.md` | Job search queries for `/scrape` |
+| Arquivo | Conteúdo |
+|---------|----------|
+| `CLAUDE.md` | O seu perfil completo |
+| `01-candidate-profile.md` | Formação, experiência e competências, estruturadas |
+| `02-behavioral-profile.md` | Avaliação comportamental |
+| `04-job-evaluation.md` | Áreas de competência e objetivos de carreira personalizados |
+| `05-cv-templates.md` | Modelos de resumo profissional para a sua trajetória |
+| `06-cover-letter-templates.md` | Linha de contato e assinatura da carta |
+| `07-interview-prep.md` | Exemplos STAR da sua experiência |
+| `cv/main_example.tex` | O seu currículo em LaTeX com os dados reais |
+| `search-queries.md` | Buscas de vagas para o `/scrape` |
 
-### Re-running setup
+### Rodando a configuração de novo
 
-You can update specific sections later:
+Dá para atualizar seções específicas depois:
 
 ```
 /setup --section skills
@@ -247,51 +264,45 @@ You can update specific sections later:
 /setup --section search
 ```
 
-The `--section search` option is especially useful as your priorities evolve. It re-runs the search configuration interview and suggests role types you may not have considered based on your full profile.
+A opção `--section search` é especialmente útil à medida que as prioridades mudam. Ela refaz a entrevista de configuração da busca e sugere tipos de vaga que você talvez não tenha considerado, com base no perfil completo.
 
-## 5. Optional: Set up salary benchmarking
+## 5. Opcional: configurar a referência salarial
 
-If you have salary data (from a union, salary survey, Glassdoor, or personal research):
+Se você tem dados salariais (de uma pesquisa salarial, de um guia de consultoria, do Glassdoor ou de pesquisa própria):
 
-1. **Option A:** Create `salary_data.json` manually in the repo root (see `tools/README_SALARY_TOOL.md` for the format)
-2. **Option B:** Convert from Excel:
+1. **Opção A:** crie o `salary_data.json` à mão na raiz do repositório (veja o formato em `tools/README_SALARY_TOOL.md`)
+2. **Opção B:** converta de uma planilha Excel (cabeçalhos em português, como "Empresa", "Cidade", "Salário médio", são reconhecidos):
    ```bash
    pip install openpyxl
-   python3 tools/convert_salary_excel.py path/to/salary-data.xlsx --source "My Salary Data 2025"
+   python3 tools/convert_salary_excel.py caminho/para/salarios.xlsx --source "Minha pesquisa salarial 2026"
    ```
 
-This creates `salary_data.json` which the `/apply` workflow uses for salary benchmarking. If you skip this step, salary lookup is simply omitted.
+Isso cria o `salary_data.json` que o fluxo do `/apply` usa como referência salarial. Se você pular este passo, a consulta salarial é simplesmente omitida e a avaliação usa fontes públicas.
 
-## 6. Test the workflow
+## 6. Testar o fluxo
 
-Find a job posting you're interested in, then:
-
-```
-/apply https://jobindex.dk/job/1234567
-```
-
-Or paste the job description directly:
+Ache uma vaga que interesse a você e rode:
 
 ```
-/apply [paste job posting text here]
+/apply https://empresa.gupy.io/jobs/12345678
 ```
 
-Claude will:
-1. Evaluate the fit against your profile
-2. Ask if you want to proceed
-3. Draft a tailored CV and cover letter
-4. Have a reviewer agent critique the drafts
-5. Revise and present the final output
+Ou cole a descrição da vaga direto:
 
-## 7. Compile your documents
-
-After `/apply` creates the LaTeX files:
-
-```bash
-# Bash / zsh / Git Bash
-cd cv && lualatex main_<company>_<role>.tex && cd ..
-cd cover_letters && xelatex cover_<company>_<role>.tex && cd ..
 ```
+/apply [cole aqui o texto da vaga]
+```
+
+O Claude vai:
+1. Avaliar o encaixe com o seu perfil (incluindo o regime e os sinais de golpe)
+2. Perguntar se você quer seguir
+3. Rascunhar um currículo e uma carta personalizados
+4. Pedir a um agente revisor que critique os rascunhos
+5. Revisar e apresentar o resultado final
+
+## 7. Compilar os seus documentos
+
+Depois que o `/apply` criar os arquivos LaTeX:
 
 ```powershell
 # PowerShell
@@ -299,52 +310,77 @@ Set-Location cv; lualatex main_<company>_<role>.tex; Set-Location ..
 Set-Location cover_letters; xelatex cover_<company>_<role>.tex; Set-Location ..
 ```
 
-These commands apply to the stock templates (moderncv CV, `cover.cls` cover letter). If you'd rather use your own LaTeX template, run `/add-template` — it captures the template's compile engine, fonts, style rules, and page limit, test-compiles it, and wires it into `/apply`. See the "LaTeX templates" section in the README.
+```bash
+# Bash / zsh / Git Bash
+cd cv && lualatex main_<company>_<role>.tex && cd ..
+cd cover_letters && xelatex cover_<company>_<role>.tex && cd ..
+```
 
-## 8. Pulling upstream updates into your fork
+Esses comandos valem para os modelos padrão (currículo moderncv, carta `cover.cls`). Para usar o seu próprio modelo, rode o `/add-template` — ele registra o motor de compilação, as fontes, as regras de estilo e o limite de páginas do modelo, testa a compilação e o liga ao `/apply`. Veja a seção "Modelos próprios" do README.
 
-Upstream keeps improving the methodology files your fork has personalized, so plan for updates from day one:
+## 8. Trazendo atualizações do upstream para o seu fork
 
-**Prefer releases over raw `master`.** Tagged [releases](../../releases) are vetted checkpoints, each described in [CHANGELOG.md](CHANGELOG.md). Updating to a tag pulls a stable, documented state instead of whatever `master` happens to be mid-review. Fetch tags with `git fetch upstream --tags` and merge a release (for example `git merge v1.0.0`) when you want stability; pull `master` directly only when you specifically want the latest unreleased changes. The steps below apply either way - substitute the release tag for `upstream/master` where you see it.
+Há dois níveis de upstream:
 
-1. **Commit your personalization - but know where those commits land.** `/setup` edits CLAUDE.md and the profile skill files in place; those edits are *yours*, and committing them is what lets updates merge cleanly. But a GitHub **fork of this repo is public** - forks of public repositories cannot be made private - so anything you commit *and push to a fork* is visible to anyone. If you want your profile in a remote at all, don't push it to a fork: create a **private** repository, push there, and add this repo as the `upstream` remote (`git remote add upstream https://github.com/MadsLorentzen/ai-job-search.git`) to keep receiving updates. Committing locally without pushing is also fine. The genuinely sensitive files (tracker, salary data, `documents/`, application archives) are gitignored and never enter git either way. An uncommitted working tree is the most common reason `git pull` refuses to merge at all (`Your local changes ... would be overwritten`).
-2. **Preview what changed before pulling:**
+- **Para quem usa o job-pindorama:** o upstream é este repositório (`https://github.com/rosanapegasgodoy/job-pindorama.git`), que traz a adaptação para o Brasil.
+- **Para o próprio job-pindorama:** o upstream é o projeto original (`https://github.com/MadsLorentzen/ai-job-search`), que continua melhorando o método. Como este fork traduziu os arquivos de instrução, quase toda atualização do original precisa ser portada à mão; as ferramentas abaixo ajudam a escolher o que vale.
+
+Planeje as atualizações desde o primeiro dia:
+
+**Prefira versões marcadas ao `master` cru.** Versões com tag são pontos de checagem revisados, cada uma descrita no [CHANGELOG.md](CHANGELOG.md). Atualizar para uma tag traz um estado estável e documentado, em vez do que o `master` estiver no meio de uma revisão. Busque as tags com `git fetch upstream --tags` e mescle uma versão (por exemplo, `git merge v1.0.0`) quando quiser estabilidade; puxe o `master` direto só quando quiser especificamente as mudanças ainda não lançadas. Os passos abaixo valem nos dois casos — troque `upstream/master` pela tag da versão onde aparecer.
+
+1. **Versione a sua personalização — mas saiba para onde vão esses commits.** O `/setup` edita o CLAUDE.md e os arquivos de perfil no lugar; essas edições são *suas*, e versioná-las é o que deixa as atualizações se mesclarem limpas. Mas um **fork deste repositório no GitHub é público** — forks de repositórios públicos não podem ser privados —, então tudo o que você versionar *e fizer push para um fork* fica visível para qualquer pessoa. Se quiser o seu perfil num remoto, não faça push para um fork: crie um repositório **privado**, faça push para ele e acrescente este repositório como o remoto `upstream` (`git remote add upstream https://github.com/rosanapegasgodoy/job-pindorama.git`) para continuar recebendo atualizações. Versionar só localmente, sem push, também tudo bem. Os arquivos realmente sensíveis (tracker, dados salariais, `documents/`, arquivos das candidaturas) são ignorados pelo git e nunca entram nele de qualquer forma. Uma árvore de trabalho com mudanças não versionadas é o motivo mais comum de o `git pull` se recusar a mesclar (`Your local changes ... would be overwritten`).
+
+   Receita do repositório privado com o `gh`:
    ```bash
-   git remote add upstream https://github.com/MadsLorentzen/ai-job-search.git   # first time only, if you cloned your own fork
-   git fetch upstream    # or origin, if you cloned the template directly
+   gh repo create minha-busca --private --clone
+   cd minha-busca
+   git remote add upstream https://github.com/rosanapegasgodoy/job-pindorama.git
+   git fetch upstream
+   git merge upstream/master --allow-unrelated-histories
+   git remote set-url --push upstream DISABLE   # impede push acidental para o upstream público
+   gh repo set-default <seu-usuario-no-github>/minha-busca
+   ```
+2. **Veja o que mudou antes de puxar:**
+   ```bash
+   git fetch upstream
    python3 tools/check_upstream_updates.py
    ```
-   It compares the `framework_version` markers in your framework files against upstream and lists exactly which methodology files changed, with the diff command for each.
+   Ele compara os marcadores `framework_version` dos seus arquivos do método com os do upstream e lista exatamente quais arquivos de método mudaram, com o comando de diferença de cada um.
 
-   Two tools answer two different questions, and it's worth running both:
-   - **`check_upstream_updates.py`** — *which of my personalized files changed?* It reads the `framework_version` stamp on each methodology file, so it flags exactly the customized files a release touched.
-   - **`upstream_triage.py`** — *which upstream commits deserve my attention?* It walks the commits you're behind and sorts them into "worth reviewing" vs "probably skip", dropping anything you've already cherry-picked (matched by `git patch-id`, so ported work falls off with no bookkeeping), commits that only touch files your fork removed, and SHAs you've listed in `.github/upstream-wontport.txt`. It's report-only — it prints ready-to-run `git cherry-pick` lines but never merges, pushes, or opens a PR, because on a fork "applies cleanly" isn't "correct".
+   Duas ferramentas respondem a duas perguntas diferentes, e vale rodar as duas:
+   - **`check_upstream_updates.py`** — *quais dos meus arquivos personalizados mudaram?* Lê o carimbo `framework_version` de cada arquivo de método, então aponta exatamente os arquivos personalizados que uma versão tocou.
+   - **`upstream_triage.py`** — *quais commits do upstream merecem minha atenção?* Percorre os commits que você não tem e os separa em "vale revisar" e "provavelmente pular", descartando o que você já trouxe com cherry-pick (reconhecido por `git patch-id`, então trabalho portado some sem contabilidade), commits que só tocam arquivos que o seu fork removeu, e SHAs listados em `.github/upstream-wontport.txt`. Só gera relatório — imprime linhas `git cherry-pick` prontas para rodar, mas nunca mescla, faz push ou abre PR, porque num fork "aplica sem conflito" não é "está correto".
 
      ```bash
      python3 tools/upstream_triage.py --remote upstream
      ```
 
-     Forks also inherit a `.github/workflows/upstream-watch.yml` that runs this weekly and writes the result into a single rolling issue (it no-ops on the upstream template itself, and stays disabled on a fork until you enable Actions).
-3. **Merge normally.** `git merge upstream/master` (or `git pull`) three-way-merges upstream's edits around your personalization; because methodology edits rarely touch the lines `/setup` filled in, most updates land cleanly. A conflict in a personalized file is a *feature*, not a failure — it means upstream changed methodology in a section you customized, and the version marker plus its changelog commit tell you why. Resolve by keeping your data and adopting the methodology change around it.
+     Forks também herdam um `.github/workflows/upstream-watch.yml` que roda isso toda semana e grava o resultado numa única issue rotativa (ele não faz nada no modelo original e fica desligado num fork até você ligar o Actions).
+3. **Mescle normalmente.** `git merge upstream/master` (ou `git pull`) faz a mescla de três vias das edições do upstream em volta da sua personalização; como as edições de método raramente tocam as linhas que o `/setup` preencheu, a maioria das atualizações entra limpa. Um conflito num arquivo personalizado é um *recurso*, não uma falha — significa que o upstream mudou o método numa seção que você personalizou, e o marcador de versão mais o commit no changelog dizem por quê. Resolva mantendo os seus dados e adotando a mudança de método em volta deles.
 
-## Troubleshooting
+## Solução de problemas
 
 ### "salary_data.json not found"
-This is expected if you haven't set up salary benchmarking. The `/apply` workflow skips this step automatically.
+É esperado se você não configurou a referência salarial. O fluxo do `/apply` pula esse passo sozinho.
 
-### Job search CLI tools not working
-Make sure Bun is installed and you ran `bun install` in each CLI directory. The tools require network access to fetch job listings.
+### As CLIs de busca não funcionam
+Confira se o Bun está instalado e se você rodou `python tools/install_portal_clis.py`. As ferramentas precisam de acesso à internet para buscar vagas. Se a Gupy parar de responder, rode `/scrape health gupy` — o portal pode ter mudado a rota de busca (veja `.agents/skills/gupy-search/url-reference.md`).
 
-### LaTeX compilation errors
-- CV: uses `lualatex` (pdflatex often fails on modern MiKTeX with `fontawesome5` font-expansion errors; lualatex handles the same sources cleanly)
-- Cover letter: uses `xelatex` (for custom fonts in `OpenFonts/fonts/`)
-- Make sure your LaTeX distribution includes the `moderncv` package
+### `fetch_page.py` falha com "curl exit 2" no Windows
+O `curl` que vem com o Windows não suporta `--compressed`. Instale um curl completo (`winget install cURL.cURL`, ou use o que vem com o Git for Windows) e garanta que ele vem primeiro no PATH.
 
-### Fonts not found in cover letter
-The cover letter template expects fonts in `cover_letters/OpenFonts/fonts/`. Make sure this directory exists and contains the Lato and Raleway font files.
+### Erros de compilação LaTeX
+- Currículo: usa `lualatex` (o pdflatex costuma falhar no MiKTeX recente com erros de expansão de fonte do `fontawesome5`; o lualatex compila os mesmos arquivos sem problema)
+- Carta: usa `xelatex` (para as fontes em `OpenFonts/fonts/`)
+- Garanta que a sua distribuição LaTeX tem o pacote `moderncv`
+- `Missing $ inserted` perto de um valor em reais: escreva `R\$`, não `R$`
 
-### Stale `.claude/settings.local.json` from an older clone
-Shared Claude Code permissions now live in `.claude/settings.json`: an `allow` list scoped to the exact commands the workflow runs (each portal CLI by path, the `tools/` scripts, `salary_lookup.py`, `pdftotext`), an `ask` list that always prompts before the permission-defining files are edited or `git push` runs, and a `deny` list that blocks upload-shaped shell and reads of credential files in every mode. `SECURITY.md` has the full table. Earlier versions of this repo committed a broader `.claude/settings.local.json` that pre-approved `Bash(curl:*)`, `Bash(python:*)` and `Bash(bun:*)`. If you cloned before that change, git leaves the old file behind in your working copy, and its permissions still apply on top of `settings.json`. Delete it (or trim it to your own personal overrides):
+### Fontes não encontradas na carta
+O modelo da carta espera as fontes em `cover_letters/OpenFonts/fonts/`. Confira se a pasta existe e tem os arquivos das fontes Lato e Raleway.
+
+### `.claude/settings.local.json` antigo de um clone anterior
+As permissões compartilhadas do Claude Code ficam em `.claude/settings.json`: uma lista `allow` restrita aos comandos exatos que o fluxo roda (cada CLI de portal pelo caminho, os scripts de `tools/`, `salary_lookup.py`, `pdftotext`), uma lista `ask` que sempre pergunta antes de editar os arquivos que definem permissões ou de rodar `git push`, e uma lista `deny` que bloqueia comandos com cara de envio de dados e a leitura de arquivos de credenciais em qualquer modo. O `SECURITY.md` tem a tabela completa. Versões antigas deste repositório versionavam um `.claude/settings.local.json` mais amplo, que pré-aprovava `Bash(curl:*)`, `Bash(python:*)` e `Bash(bun:*)`. Se você clonou antes dessa mudança, o git deixa o arquivo antigo na sua cópia, e as permissões dele continuam valendo por cima do `settings.json`. Apague-o (ou reduza-o às suas preferências pessoais):
 
 ```bash
 rm .claude/settings.local.json

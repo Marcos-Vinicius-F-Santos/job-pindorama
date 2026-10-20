@@ -1,155 +1,160 @@
 ---
 name: scrape
 description: >
-  Finds new job postings matching your profile via installed portal-search CLIs
-  (LinkedIn, local job boards, and any skills added with /add-portal). Deduplicates
-  across runs. Triggers on: job scrape, find jobs, search jobs, new jobs, job search,
-  scrape jobs, /scrape
+  Encontra vagas novas compatíveis com o seu perfil pelas CLIs de busca de portais
+  instaladas (Gupy, LinkedIn e qualquer portal acrescentado com /add-portal).
+  Deduplica entre execuções. Ativa com: buscar vagas, procurar vagas, vagas novas,
+  tem vaga nova?, rodar a busca, varrer portais, /scrape. English: job scrape,
+  find jobs, search jobs, new jobs.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun --version), Bash(python tools/job_key.py:*), Bash(python3 tools/job_key.py:*), WebFetch, WebSearch, Agent, AskUserQuestion
 ---
 
-# Job Scraper
+# Busca de vagas
 
 ---
 
-## How It Works
+## Como funciona
 
-This skill searches job portals using the **installed portal-search CLIs** in
-`.agents/skills/` (plus WebSearch as a fallback), using queries from your profile.
-It deduplicates against previously seen jobs and the application tracker, and
-presents new matches with a quick fit assessment.
+Esta skill busca vagas nos portais usando as **CLIs de busca de portais instaladas** em
+`.agents/skills/` (mais o WebSearch como plano B), com as buscas do seu perfil.
+Deduplica contra vagas já vistas e contra o tracker de candidaturas, e apresenta as
+vagas novas com uma avaliação rápida de encaixe.
 
-## Invocation
+## Como acionar
 
-The user triggers this skill by saying things like:
-- "Find new jobs"
-- "Scrape for jobs"
-- "Any new positions?"
+A pessoa aciona esta skill dizendo coisas como:
+- "Busque vagas novas"
+- "Roda a busca de vagas"
+- "Tem vaga nova?"
 - "/scrape"
 
-Optional arguments:
-- A focus area, e.g. "/scrape data science" or "/scrape geophysics"
-- "broad" to run all search categories, e.g. "/scrape broad"
-- "health" to run the portal health check only (Step 4.75), without searching, deduplicating, or presenting jobs - e.g. "/scrape health", or "/scrape health jobnet" to probe one portal even if disabled
+Argumentos opcionais:
+- Uma área de foco, ex.: "/scrape ciência de dados" ou "/scrape geofísica"
+- "broad" para rodar todas as categorias de busca, ex.: "/scrape broad"
+- "health" para rodar só a checagem de saúde dos portais (Passo 4.75), sem buscar, deduplicar nem apresentar vagas — ex.: "/scrape health", ou "/scrape health gupy" para testar um portal mesmo desligado
 
 ---
 
-## Execution Steps
+## Passos de execução
 
-### Step 0: Load State
+### Passo 0: Carregar o estado
 
-1. Read `job_scraper/seen_jobs.json` (create if missing - start with `{"seen": {}}`)
-2. Read `job_search_tracker.csv` to extract already-applied companies+roles
-3. Read `search-queries.md` (this directory) for the search strategy
+1. Leia `job_scraper/seen_jobs.json` (crie se não existir — comece com `{"seen": {}}`)
+2. Leia `job_search_tracker.csv` para extrair as empresas+cargos a que a pessoa já se candidatou
+3. Leia `search-queries.md` (nesta pasta) para a estratégia de busca
 
-### Step 1: Search
+### Passo 1: Buscar
 
-Read `search-queries.md` (this directory) for the search strategy. By default, run the top 3 priority query categories. If the user said "broad", run all categories. If the user specified a focus area (e.g. "data science"), prioritize queries from that category.
+Leia `search-queries.md` (nesta pasta) para a estratégia de busca. Por padrão, rode as 3 categorias de maior prioridade. Se a pessoa disse "broad", rode todas. Se indicou uma área de foco (ex.: "ciência de dados"), priorize as buscas dessa categoria.
 
-**Use the installed CLI tools as the primary search mechanism.** Fall back to `WebSearch` only for portals that do not have a CLI skill, or if `bun` is unavailable on the system.
+**Use as CLIs instaladas como mecanismo principal de busca.** Recorra ao `WebSearch` só para portais sem skill de CLI, ou se o `bun` não estiver disponível no sistema.
 
-#### 1a. Check bun availability
+#### 1a. Conferir se o bun está disponível
 
 ```bash
 bun --version
 ```
 
-If this fails (bun not installed), skip to **1c (WebSearch fallback)** for all portals and note the fallback in the Step 5 output.
+Se falhar (bun não instalado), pule para **1c (WebSearch como plano B)** para todos os portais e registre o plano B na saída do Passo 5.
 
-#### 1b. Run CLI tools (primary — run these in parallel where possible)
+#### 1b. Rodar as CLIs (principal — em paralelo sempre que possível)
 
-Discover all installed portal CLI skills by reading every `SKILL.md` found under `.agents/skills/*/SKILL.md`. Each file documents that portal's exact CLI flags and usage examples. **Use each portal's own documented interface — do not guess flags.** This approach automatically includes any new portals added via `/add-portal` without requiring changes to this file.
+Descubra todas as skills de CLI de portal instaladas lendo cada `SKILL.md` em `.agents/skills/*/SKILL.md`. Cada arquivo documenta as opções exatas e exemplos de uso da CLI daquele portal. **Use a interface documentada de cada portal — não chute opções.** Assim, qualquer portal novo acrescentado pelo `/add-portal` entra automaticamente, sem mudar este arquivo.
 
-**Honor the `enabled` toggle.** A portal is enabled unless its `SKILL.md` frontmatter sets `enabled: false` (a missing key means enabled — the default). Skip each disabled portal and record it for the Step 5 summary. A fork can thus keep a portal installed but sit out a run without deleting its directory.
+**Respeite a chave `enabled`.** Um portal está ligado a menos que o frontmatter do `SKILL.md` dele defina `enabled: false` (sem a chave, está ligado — o padrão). Pule cada portal desligado e registre-o para o resumo do Passo 5. Assim, um fork pode manter um portal instalado e deixá-lo de fora de uma rodada sem apagar a pasta.
 
-For each **enabled** portal skill:
+Para cada skill de portal **ligada**:
 
-1. Read its `SKILL.md` to find the correct `bun run …` invocation and supported flags.
-2. Translate the query terms from `search-queries.md` into that portal's flag format (e.g. `--key`, `--search-string`, `--query`, filter codes — whatever the portal's SKILL.md specifies).
-3. Scope to the last 14 days using the portal's supported recency **filter** flag (`--jobage`, `--since <YYYY-MM-DD>`, etc. — as documented per portal). A portal with **no recency flag** (jobdanmark offers none) still gets scoped: every portal's search output carries a `date` field, so filter client-side — drop results whose `date` is older than 14 days after the call returns, and never invent a flag the portal's SKILL.md does not document (the CLIs reject unknown flags). `--order PublicationDate` is a sort, and a sort is not a filter — pairing it with a `--limit` is a defensible approximation on a portal that offers nothing better (jobnet), but apply the client-side date filter on top all the same.
-4. Cap results to ~20 per call using the portal's limit flag.
-5. Use `--format json` for machine-readable output.
+1. Leia o `SKILL.md` dela para achar a chamada `bun run …` correta e as opções suportadas.
+2. Traduza os termos de busca de `search-queries.md` para o formato de opções daquele portal (ex.: `--query`, `--location`, `--state`, `--type`, códigos de filtro — o que o SKILL.md do portal especificar). Na Gupy, use `--state` com a UF e, se o perfil disser, `--type clt` ou `--type pj` e `--remote`.
+3. Limite aos últimos 14 dias com o **filtro** de data que o portal suporta (`--jobage`, `--since <YYYY-MM-DD>` etc. — conforme documentado em cada portal). Um portal **sem filtro de data** também é limitado: a saída de busca de todo portal traz o campo `date`, então filtre do lado do cliente — descarte, depois que a chamada voltar, os resultados com `date` de mais de 14 dias, e nunca invente uma opção que o SKILL.md do portal não documenta (as CLIs rejeitam opções desconhecidas). Uma opção de ordenação por data é só ordenação, e ordenação não é filtro — combiná-la com `--limit` é uma aproximação aceitável num portal que não oferece nada melhor, mas aplique o filtro de data do lado do cliente por cima mesmo assim.
+4. Limite a ~20 resultados por chamada com a opção de limite do portal.
+5. Use `--format json` para saída legível por máquina.
 
-Run all portal CLI calls in parallel where possible using the Agent tool. Collect all `results` arrays into a single pool for Step 2, keeping each result tagged with its source portal skill (for Step 2 `detail` lookups).
+Rode as chamadas de CLI em paralelo sempre que possível, com a ferramenta Agent. Junte todos os arrays `results` num único conjunto para o Passo 2, mantendo cada resultado marcado com a skill de portal de origem (para as consultas `detail` do Passo 2).
 
-If a CLI tool exits with a non-zero code, log the error message and continue — do not abort the whole search.
+Se uma CLI sair com código diferente de zero, registre a mensagem de erro e siga — não aborte a busca inteira.
 
-#### 1c. WebSearch fallback
+#### 1c. WebSearch como plano B
 
-Use `WebSearch` for:
-- Portals listed in `search-queries.md` that do **not** have a corresponding directory under `.agents/skills/`
-- Any portal whose CLI fails at runtime
-- When bun is unavailable (Step 1a failed)
+Use o `WebSearch` para:
+- Portais listados em `search-queries.md` que **não** têm pasta correspondente em `.agents/skills/` (no Brasil: Vagas.com, Catho, InfoJobs, Indeed Brasil e outros)
+- Qualquer portal cuja CLI falhe na execução
+- Quando o bun não estiver disponível (o Passo 1a falhou)
 
-Use the site-specific query strings from `search-queries.md` directly as WebSearch queries for these portals.
+Use as buscas com `site:` de `search-queries.md` diretamente como consultas do WebSearch para esses portais.
 
-Tag each fallback result as WebSearch-sourced, keeping the portal tag when the fallback stands in for an installed portal whose CLI failed. Step 4 persists this as the entry's `source`, and Step 5 reports which portals ran on the fallback this run.
+Marque cada resultado do plano B como vindo do WebSearch, mantendo a marca do portal quando o plano B substitui um portal instalado cuja CLI falhou. O Passo 4 grava isso como o `source` da entrada, e o Passo 5 informa quais portais rodaram no plano B nesta execução.
 
-### Step 2: Fetch & Parse
+### Passo 2: Coletar e interpretar
 
-For each promising result from Step 1:
+Para cada resultado promissor do Passo 1:
 
-**From CLI results:** Search output already includes title, company, location, date,
-and URL. For jobs worth a deeper look, fetch full detail with that portal's `detail`
-command (see its SKILL.md — do not guess flags) to extract **key requirements**,
-**application deadline**, and a brief description snippet.
+**De resultados de CLI:** A saída da busca já traz title, company, location, date e URL.
+Para vagas que merecem um olhar mais atento, obtenha o detalhe completo com o comando
+`detail` daquele portal (veja o SKILL.md dele — não chute opções) para extrair os
+**principais requisitos**, o **prazo de inscrição**, o **regime** (CLT, PJ, estágio) e um
+trecho curto da descrição. Na Gupy, a própria busca já traz `contract` (o regime) e `deadline`.
 
-**Closed-at-source detection:** `linkedin-search detail` also returns `isActive`.
-`false` means the posting page itself renders LinkedIn's "No longer accepting
-applications" banner — the job died between being indexed and being fetched (expired
-LinkedIn URLs redirect to *similar live jobs*, so a search hit can be a ghost). Mark
-such a job, never silently drop it: write its entry to `job_scraper/seen_jobs.json` in Step 4 with
-`"status": "expired"` and leave it out of the Step 5 presentation — an absent entry
-looks identical to a job never seen, and the recorded status is what makes a later
-ghost report self-triaging. `isActive: true` is only the absence of that banner, not
-proof the posting is open; deadlines and dead URLs remain `/rank`'s job.
+**Detecção de vaga encerrada na origem:** o `linkedin-search detail` também devolve `isActive`.
+`false` significa que a própria página da vaga mostra o aviso do LinkedIn "Não aceita mais
+candidaturas" — a vaga morreu entre ser indexada e ser coletada (URLs vencidas do LinkedIn
+redirecionam para *vagas parecidas ainda ativas*, então um resultado de busca pode ser um
+fantasma). Marque essa vaga, nunca a descarte em silêncio: grave a entrada dela em
+`job_scraper/seen_jobs.json` no Passo 4 com `"status": "expired"` e deixe-a fora da
+apresentação do Passo 5 — uma entrada ausente parece igual a uma vaga nunca vista, e o status
+gravado é o que torna um relato de fantasma autoexplicativo depois. `isActive: true` é só a
+ausência daquele aviso, não prova de que a vaga está aberta; prazos e URLs mortas continuam
+sendo trabalho do `/rank`. Na Gupy, uma vaga encerrada faz o `detail` devolver `NOT_FOUND`.
 
-**From WebSearch results:** Use `WebFetch` on the posting URL and extract the same
-fields manually. If it returns HTTP 403, retry with browser headers via `python3 tools/fetch_page.py` per
-`.claude/skills/job-application-assistant/09-web-research.md` before giving up — most
-bank and corporate sites reject WebFetch's user agent while serving browsers normally.
+**De resultados do WebSearch:** use `WebFetch` na URL da vaga e extraia os mesmos campos à mão.
+Se devolver HTTP 403, tente de novo com cabeçalhos de navegador via `python3 tools/fetch_page.py`
+conforme `.claude/skills/job-application-assistant/09-web-research.md` antes de desistir — a
+maioria dos sites de bancos e empresas rejeita o user agent do WebFetch enquanto serve
+navegadores normalmente.
 
-**Store a URL that actually resolves to the posting.** A listing-page URL with a
-`#fragment` appended (`.../jobs/ciso/#ikerian`) is not a posting: it fetches fine and
-returns unrelated job titles, which makes every later `/rank` and `/apply` run fail on
-that entry. When WebSearch only yields a listing page, search the employer's own careers
-site for the role and store that URL instead, or drop the candidate rather than saving a
-fragment link.
+**Grave uma URL que de fato leve à vaga.** Uma URL de página de listagem com um `#fragmento`
+no fim (`.../jobs/ciso/#ikerian`) não é uma vaga: carrega sem erro e devolve títulos sem relação,
+o que faz toda execução posterior do `/rank` e do `/apply` falhar naquela entrada. Quando o
+WebSearch só achar uma página de listagem, procure a vaga no site de carreiras da própria
+empresa e grave essa URL, ou descarte a candidata em vez de salvar um link com fragmento.
 
-For every candidate:
-- Skip if the URL matches any existing `job_scraper/seen_jobs.json` entry, regardless of
-  that entry's key. This preserves dedup continuity for postings stored under
-  the pre-helper key rule while new entries use the canonical key from Step 4.
-- Otherwise, skip if the company+title combo already exists in `job_scraper/seen_jobs.json`
-- Skip if the company+role already appears in `job_search_tracker.csv`
+Para cada candidata:
+- Pule se a URL corresponder a qualquer entrada existente em `job_scraper/seen_jobs.json`, qualquer
+  que seja a chave dela. Isso preserva a continuidade da deduplicação para vagas gravadas com
+  a regra de chave anterior ao helper, enquanto as entradas novas usam a chave canônica do Passo 4.
+- Senão, pule se a combinação empresa+título já existir em `job_scraper/seen_jobs.json`
+- Pule se a empresa+cargo já aparecer em `job_search_tracker.csv`
 
-### Step 2.5: Mass-Posting Detection (within this run)
+### Passo 2.5: Detecção de vaga em massa (dentro desta execução)
 
-A distribution pattern worth flagging to the user as a caution signal, not as an accusation against the employer - it describes how a listing is being distributed, not a verdict on whether the company is legitimate. It alone proves nothing is wrong (companies do legitimately hire the same role across several cities); flag it so the user can factor it in when deciding whether to invest time, don't downgrade fit or silently exclude the result because of it.
+Um padrão de distribuição que vale sinalizar à pessoa como cautela, não como acusação contra a empresa — descreve como o anúncio está sendo distribuído, não um veredito sobre a legitimidade da empresa. Sozinho, não prova que há algo errado (empresas contratam de fato o mesmo cargo em várias cidades); sinalize para a pessoa pesar ao decidir se investe tempo, sem rebaixar o encaixe nem excluir o resultado em silêncio por causa disso.
 
-If two or more results in this run's pool (from the same company, or sharing the same req/job ID visible in the URL or title) have substantially the same description and differ only in city/location/title, don't present them as separate rows. Consolidate into a single row and note the spread, e.g. "posted identically across 6 cities (BR, MX, GT)".
+Se dois ou mais resultados do conjunto desta execução (da mesma empresa, ou com o mesmo código de requisição visível na URL ou no título) tiverem praticamente a mesma descrição e diferirem só em cidade, local ou título, não os apresente como linhas separadas. Junte numa linha só e registre a dispersão, ex.: "publicada igual em 6 cidades (SP, RJ, BH, POA, REC, CWB)". No Brasil, isso é comum em vagas de varejo, call center e bancos de talentos; vagas "Banco de talentos" (`vacancy_type_talent_pool` na Gupy) não são vagas abertas de fato — sinalize.
 
-### Step 3: Quick Fit Assessment
+### Passo 3: Avaliação rápida de encaixe
 
-For each new job, do a rapid fit check (NOT the full evaluation from `04-job-evaluation.md` - just a quick signal):
+Para cada vaga nova, faça uma checagem rápida (NÃO a avaliação completa de `04-job-evaluation.md` — só um sinal):
 
-- **High match**: Role directly involves your core skills
-- **Medium match**: Role is adjacent to your experience
-- **Low match**: Role requires significant skills you lack
+- **Alto**: a vaga envolve diretamente as suas competências centrais
+- **Médio**: a vaga é vizinha da sua experiência
+- **Baixo**: a vaga exige competências importantes que você não tem
 
-**Language override:** before assigning a match level, check the posting against `04-job-evaluation.md`'s Language Gate (a required language you haven't declared at all in your CLAUDE.md Languages table). A required language that's entirely undeclared overrides skill fit: mark it **Low** regardless of how well the skills align, and name it in the highlight bullets so it isn't buried under an otherwise-good-looking match. A **declared** language at a requirement that reads higher than your declared level is *not* an override — score fit normally, but add a red-flag bullet under that job's highlights (Step 5) quoting the posting's requirement next to your declared level, so the gap is visible without being auto-downgraded.
+**Regime:** se o perfil (deal-breakers no CLAUDE.md) diz que a pessoa não aceita PJ (ou outro regime) e a vaga traz esse regime, marque **Baixo** e cite o regime nos destaques.
 
-### Step 4: Deduplicate & Store
+**Prioridade do idioma:** antes de atribuir o nível de encaixe, confira a vaga contra o filtro de idioma (Language Gate) do `04-job-evaluation.md` (um idioma exigido que você não declarou de forma nenhuma na tabela de Idiomas do CLAUDE.md). Um idioma exigido totalmente não declarado prevalece sobre o encaixe de competências: marque **Baixo**, por melhor que seja o encaixe técnico, e cite-o nos tópicos de destaque para não ficar escondido sob um encaixe que parece bom. Um idioma **declarado** com exigência que parece acima do seu nível declarado *não* prevalece — avalie o encaixe normalmente, mas acrescente um tópico de alerta nos destaques daquela vaga (Passo 5), citando a exigência da vaga ao lado do seu nível declarado, para a diferença ficar visível sem rebaixamento automático.
 
-1. Derive each entry's key with the helper, never by slugifying in the moment:
+### Passo 4: Deduplicar e gravar
+
+1. Derive a chave de cada entrada com o helper, nunca transformando em slug na hora:
 
 ```bash
 python3 tools/job_key.py --company "<company>" --title "<title>" --url "<url>"
 ```
 
-It prints one line: the canonical key for that posting. The key must be a pure function of the posting, because two runs that slugify differently store the same job twice and defeat the dedup this step exists to provide. The helper also length-caps long titles and disambiguates the cap with a hash of the full slug, so a truncated title is stable across runs and two different long titles never collide. `python3 tools/job_key.py --audit` reports entries in an existing state file that predate this rule; it only reports, and never rewrites keys, since a rewritten key breaks the tracker's own company+role matching.
+Ele imprime uma linha: a chave canônica daquela vaga. A chave precisa ser uma função pura da vaga, porque duas execuções que geram slugs diferentes gravam a mesma vaga duas vezes e derrotam a deduplicação que este passo existe para garantir. O helper também limita o tamanho de títulos longos e desambigua o corte com um hash do slug completo, então um título cortado é estável entre execuções e dois títulos longos diferentes nunca colidem. `python3 tools/job_key.py --audit` informa as entradas de um arquivo de estado existente que são anteriores a esta regra; só informa, e nunca reescreve chaves, porque uma chave reescrita quebra a correspondência empresa+cargo do próprio tracker.
 
-2. Add ALL fetched jobs (new and skipped) to `job_scraper/seen_jobs.json` with structure:
+2. Acrescente TODAS as vagas coletadas (novas e puladas) em `job_scraper/seen_jobs.json` com a estrutura:
 ```json
 {
   "seen": {
@@ -162,133 +167,132 @@ It prints one line: the canonical key for that posting. The key must be a pure f
       "deadline": "YYYY-MM-DD" | null,
       "fit": "high/medium/low",
       "status": "new/skipped/ranked/expired/unreachable",
-      "portal": "<source portal skill, e.g. jobindex-search>",
+      "portal": "<skill de portal de origem, ex.: gupy-search>",
       "source": "cli/websearch"
     }
   }
 }
 ```
 
-The `portal` field records which CLI skill produced the job (results are already tagged per portal in Step 1b - persist that tag here). Entries written before this field existed lack it; the health check (Step 4.75) attributes those by matching the URL's domain against each portal's base URL, so do not backfill.
+O campo `portal` registra qual skill de CLI produziu a vaga (os resultados já vêm marcados por portal no Passo 1b — grave essa marca aqui). Entradas gravadas antes de este campo existir não o têm; a checagem de saúde (Passo 4.75) atribui essas entradas comparando o domínio da URL com a URL base de cada portal, então não preencha retroativamente.
 
-The `source` field records which mechanism produced the entry: `cli` for Step 1b portal-CLI output, `websearch` for the Step 1c fallback. This is what keeps a ghost-job report diagnosable after the run's summary is gone: a stored entry whose URL later resolves to nothing (or to a different job) reads very differently depending on whether it came from live CLI output or from a search index that can be weeks stale - and a presented job with no entry here at all points at fabrication, which Rule 1 forbids. Entries written before this field existed lack it; never backfill it - the mechanism was not recorded.
+O campo `source` registra qual mecanismo produziu a entrada: `cli` para a saída das CLIs de portal do Passo 1b, `websearch` para o plano B do Passo 1c. É isso que mantém um relato de vaga fantasma diagnosticável depois que o resumo da execução sumiu: uma entrada gravada cuja URL depois não leva a nada (ou leva a outra vaga) se lê de forma muito diferente se veio da saída ao vivo de uma CLI ou de um índice de busca que pode estar semanas desatualizado — e uma vaga apresentada sem entrada nenhuma aqui aponta para invenção, que a Regra 1 proíbe. Entradas gravadas antes de este campo existir não o têm; nunca preencha retroativamente — o mecanismo não foi registrado.
 
-`/rank` extends this schema additively: ranked entries also carry `rank_score` (0–100 overall score), `rank_verdict` (fit band, e.g. "strong fit"), `rank_date` (ISO date of ranking), the veto fields `location_verdict` and `language_gate` (both PASS/FAIL/FLAG) with `language_note` (the quoted requirement explaining a non-PASS), and `strengths`/`gaps` (1-3 verbatim bullets each, copied from the scoring agent's findings). The `status` field is set to `"ranked"`. Do not drop any of these fields when re-writing entries. Entries ranked before `strengths`/`gaps` existed simply lack them; readers tolerate their absence and never backfill by guessing. Entries ranked before the verdict rename may carry a legacy PASS/FAIL/FLAG string in `location` - read that as the verdict when `location_verdict` is absent; in fresh entries `location` is always a place, never a verdict.
+O `/rank` estende este esquema por acréscimo: entradas avaliadas também levam `rank_score` (nota geral de 0 a 100), `rank_verdict` (faixa de encaixe, ex.: "strong fit"), `rank_date` (data ISO da avaliação), os campos de veto `location_verdict` e `language_gate` (ambos PASS/FAIL/FLAG) com `language_note` (a exigência citada que explica um não-PASS) e `strengths`/`gaps` (1 a 3 tópicos literais cada, copiados dos achados do agente de pontuação). O campo `status` vira `"ranked"`. Não descarte nenhum desses campos ao regravar entradas. Entradas avaliadas antes de `strengths`/`gaps` existirem simplesmente não os têm; quem lê tolera a ausência e nunca preenche chutando. Entradas avaliadas antes da renomeação do veredito podem trazer uma string antiga PASS/FAIL/FLAG em `location` — leia isso como o veredito quando `location_verdict` estiver ausente; em entradas novas, `location` é sempre um lugar, nunca um veredito.
 
-`deadline` is a base field rather than a `/rank` extension: Step 2's detail fetch already extracts the application deadline, so it is written when the job is first seen and refreshed by `/rank` Step 4 when a scoring agent returns a different value. `null` means the posting states no deadline; a missing key means the entry predates this field - **never infer a deadline** from either, and never backfill by guessing.
+`deadline` é um campo de base, não uma extensão do `/rank`: a coleta de detalhe do Passo 2 já extrai o prazo de inscrição, então ele é gravado quando a vaga é vista pela primeira vez e atualizado pelo Passo 4 do `/rank` quando um agente de pontuação devolve um valor diferente. `null` significa que a vaga não informa prazo; uma chave ausente significa que a entrada é anterior a este campo — **nunca deduza um prazo** a partir de nenhum dos dois, e nunca preencha retroativamente chutando.
 
-`posted_date` is the posting's own publication date, taken from the `date` field Step 2's contract already guarantees on every portal CLI's search output. Step 1b uses that date to scope the run to the last 14 days and then drops it, so nothing downstream can distinguish a posting published yesterday from one published two years ago - `first_seen` is when this scraper first saw the entry, not when the employer posted it. Persisting it makes Step 1b's window auditable after the run and gives `/rank` a freshness signal to weigh, instead of rediscovering the date and recording it in prose that nothing reads. That gap landed for real: a freehire-search posting dated 2024-05-13 was scraped and ranked Strong Fit at position 1 of 133, its own scoring note observing the listing "may be long stale" with nothing able to act on it. `null` means the portal returned no date for that result (the CLIs emit `date: null` when a listing omits it); a missing key means the entry predates this field - **never infer a posting date** from either, and never backfill by guessing.
+`posted_date` é a data de publicação da própria vaga, tirada do campo `date` que o contrato do Passo 2 já garante na saída de busca de toda CLI de portal. O Passo 1b usa essa data para limitar a execução aos últimos 14 dias e depois a descarta, então nada adiante consegue distinguir uma vaga publicada ontem de uma publicada há dois anos — `first_seen` é quando esta busca viu a entrada pela primeira vez, não quando a empresa publicou. Gravá-la torna a janela do Passo 1b auditável depois da execução e dá ao `/rank` um sinal de frescor para pesar, em vez de redescobrir a data e registrá-la em prosa que ninguém lê. Essa lacuna aconteceu de verdade: uma vaga do freehire-search de 13/05/2024 foi coletada e avaliada como Strong Fit na posição 1 de 133, com a própria nota de pontuação observando que o anúncio "pode estar velho há muito tempo", sem nada capaz de agir sobre isso. `null` significa que o portal não devolveu data para aquele resultado (as CLIs emitem `date: null` quando um anúncio omite); uma chave ausente significa que a entrada é anterior a este campo — **nunca deduza uma data de publicação** a partir de nenhum dos dois, e nunca preencha retroativamente chutando.
 
-3. Only present jobs NOT already in the seen list (matched by URL or
-   company+title) or tracker.
+3. Apresente só as vagas que NÃO estão na lista de vistas (por URL ou
+   empresa+título) nem no tracker.
 
-### Step 4.5: Generate Referral Contact Links (High & Medium Fit Only)
+### Passo 4.5: Gerar links de contato para indicação (só encaixe alto e médio)
 
-For every job from this run with `fit` of **high** or **medium** (skip low-fit jobs),
-build two LinkedIn people-search URLs so the user can find a recruiter or team member to
-reach out to for a referral or a warm intro. This is deliberately a link-generation step,
-not an automated lookup: no scraping, no third-party API, zero runtime dependencies or
-credentials required.
+Para cada vaga desta execução com `fit` **high** ou **medium** (pule as de encaixe baixo),
+monte duas URLs de busca de pessoas no LinkedIn, para a pessoa achar alguém do recrutamento
+ou do time e pedir uma indicação ou uma conversa. No Brasil, indicação interna pesa muito nos
+processos. Isto é de propósito um passo que só gera links, não uma consulta automática: sem
+raspagem, sem API de terceiros, sem dependências nem credenciais.
 
-**A. Recruiters / Talent Acquisition (the referral path)**
+**A. Recrutamento / Talent Acquisition (o caminho da indicação)**
 ```
-https://www.linkedin.com/search/results/people/?keywords=<url-encoded "<Company Name> recruiter">&origin=GLOBAL_SEARCH_HEADER
-```
-
-**B. Role/team peers (informational-outreach / warm-intro path)**
-```
-https://www.linkedin.com/search/results/people/?keywords=<url-encoded "<Company Name> <role keyword>">&origin=GLOBAL_SEARCH_HEADER
-```
-Use a short keyword drawn from the posting's title for `<role keyword>` - e.g. a posting
-titled "AI Program Manager" becomes `"<Company Name> AI Program Manager"`.
-
-Both links are for the user to open and browse themselves - never fetch or scrape the
-LinkedIn people-search result pages programmatically. Never fabricate contacts or claim a
-specific person was found; these are search links, not results.
-
-### Step 4.75: Portal Health Check
-
-Scraper-based portal CLIs rot silently: when a portal changes its markup, the parser usually exits 0 with zero results or with null/garbled fields, and the Step 1c fallback never fires because it only triggers on hard failure. This step catches that from evidence the run already holds.
-
-**Free pass (no extra requests).** For each enabled portal that ran in Step 1b:
-
-- **Degraded scan:** inspect the results it returned this run. Flags: `company` null or empty on every result, empty titles, undecoded entities (`&amp;`) or HTML fragments in titles, URLs that do not point at the portal. Any of these means the parser is half-working and `/scrape` is silently collecting junk.
-- **Yield history:** if the portal returned zero results across all of this run's queries, check whether `job_scraper/seen_jobs.json` holds prior entries from it (via the `portal` field, or by matching URL domains for entries predating the field). A portal that produced jobs on earlier runs and produces nothing now is suspect - the same queries worked before.
-
-**Escalation (bounded, on suspicion only).** A suspect portal gets **one** sentinel probe: run its documented `search` with the example query from its own SKILL.md (that query provably worked when the skill was registered), the portal's limit flag capped at 3, `--format json`. If that returns nothing, retry **once** with a single common word. Only then is the verdict **broken**. A 429 or block page is **never** evidence of breakage - record the portal as **inconclusive (rate-limited)**, back off, and do not retry.
-
-**Verdicts.** Healthy portals get silence - no table, no line. Anything else surfaces in the Step 5 summary as a health line.
-
-**Probe-only mode (`/scrape health`).** Skip Steps 1-4 and this step's free pass (there is no fresh run to scan); instead probe every installed portal directly - enabled ones by default, a disabled one only when named explicitly (e.g. `/scrape health jobnet`). Each portal gets the sentinel probe above, the degraded criteria applied to whatever it returns, and - since the user explicitly asked for diagnosis - one `detail` fetch on the first result of each healthy portal (description must be readable decoded text; a failure downgrades to degraded). Report all statuses in this mode, including healthy. Volume stays bounded: one search, at most one retry, at most one detail per portal.
-
-### Step 5: Present Results
-
-Present new jobs in a table sorted by fit (high first). When Step 1b skipped
-portals (`enabled: false`), report them with the `skipped (disabled):` line below
-so opting one out stays visible rather than silent; omit the line when nothing
-was skipped. When any portal's results came from the Step 1c fallback this run
-(bun unavailable, or its CLI failed at runtime), report it with the
-`fallback (websearch):` line - fallback results come from a search index that
-can be stale, so the reader should know which rows carry that caveat; omit the
-line when every portal ran its CLI. When Step 4.75 found a portal degraded, broken, or inconclusive,
-add one `health:` line per suspect portal (healthy portals get no line); after
-the report, offer to set that portal's `enabled: false` so `/scrape` stops
-running it (and covers it via the Step 1c fallback) until it is fixed - only
-edit the toggle with the user's confirmation, and never edit anything else in
-the skill.
-
-```
-## New Job Matches - YYYY-MM-DD
-
-Found X new positions (Y high, Z medium, W low match).
-
-skipped (disabled): <portal-name>, <portal-name>
-
-fallback (websearch): <portal-name>, <portal-name>
-
-health: <portal-name> - degraded (company null on all 12 results); parsing anchors in .agents/skills/<portal-name>/url-reference.md
-health: <portal-name> - broken (0 results for the SKILL.md test query and a broader retry); parsing anchors in .agents/skills/<portal-name>/url-reference.md
-
-| # | Fit | Title | Company | Location | Deadline | URL |
-|---|-----|-------|---------|----------|----------|-----|
-| 1 | High | ... | ... | ... | ... | [Link](...) |
-
-If Step 2.5 flagged a mass-posting pattern, note it in the Title cell (e.g. "Frontend Developer (posted in 6 cities)") rather than burying it. Do the same for a declared-language-insufficient-level flag from the Language Gate (e.g. "Backend Engineer ⚠ fluent English required") - both are signals the user should see at a glance, not just in the detail highlights below.
-
-### High-Match Highlights
-For each high-match job, add 2-3 bullet points:
-- Why it matches your profile
-- Key requirements to check
-- Any red flags (including mass-posting signals from Step 2.5)
-
-### Contacts
-For each high/medium-fit job from Step 4.5, add a short contacts block with the two
-LinkedIn search links:
-- Recruiters/TA search link, for the referral path
-- Role/team-peer search link, for the warm-intro / informational-outreach path
+https://www.linkedin.com/search/results/people/?keywords=<url-encoded "<Company Name> recrutamento">&origin=GLOBAL_SEARCH_HEADER
 ```
 
-After presenting, ask:
-> "Want me to evaluate any of these in detail? Just give me the number(s)."
+**B. Pessoas da área ou do time (o caminho da conversa informativa)**
+```
+https://www.linkedin.com/search/results/people/?keywords=<url-encoded "<Company Name> <palavra do cargo>">&origin=GLOBAL_SEARCH_HEADER
+```
+Use uma palavra curta tirada do título da vaga para `<palavra do cargo>` — ex.: uma vaga
+chamada "Gerente de Programa de IA" vira `"<Company Name> Gerente de Programa de IA"`.
 
-If the user picks a number, invoke the **job-application-assistant** skill workflow (fit evaluation first, then CV + cover letter if approved).
+Os dois links são para a pessoa abrir e navegar por conta própria — nunca colete ou raspe as
+páginas de resultado da busca de pessoas do LinkedIn por programa. Nunca invente contatos nem
+diga que uma pessoa específica foi encontrada; são links de busca, não resultados.
 
-If the run found many new jobs (roughly 8+), also suggest `/rank` - it batch-scores all new postings against the full fit framework and returns a ranked shortlist, which beats eyeballing a long table. (`/rank` sets the `ranked`, `expired` and `unreachable` status values in `job_scraper/seen_jobs.json`; treat all three as already-seen for dedup purposes.)
+### Passo 4.75: Checagem de saúde dos portais
 
-### Step 6: Update Tracker (Optional)
+CLIs de portal baseadas em raspagem apodrecem em silêncio: quando um portal muda a marcação, o leitor geralmente sai com 0 e zero resultados, ou com campos nulos ou embaralhados, e o plano B do Passo 1c nunca dispara, porque só aciona em falha dura. Este passo pega isso com a evidência que a execução já tem.
 
-If the user decides to apply to any job, the tracker row is written by **job-application-assistant Step 3b**, which Step 5 already routes into - do not add a second row here. Only when the user says they applied to something outside that path, add a row using the header and the match-then-update rule in `/outcome` Step 1.
+**Passada grátis (sem pedidos extras).** Para cada portal ligado que rodou no Passo 1b:
+
+- **Varredura de degradação:** examine os resultados que ele devolveu nesta execução. Sinais: `company` nulo ou vazio em todos os resultados, títulos vazios, entidades não decodificadas (`&amp;`) ou pedaços de HTML nos títulos, URLs que não apontam para o portal. Qualquer um deles significa que o leitor está meio funcionando e o `/scrape` está coletando lixo em silêncio.
+- **Histórico de rendimento:** se o portal devolveu zero resultados em todas as buscas desta execução, veja se `job_scraper/seen_jobs.json` tem entradas anteriores dele (pelo campo `portal`, ou comparando domínios de URL nas entradas anteriores ao campo). Um portal que produziu vagas em execuções anteriores e agora não produz nada é suspeito — as mesmas buscas funcionavam antes.
+
+**Escalada (limitada, só sob suspeita).** Um portal suspeito recebe **um** teste-sentinela: rode o `search` documentado com a busca de exemplo do próprio SKILL.md (essa busca comprovadamente funcionou quando a skill foi registrada), com a opção de limite do portal em 3, `--format json`. Se não devolver nada, tente **uma vez** com uma palavra comum. Só então o veredito é **quebrado**. Um 429 ou uma página de bloqueio **nunca** é evidência de quebra — registre o portal como **inconclusivo (limite de requisições)**, recue e não tente de novo.
+
+**Vereditos.** Portais saudáveis ficam em silêncio — sem tabela, sem linha. Qualquer outra coisa aparece no resumo do Passo 5 como uma linha de saúde.
+
+**Modo só teste (`/scrape health`).** Pule os Passos 1-4 e a passada grátis deste passo (não há execução nova para examinar); em vez disso, teste cada portal instalado diretamente — os ligados por padrão, um desligado só quando citado explicitamente (ex.: `/scrape health gupy`). Cada portal recebe o teste-sentinela acima, os critérios de degradação aplicados ao que devolver e — como a pessoa pediu explicitamente um diagnóstico — uma coleta `detail` no primeiro resultado de cada portal saudável (a descrição precisa ser texto legível e decodificado; uma falha rebaixa para degradado). Informe todos os status neste modo, inclusive os saudáveis. O volume continua limitado: uma busca, no máximo uma nova tentativa, no máximo um detalhe por portal.
+
+### Passo 5: Apresentar os resultados
+
+Apresente as vagas novas numa tabela ordenada por encaixe (alto primeiro). Quando o Passo 1b
+pulou portais (`enabled: false`), informe-os com a linha `pulados (desligados):` abaixo,
+para a escolha de deixar um de fora continuar visível, e não silenciosa; omita a linha quando
+nada foi pulado. Quando os resultados de algum portal vieram do plano B do Passo 1c nesta
+execução (bun indisponível, ou a CLI falhou na execução), informe com a linha
+`plano B (websearch):` — resultados do plano B vêm de um índice de busca que pode estar
+desatualizado, então quem lê deve saber quais linhas carregam essa ressalva;
+omita a linha quando todo portal rodou a própria CLI. Quando o Passo 4.75 achou um portal degradado, quebrado
+ou inconclusivo, acrescente uma linha `saúde:` por portal suspeito (portais saudáveis não ganham
+linha); depois do relatório, ofereça pôr `enabled: false` naquele portal para o `/scrape` parar
+de rodá-lo (e cobri-lo pelo plano B do Passo 1c) até ser consertado — só edite a chave com a
+confirmação da pessoa, e nunca edite mais nada na skill.
+
+```
+## Vagas novas - AAAA-MM-DD
+
+Encontrei X vagas novas (Y de encaixe alto, Z médio, W baixo).
+
+pulados (desligados): <portal>, <portal>
+
+plano B (websearch): <portal>, <portal>
+
+saúde: <portal> - degradado (company nulo nos 12 resultados); âncoras de leitura em .agents/skills/<portal>/url-reference.md
+saúde: <portal> - quebrado (0 resultados para a busca de teste do SKILL.md e para uma nova tentativa mais ampla); âncoras de leitura em .agents/skills/<portal>/url-reference.md
+
+| # | Encaixe | Vaga | Empresa | Local | Regime | Prazo | URL |
+|---|---------|------|---------|-------|--------|-------|-----|
+| 1 | Alto | ... | ... | ... | CLT | ... | [Link](...) |
+
+Se o Passo 2.5 sinalizou um padrão de vaga em massa, registre na célula Vaga (ex.: "Desenvolvedor Frontend (publicada em 6 cidades)") em vez de esconder. Faça o mesmo com um alerta de nível insuficiente num idioma declarado, do filtro de idioma (ex.: "Engenheiro Backend ⚠ exige inglês fluente") — os dois são sinais que a pessoa deve ver de relance, não só nos destaques abaixo.
+
+### Destaques de encaixe alto
+Para cada vaga de encaixe alto, acrescente 2 ou 3 tópicos:
+- Por que combina com o seu perfil
+- Principais requisitos a conferir
+- Alertas (incluindo sinais de vaga em massa do Passo 2.5 e sinais de golpe do `04-job-evaluation.md`)
+
+### Contatos
+Para cada vaga de encaixe alto ou médio do Passo 4.5, acrescente um bloco curto de contatos com os
+dois links de busca do LinkedIn:
+- Link de busca de recrutamento, para o caminho da indicação
+- Link de busca de pessoas da área/time, para o caminho da conversa informativa
+```
+
+Depois de apresentar, pergunte:
+> "Quer que eu avalie alguma em detalhe? É só me dizer o(s) número(s)."
+
+Se a pessoa escolher um número, acione o fluxo da skill **job-application-assistant** (avaliação de encaixe primeiro, depois currículo + carta se aprovado).
+
+Se a execução achou muitas vagas novas (umas 8 ou mais), sugira também o `/rank` — ele pontua em lote todas as vagas novas com o método completo de avaliação e devolve uma lista final ordenada, o que é melhor que olhar uma tabela longa. (O `/rank` define os status `ranked`, `expired` e `unreachable` em `job_scraper/seen_jobs.json`; trate os três como já vistos para a deduplicação.)
+
+### Passo 6: Atualizar o tracker (opcional)
+
+Se a pessoa decidir se candidatar a alguma vaga, a linha do tracker é gravada pelo **Passo 3b da job-application-assistant**, para onde o Passo 5 já leva — não acrescente uma segunda linha aqui. Só quando a pessoa disser que se candidatou a algo fora desse caminho, acrescente uma linha usando o cabeçalho e a regra de procurar e depois atualizar do Passo 1 do `/outcome`.
 
 ---
 
-## Important Rules
+## Regras importantes
 
-1. **Never fabricate job postings.** Only present jobs from actual CLI search/detail output or WebSearch/WebFetch results.
-2. **Respect deduplication.** Always check job_scraper/seen_jobs.json AND job_search_tracker.csv before presenting.
-3. **Focus on configured geographic area.** Skip jobs that require relocation or are clearly outside commute range.
-4. **Only open positions.** Skip postings with expired deadlines or those marked as closed.
-5. **Be efficient with detail fetches.** Don't run `detail` or WebFetch on every search hit — pre-filter by title/snippet, then fetch only promising matches.
-6. **Parallel searches.** Run portal CLI searches in parallel; use WebSearch only for gaps the CLIs don't cover.
-7. **No automated people lookups.** Referral contacts (Step 4.5) are LinkedIn search links only - never fetch or scrape LinkedIn people-search result pages programmatically.
-8. **Health checks are bounded and honest.** Step 4.75 spends at most one probe, one retry, and (in `health` mode) one detail fetch per portal - a diagnosis, not a crawl. A rate-limit is never evidence of breakage. Health verdicts come only from observed CLI output; a portal that could not be tested is reported as inconclusive, never guessed. The `enabled` toggle is the only thing the health check may edit, and only with confirmation.
-9. **Flag distribution patterns, never accuse.** The mass-posting signal (Step 2.5) describes how a listing is being distributed, not a claim that the employer is a scam. Never name a company as fraudulent or untrustworthy - present the observation and let the user decide.
+1. **Nunca invente vagas.** Apresente só vagas vindas da saída real de search/detail das CLIs ou de resultados do WebSearch/WebFetch.
+2. **Respeite a deduplicação.** Confira sempre job_scraper/seen_jobs.json E job_search_tracker.csv antes de apresentar.
+3. **Foque na área geográfica configurada.** Pule vagas que exigem mudança de cidade ou que estão claramente fora do raio de deslocamento. Vagas "remotas" com exigência de morar em outro estado contam como fora.
+4. **Só vagas abertas.** Pule vagas com prazo vencido ou marcadas como encerradas.
+5. **Economize nas coletas de detalhe.** Não rode `detail` nem WebFetch em todo resultado de busca — pré-filtre pelo título e pelo trecho, e só colete as promissoras.
+6. **Buscas em paralelo.** Rode as buscas das CLIs de portal em paralelo; use o WebSearch só para as lacunas que as CLIs não cobrem.
+7. **Sem consultas automáticas de pessoas.** Contatos de indicação (Passo 4.5) são só links de busca do LinkedIn — nunca colete ou raspe páginas de resultado de busca de pessoas do LinkedIn por programa.
+8. **Checagens de saúde são limitadas e honestas.** O Passo 4.75 gasta no máximo um teste, uma nova tentativa e (no modo `health`) uma coleta de detalhe por portal — um diagnóstico, não uma varredura. Um limite de requisições nunca é evidência de quebra. Vereditos de saúde vêm só da saída observada das CLIs; um portal que não pôde ser testado é informado como inconclusivo, nunca chutado. A chave `enabled` é a única coisa que a checagem de saúde pode editar, e só com confirmação.
+9. **Sinalize padrões de distribuição, nunca acuse.** O sinal de vaga em massa (Passo 2.5) descreve como um anúncio está sendo distribuído, não afirma que a empresa é golpe. Nunca chame uma empresa de fraudulenta ou não confiável — apresente a observação e deixe a pessoa decidir.

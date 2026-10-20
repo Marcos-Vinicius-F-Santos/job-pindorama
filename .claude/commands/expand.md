@@ -1,230 +1,230 @@
-# /expand - Competency Expansion from Documents and Online Presence
+# /expand - Ampliar as competências a partir de documentos e da presença online
 
-You are enriching the candidate profile by discovering competencies hidden in documents and public online presence. This command is additive only — it never modifies existing profile content, only extends it.
+Você vai enriquecer o perfil descobrindo competências escondidas em documentos e na presença pública online da pessoa. Este comando só acrescenta — nunca modifica o conteúdo existente do perfil, só o amplia.
 
-Follow these steps **exactly in order**. Do not skip steps.
+Siga estes passos **exatamente na ordem**. Não pule nenhum.
 
 ---
 
-## Step 0: Read Existing Profile Files
+## Passo 0: Ler os arquivos de perfil existentes
 
-Read these two files in parallel before doing anything else. You must know what is already there so you do not propose duplicates.
+Leia estes dois arquivos em paralelo antes de qualquer outra coisa. Você precisa saber o que já está lá para não propor duplicatas.
 
 - `.claude/skills/job-application-assistant/01-candidate-profile.md`
 - `.claude/skills/job-application-assistant/02-behavioral-profile.md`
 
-Hold this content in context throughout the command. Do not re-read these files later.
+Mantenha esse conteúdo no contexto durante todo o comando. Não releia esses arquivos depois.
 
 ---
 
-## Step 1: Discovery — Scan All Sources
+## Passo 1: Descoberta — examinar todas as fontes
 
-Scan every available source for "experience items" — anything that implies skill, knowledge, or competency. Process sources in this order.
+Examine toda fonte disponível atrás de "itens de experiência" — qualquer coisa que indique competência, conhecimento ou habilidade. Processe as fontes nesta ordem.
 
 ### 1a. documents/cv/
-Read all files in `documents/cv/`. Extract:
-- Every course or module listed (including university coursework and online courses)
-- Every certification mentioned, with issuer and date
-- Every job responsibility bullet point (tools, methods, outcomes)
-- Every independent project or side project
-- Every volunteer or extracurricular role
+Leia todos os arquivos em `documents/cv/`. Extraia:
+- Todo curso ou disciplina listado (inclusive disciplinas da faculdade e cursos online)
+- Toda certificação citada, com emissor e data
+- Todo tópico de responsabilidade profissional (ferramentas, métodos, resultados)
+- Todo projeto independente ou paralelo
+- Todo trabalho voluntário ou atividade extracurricular (empresa júnior, iniciação científica, monitoria, centro acadêmico)
 
 ### 1b. documents/linkedin/
-Read all files in `documents/linkedin/`. Extract:
-- Courses and certifications in the "Licenses & Certifications" section
-- Skills and endorsements list
-- Volunteer experiences
-- Projects section
-- Any platform-specific items not already found in the CV
+Leia todos os arquivos em `documents/linkedin/`. Extraia:
+- Cursos e certificações da seção "Licenças e certificados"
+- A lista de competências e recomendações de competências
+- Experiências de voluntariado
+- A seção de projetos
+- Qualquer item da plataforma que ainda não apareceu no currículo
 
 ### 1c. documents/diplomas/
-Read all files in `documents/diplomas/`. Extract:
-- All course/module names listed on transcripts
-- Thesis title and subject area
-- Any specialisation or track name
+Leia todos os arquivos em `documents/diplomas/`. Extraia:
+- Todos os nomes de disciplinas listados nos históricos
+- O título e a área do TCC, da dissertação ou da tese
+- Qualquer ênfase, habilitação ou linha de pesquisa
 
 ### 1d. documents/references/
-Read all files in `documents/references/`. Extract:
-- Competency language used by the referee (what skills or qualities they mention)
-- Any specific projects, tools, or methods named
+Leia todos os arquivos em `documents/references/`. Extraia:
+- A linguagem de competências usada por quem recomenda (que habilidades ou qualidades cita)
+- Quaisquer projetos, ferramentas ou métodos específicos citados
 
-### 1e. GitHub Profile
-Look up the GitHub username from `01-candidate-profile.md`. If a GitHub URL or username is present:
+### 1e. Perfil do GitHub
+Procure o usuário do GitHub em `01-candidate-profile.md`. Se houver uma URL ou um usuário do GitHub:
 
-1. Use WebFetch or WebSearch to retrieve the public profile and pinned repositories
-2. For each repository found:
-   - Fetch the repository README
-   - Note: name, description, primary language(s), topics/tags, any frameworks or libraries mentioned in the README
-   - If the repository represents an independent technical project (not an empty stub or uncustomized fork), extract a project summary (problem domain, tech stack, and demonstrable technical results) for consideration under Independent Projects
-3. Also retrieve the full repository list if available (to catch unpinned repos)
+1. Use o WebFetch ou o WebSearch para obter o perfil público e os repositórios fixados
+2. Para cada repositório encontrado:
+   - Colete o README do repositório
+   - Anote: nome, descrição, linguagem(ns) principal(is), tópicos/tags, frameworks ou bibliotecas citados no README
+   - Se o repositório representar um projeto técnico independente (não um esboço vazio nem um fork sem personalização), extraia um resumo do projeto (domínio do problema, stack e resultados técnicos demonstráveis) para considerar em Projetos independentes
+3. Obtenha também a lista completa de repositórios, se disponível (para pegar os não fixados)
 
-If no GitHub username or URL is found in the profile, skip this source and note it was skipped.
+Se não houver usuário nem URL do GitHub no perfil, pule esta fonte e registre que foi pulada.
 
-### 1f. Other URLs in Profile
-Check `01-candidate-profile.md` for any other URLs (portfolio site, personal website, Kaggle, Google Scholar, ResearchGate, publication links). For each:
-- Fetch the page
-- Extract any tools, methods, datasets, awards, or skills mentioned
-
----
-
-## Step 2: Web Enrichment
-
-For each experience item discovered in Step 1, search the web to extract the competencies it implies. Apply both approaches below — do not choose one over the other.
-
-### Approach A: Direct lookup (explicit tools and frameworks)
-If the item names a specific tool, framework, library, method, or platform, search for it directly:
-- `"[Course name] [Provider] syllabus learning outcomes"`
-- `"[Certification name] skills covered exam guide"`
-- `"[Tool/framework name] skills what you learn"`
-
-Fetch the most relevant page and extract the competency list.
-
-### Approach B: Inferred competencies (from description and context)
-For each item, regardless of whether Approach A found anything, also reason from the description:
-- What problem domain does this item address?
-- What methods, skills, or knowledge does someone need to do this work?
-- What is the standard toolchain for this kind of work?
-
-Combine both approaches into a single competency list for each item.
-
-### Prioritise web lookup for:
-- Named online courses (Coursera, edX, Udemy, LinkedIn Learning, DataCamp, fast.ai, etc.)
-- Named certifications (AWS, GCP, Azure, Databricks, Tableau, etc.)
-- University courses with a standard syllabus
-- GitHub repositories with a README that names specific technologies
-
-### Infer (without web lookup) for:
-- Generic job responsibility bullets with no named tool
-- Vague project descriptions
-- Reference letter language (already phrased as competency — just record it)
+### 1f. Outras URLs do perfil
+Procure em `01-candidate-profile.md` outras URLs (portfólio, site pessoal, Kaggle, Google Scholar, ResearchGate, **Currículo Lattes**, links de publicações). Para cada uma:
+- Colete a página
+- Extraia ferramentas, métodos, conjuntos de dados, prêmios ou competências citados
 
 ---
 
-## Step 3: Build Competency Map
+## Passo 2: Enriquecimento pela web
 
-After enriching all items, build a deduplicated competency map. Group findings into these categories:
+Para cada item de experiência descoberto no Passo 1, busque na web as competências que ele implica. Aplique as duas abordagens abaixo — não escolha uma em vez da outra.
 
-**Technical Skills — Primary** (core languages, frameworks, methods you use regularly)  
-**Technical Skills — Secondary** (tools you have used but are not primary)  
-**Domain Knowledge** (subject matter expertise: geophysics, ML, NLP, etc.)  
-**Methods and Practices** (agile, version control, reproducibility, testing, etc.)  
-**Soft / Behavioral** (leadership, communication, collaboration signals from references and project descriptions)  
-**Independent Projects & Portfolio** (distinct technical projects from GitHub with problem domain, tech stack, and key technical milestone)
+### Abordagem A: consulta direta (ferramentas e frameworks explícitos)
+Se o item cita uma ferramenta, framework, biblioteca, método ou plataforma específica, busque diretamente:
+- `"[Nome do curso] [Plataforma] ementa conteúdo programático"` ou `"[Course name] [Provider] syllabus learning outcomes"`
+- `"[Nome da certificação] competências avaliadas guia do exame"`
+- `"[Ferramenta/framework] o que se aprende"`
 
-For each competency, record:
-- The competency name
-- The source item it came from (e.g. "Coursera — Deep Learning Specialisation", "GitHub — repo-name", "Reference letter — Jens Jensen")
-- Whether it came from direct lookup (A), inference (B), or both
+Colete a página mais relevante e extraia a lista de competências.
 
-For each project, record:
-- Project name
-- One-line summary: problem tackled, tech stack used, and verifiable outcome/impact
-- Source (e.g. "GitHub — repo-name")
+### Abordagem B: competências deduzidas (pela descrição e pelo contexto)
+Para cada item, tendo ou não a Abordagem A achado algo, raciocine também a partir da descrição:
+- Que domínio de problema este item trata?
+- Que métodos, habilidades ou conhecimentos alguém precisa para fazer este trabalho?
+- Qual é o conjunto padrão de ferramentas para este tipo de trabalho?
 
-Remove anything already present in `01-candidate-profile.md` or `02-behavioral-profile.md`.
+Junte as duas abordagens numa única lista de competências por item.
+
+### Priorize a consulta na web para:
+- Cursos online com nome (Coursera, edX, Udemy, LinkedIn Learning, DataCamp, fast.ai, Alura, DIO, Fundação Bradesco, Escola Virtual.Gov etc.)
+- Certificações com nome (AWS, GCP, Azure, Databricks, Tableau, PMP etc.)
+- Disciplinas universitárias com ementa padrão
+- Repositórios do GitHub com README que cita tecnologias específicas
+
+### Deduza (sem consulta na web) para:
+- Tópicos genéricos de responsabilidade sem ferramenta citada
+- Descrições vagas de projetos
+- Linguagem de cartas de recomendação (já formulada como competência — só registre)
 
 ---
 
-## Step 4: Present Grouped Summary
+## Passo 3: Montar o mapa de competências
 
-Present all new competencies and project additions for the user's review before writing anything. Format:
+Depois de enriquecer todos os itens, monte um mapa de competências sem duplicatas. Agrupe os achados nestas categorias:
+
+**Competências técnicas — principais** (linguagens, frameworks e métodos centrais que você usa com regularidade)  
+**Competências técnicas — secundárias** (ferramentas que você já usou, mas não são principais)  
+**Conhecimento de domínio** (área de especialidade: geofísica, ML, PLN etc.)  
+**Métodos e práticas** (ágil, controle de versão, reprodutibilidade, testes etc.)  
+**Comportamentais** (sinais de liderança, comunicação e colaboração vindos de recomendações e descrições de projetos)  
+**Projetos independentes e portfólio** (projetos técnicos distintos do GitHub, com domínio do problema, stack e principal marco técnico)
+
+Para cada competência, registre:
+- O nome da competência
+- O item de origem (ex.: "Coursera — Especialização em Deep Learning", "GitHub — repo-name", "Carta de recomendação — Maria Souza")
+- Se veio de consulta direta (A), de dedução (B) ou de ambas
+
+Para cada projeto, registre:
+- Nome do projeto
+- Resumo em uma linha: problema tratado, stack usado e resultado/impacto verificável
+- Origem (ex.: "GitHub — repo-name")
+
+Tire tudo o que já estiver em `01-candidate-profile.md` ou `02-behavioral-profile.md`.
+
+---
+
+## Passo 4: Apresentar o resumo agrupado
+
+Apresente todas as competências novas e os projetos a acrescentar para a pessoa revisar antes de gravar qualquer coisa. Formato:
 
 ```
-## /expand found [N] new competency signals across [M] sources
+## O /expand encontrou [N] novos sinais de competência em [M] fontes
 
-**COURSES & CERTIFICATIONS**
-Source: [Course/cert name — Provider]
-  + [Competency 1]
-  + [Competency 2]
+**CURSOS E CERTIFICAÇÕES**
+Fonte: [Nome do curso/certificação — Plataforma]
+  + [Competência 1]
+  + [Competência 2]
   ...
 
-**PROJECTS & PORTFOLIO**
-Source: [GitHub — repo-name]
-  + [Project Name]: [Problem, stack, and outcome]
+**PROJETOS E PORTFÓLIO**
+Fonte: [GitHub — repo-name]
+  + [Nome do projeto]: [Problema, stack e resultado]
   ...
 
 **GITHUB — [repo-name]**
-Source: README + inferred from tech stack
-  + [Competency 1]
-  + [Competency 2]
+Fonte: README + dedução pelo stack
+  + [Competência 1]
+  + [Competência 2]
   ...
 
-**JOB RESPONSIBILITIES — [Company, Role]**
-Source: CV bullets + direct tool lookup
-  + [Competency 1]
+**RESPONSABILIDADES PROFISSIONAIS — [Empresa, Cargo]**
+Fonte: tópicos do currículo + consulta direta das ferramentas
+  + [Competência 1]
   ...
 
-**BEHAVIORAL SIGNALS**
-Source: [Reference letter — Name / LinkedIn About / Project leadership]
-  + [Signal 1]
+**SINAIS COMPORTAMENTAIS**
+Fonte: [Carta de recomendação — Nome / Sobre do LinkedIn / Liderança em projeto]
+  + [Sinal 1]
   ...
 
-[more sections as needed]
+[mais seções conforme necessário]
 ```
 
-Then ask:
+Depois pergunte:
 
-> **How would you like to proceed?**
+> **Como você quer seguir?**
 >
-> - **`all`** — Add everything above to your profile
-> - **`review`** — I'll walk you through each source group one at a time
-> - **`skip`** — Cancel without writing anything
+> - **`all`** — Acrescentar tudo acima ao seu perfil
+> - **`review`** — Passo com você por cada grupo de fontes, um de cada vez
+> - **`skip`** — Cancelar sem gravar nada
 >
-> Or list specific groups to skip (e.g. "skip GitHub, add everything else").
+> Ou liste grupos específicos para pular (ex.: "pular GitHub, acrescentar o resto").
 
-Wait for the user's response before writing anything.
-
----
-
-## Step 5: Write Confirmed Additions
-
-Apply only the confirmed items. Use the Edit tool to add to the relevant sections of each file — do not rewrite entire files.
-
-### Additions to `01-candidate-profile.md`
-- Independent projects → append to the `## Independent Projects` section formatted as `- **[Project Name]**: [Description with stack and outcome] *(GitHub — repo-name)*`
-- Technical skills (primary and secondary) → append to the Technical Skills section
-- Domain knowledge → append to the Domain Knowledge or Technical Skills section (match the existing structure)
-- Methods and practices → append appropriately
-
-For each addition, add a brief source annotation in a comment or parenthetical: *(Coursera — Deep Learning Specialisation)*, *(GitHub — project-name)*, etc. This makes future `/expand` runs idempotent.
-
-### Additions to `02-behavioral-profile.md`
-- Soft/behavioral signals → append to the "Strongest Behaviors" or "How You Work Best" section (the shipped file's `##` headings - match existing structure)
-- Always label inferred behavioral additions: *[Inferred from reference letter — Name / review before relying on this]*
+Espere a resposta antes de gravar qualquer coisa.
 
 ---
 
-## Step 6: Summary Report
+## Passo 5: Gravar os acréscimos confirmados
 
-After writing, present:
+Aplique só os itens confirmados. Use a ferramenta Edit para acrescentar às seções relevantes de cada arquivo — não reescreva arquivos inteiros.
+
+### Acréscimos ao `01-candidate-profile.md`
+- Projetos independentes → acrescente à seção `## Projetos independentes`, no formato `- **[Nome do projeto]**: [Descrição com stack e resultado] *(GitHub — repo-name)*`
+- Competências técnicas (principais e secundárias) → acrescente à seção Competências técnicas
+- Conhecimento de domínio → acrescente à seção Conhecimento de domínio ou Competências técnicas (siga a estrutura existente)
+- Métodos e práticas → acrescente onde fizer sentido
+
+Para cada acréscimo, inclua uma breve anotação da origem num comentário ou entre parênteses: *(Coursera — Especialização em Deep Learning)*, *(GitHub — nome-do-projeto)* etc. Isso torna as próximas execuções do `/expand` idempotentes.
+
+### Acréscimos ao `02-behavioral-profile.md`
+- Sinais comportamentais → acrescente à seção "Comportamentos mais fortes" ou "Como você trabalha melhor" (os títulos `##` do arquivo como vem no modelo — siga a estrutura existente)
+- Marque sempre os acréscimos comportamentais deduzidos: *[Deduzido da carta de recomendação — Nome / revise antes de confiar nisto]*
+
+---
+
+## Passo 6: Relatório final
+
+Depois de gravar, apresente:
 
 ```
-## /expand Complete
+## /expand concluído
 
-### Added to 01-candidate-profile.md
-[List each competency and independent project added, with source]
+### Acrescentado ao 01-candidate-profile.md
+[Liste cada competência e projeto independente acrescentado, com a origem]
 
-### Added to 02-behavioral-profile.md
-[List each behavioral signal added, with source]
+### Acrescentado ao 02-behavioral-profile.md
+[Liste cada sinal comportamental acrescentado, com a origem]
 
-### Sources processed
-[List each source scanned and how many competencies it yielded]
+### Fontes processadas
+[Liste cada fonte examinada e quantas competências ela rendeu]
 
-### Sources skipped
-[List any sources that were missing, empty, or yielded nothing new — with brief reason]
+### Fontes puladas
+[Liste as fontes ausentes, vazias ou que não renderam nada novo — com um motivo curto]
 
-### Needs manual review
-[Any items that were ambiguous, partially readable, or where web lookup returned no clear syllabus]
+### Precisa de revisão manual
+[Itens ambíguos, parcialmente legíveis, ou em que a consulta na web não trouxe uma ementa clara]
 ```
 
 ---
 
-## Design Principles
+## Princípios de projeto
 
-- **Additive only.** This command never modifies existing profile content. It only appends.
-- **Source-traceable.** Every addition records where it came from, so future runs are idempotent and the user can verify or remove individual items later.
-- **Both approaches, always.** Web lookup and inference are applied together — not as alternatives. A named course gets its official syllabus AND a reasoned competency list.
-- **User confirms before writing.** The full competency map is shown and confirmed before a single file is touched.
-- **Behavioral signals are labeled.** Anything inferred from tone, language, or indirect signals is marked as inferred so it is reviewed critically.
-- **GitHub is fully scanned.** All public repositories are checked, not just pinned ones — unpinned repos often contain significant competency signals.
-- **Portfolio & projects grounded in code.** Independent projects added to the profile must reflect real projects found in public GitHub repositories — never fabricated project claims.
+- **Só acréscimos.** Este comando nunca modifica o conteúdo existente do perfil. Só acrescenta.
+- **Origem rastreável.** Todo acréscimo registra de onde veio, para as próximas execuções serem idempotentes e a pessoa poder verificar ou remover itens individualmente depois.
+- **As duas abordagens, sempre.** Consulta na web e dedução são aplicadas juntas — não como alternativas. Um curso com nome recebe a ementa oficial E uma lista de competências raciocinada.
+- **A pessoa confirma antes de gravar.** O mapa completo de competências é mostrado e confirmado antes de qualquer arquivo ser tocado.
+- **Sinais comportamentais são marcados.** Tudo o que for deduzido de tom, linguagem ou sinais indiretos é marcado como deduzido, para ser revisado com senso crítico.
+- **O GitHub é examinado por inteiro.** Todos os repositórios públicos são conferidos, não só os fixados — repositórios não fixados muitas vezes têm sinais importantes de competência.
+- **Portfólio e projetos apoiados em código.** Projetos independentes acrescentados ao perfil precisam refletir projetos reais encontrados em repositórios públicos do GitHub — nunca afirmações de projeto inventadas.

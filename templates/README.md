@@ -1,26 +1,26 @@
-# Custom Templates
+# Modelos próprios
 
-This folder holds user-registered templates (LaTeX, Typst, or any other toolchain with a declared compile command), managed by the `/add-template` command. The framework works out of the box with its stock templates (moderncv for CVs, `cover.cls` for cover letters) — this folder only gets content when you register your own.
+Esta pasta guarda os modelos registrados pela pessoa (LaTeX, Typst ou qualquer outra ferramenta com um comando de compilação declarado), gerenciados pelo comando `/add-template`. O projeto funciona de primeira com os modelos padrão (moderncv para currículos, `cover.cls` para cartas) — esta pasta só recebe conteúdo quando você registra os seus.
 
-## Layout
+## Organização
 
 ```
 templates/
 ├── cv/
-│   └── <template-name>/
-│       ├── template.<ext>  # Profile-agnostic skeleton ([PLACEHOLDER] tokens), e.g. template.tex or template.typ
-│       ├── TEMPLATE.md      # Manifest: source extension, compile command, fonts, page limit, style rules, pitfalls
-│       ├── *.cls / *.sty    # Custom class/style files, or Typst packages (if the template needs them)
-│       └── fonts/           # Bundled font files (if not using system fonts)
+│   └── <nome-do-modelo>/
+│       ├── template.<ext>  # Esqueleto sem dados pessoais (marcadores [PLACEHOLDER]), ex.: template.tex ou template.typ
+│       ├── TEMPLATE.md      # Manifesto: extensão do fonte, comando de compilação, fontes, limite de páginas, regras de estilo, armadilhas
+│       ├── *.cls / *.sty    # Arquivos de classe/estilo, ou pacotes Typst (se o modelo precisar)
+│       └── fonts/           # Arquivos de fonte incluídos (se não usar fontes do sistema)
 └── cover_letters/
-    └── <template-name>/
-        └── (same layout)
+    └── <nome-do-modelo>/
+        └── (mesma organização)
 ```
 
-## How it works
+## Como funciona
 
-- `/add-template` interviews you for the template's instructions (source extension, compile command, fonts, style rules, page limit), stores the files here, and runs a mandatory test compile before registering anything.
-- Activating a template adds a managed block to `05-cv-templates.md` or `06-cover-letter-templates.md`, which is what `/apply` reads when drafting and compiling — no other wiring needed.
-- `/add-template --list` shows registered templates; `/add-template --use <name>` switches; `/add-template --use default` reverts to the stock templates.
+- O `/add-template` entrevista você sobre as instruções do modelo (extensão do fonte, comando de compilação, fontes, regras de estilo, limite de páginas), guarda os arquivos aqui e roda uma compilação de teste obrigatória antes de registrar qualquer coisa.
+- Ativar um modelo acrescenta um bloco gerenciado ao `05-cv-templates.md` ou ao `06-cover-letter-templates.md`, que é o que o `/apply` lê ao redigir e compilar — não precisa de mais nenhuma ligação.
+- `/add-template --list` mostra os modelos registrados; `/add-template --use <nome>` troca; `/add-template --use default` volta aos modelos padrão.
 
-Templates are stored with `[PLACEHOLDER]` tokens instead of personal data, so they are safe to commit and share.
+Os modelos são guardados com marcadores `[PLACEHOLDER]` no lugar de dados pessoais, então podem ser versionados e compartilhados.

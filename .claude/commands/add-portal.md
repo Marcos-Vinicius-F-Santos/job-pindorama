@@ -1,161 +1,161 @@
-# /add-portal - Generate a Job-Portal Search Skill for Your Local Market
+# /add-portal - Gerar uma skill de busca para um portal de vagas do seu mercado
 
-You are helping the user build a job-portal search skill for a job board in their market. The repo ships worked examples of the pattern (four Danish portals plus the country-agnostic `linkedin-search` and `freehire-search`), and the README invites users elsewhere to build equivalents — this command turns that invitation into a guided workflow: investigate the portal, scaffold the skill from the canonical structure, and test-run a live query before registering anything.
+Você vai ajudar a pessoa a construir uma skill de busca para um portal de vagas do mercado dela. O projeto já traz exemplos prontos do padrão (o `gupy-search`, para o Portal Gupy, e os que funcionam em qualquer país, `linkedin-search` e `freehire-search`) — este comando transforma esse convite num fluxo guiado: investigar o portal, montar a skill a partir da estrutura canônica e testar uma busca ao vivo antes de registrar qualquer coisa.
 
-The generator is **country-agnostic**: it works for any portal in any market and language. The skills it produces are typically market-specific and live in the user's fork (per repo policy, country-specific portal skills are not merged upstream — the generator is the upstream feature, its output is yours).
+O gerador **não depende de país**: funciona para qualquer portal, em qualquer mercado e idioma. No Brasil, candidatos naturais são Vagas.com, Catho, InfoJobs, Indeed Brasil, Trampos, Programathor, Remotar e portais de nicho da sua área — sempre sujeitos à checagem de `robots.txt` e de termos de uso do Passo 2. As skills geradas são específicas do mercado e vivem no fork da pessoa.
 
-`$ARGUMENTS` may contain a subcommand, a portal URL, or nothing.
+`$ARGUMENTS` pode conter um subcomando, a URL de um portal ou nada.
 
-Follow these steps **in order**.
-
----
-
-## Step 0: Parse Arguments
-
-- If `$ARGUMENTS` contains `--list`: use Glob with `.agents/skills/*/SKILL.md`, print a table of installed portal skills (name, market from the description, data source from `url-reference.md`), and stop.
-- If `$ARGUMENTS` contains a URL: treat it as the portal URL and carry it into Step 1.
-- Otherwise: start the interview at Step 1.
+Siga estes passos **na ordem**.
 
 ---
 
-## Step 1: Interview - Portal Basics
+## Passo 0: Interpretar os argumentos
 
-Ask the user (skip anything already answered by `$ARGUMENTS`):
-
-1. **Portal URL** - the job board's public site (e.g. `https://www.seek.com.au`, `https://www.stepstone.de`).
-2. **Skill name** - kebab-case, suffixed `-search` (e.g. `seek-search`, `stepstone-search`). Must not collide with an existing folder in `.agents/skills/`.
-3. **Market and language** - which country/region the portal covers and what language its postings use. This drives the trigger phrases in `SKILL.md` (include local-language terms like the Danish skills do: "ledige stillinger", "jobsøgning").
-4. **A realistic test query** - a job title or skill the user would actually search for, used for the live test in Step 4.
+- Se `$ARGUMENTS` contiver `--list`: use o Glob com `.agents/skills/*/SKILL.md`, imprima uma tabela das skills de portal instaladas (nome, mercado pela descrição, fonte de dados pelo `url-reference.md`) e pare.
+- Se `$ARGUMENTS` contiver uma URL: trate-a como a URL do portal e leve-a para o Passo 1.
+- Caso contrário: comece a entrevista no Passo 1.
 
 ---
 
-## Step 2: Investigate the Portal
+## Passo 1: Entrevista - dados básicos do portal
 
-Do reconnaissance before writing any code. Use WebFetch (or `python3 tools/fetch_page.py '<URL>' --text` via Bash when WebFetch is refused) on the portal:
+Pergunte à pessoa (pule o que `$ARGUMENTS` já responder):
 
-1. **Find the search URL pattern.** Load the portal's search page, run a search in the URL bar mentally or via fetch, and identify: the search endpoint, the query parameter, and any parameters for location, posting age, and pagination. Prefer a JSON API if one backs the site (check for `/api/` XHR endpoints in the page source); otherwise plan to parse the HTML results page.
-2. **Fetch one search-results response** for the test query and identify the per-result fields: **id, title, company, location, posting date, and URL**. For HTML, note the class names / attributes that anchor each field. For JSON, note the field paths.
-3. **Find the detail-page pattern** - the URL that returns a single posting's full description, and where the description, deadline, employment type, and apply link live in it.
-4. **Check access requirements and terms.**
-   - Fetch `robots.txt` and check whether the search/detail paths are disallowed.
-   - If the portal requires login/authentication to view listings, **stop**: this pattern only works on public pages. Tell the user and suggest checking whether the portal has an official API.
-   - If robots.txt disallows the paths or the portal's terms prohibit automated access, tell the user plainly and let them decide whether to proceed for personal use. If they proceed, the generated `SKILL.md` **must** carry a prominent personal-use-only warning (copy the tone of `linkedin-search`'s "⚠️ Personal use only" section: keep volume low, no commercial or bulk use, own responsibility).
-
-5. **Check whether the portal can be reached without a credential.** Some portals return usable content only through a third-party fetching service (a paid unlocker/proxy API). **This step never overrides Step 2.4:** if `robots.txt` or the portal's terms disallow access, that is decided there, and a paid fetching service does not change the answer. The credential path exists for portals whose `robots.txt` permits access but whose bot protection blocks ordinary fetches. Where that applies and the test fetch succeeds only through such a service, say so to the user **before scaffolding** - a portal that bills per query is a different proposition from a free one, and they may prefer to skip it. Note which service and which environment variable; the handling rules are in the portal-skill contract in Step 3.
-
-Record everything you found - endpoints, parameters, field anchors, quirks - you will write it into `url-reference.md` in Step 3.
+1. **URL do portal** - o site público de vagas (ex.: `https://www.vagas.com.br`, `https://www.catho.com.br`).
+2. **Nome da skill** - em kebab-case, terminado em `-search` (ex.: `vagas-search`, `catho-search`). Não pode colidir com uma pasta existente em `.agents/skills/`.
+3. **Mercado e idioma** - que país ou região o portal cobre e em que idioma as vagas são publicadas. Isso orienta as frases de ativação do `SKILL.md` (inclua termos no idioma local, como faz o `gupy-search`: "buscar vagas", "procurar emprego", "vagas CLT").
+4. **Uma busca de teste realista** - um cargo ou competência que a pessoa de fato buscaria, usado no teste ao vivo do Passo 4.
 
 ---
 
-## Step 3: Scaffold the Skill
+## Passo 2: Investigar o portal
 
-**Canonical reference:** read `.agents/skills/linkedin-search/` before generating - it is the zero-dependency worked example of this exact structure. Copy its architecture, not its LinkedIn-specific parsing.
+Faça o reconhecimento antes de escrever código. Use o WebFetch (ou `python3 tools/fetch_page.py '<URL>' --text` via Bash quando o WebFetch for recusado) no portal:
 
-Create `.agents/skills/<name>/` with:
+1. **Ache o padrão da URL de busca.** Carregue a página de busca do portal, faça uma busca (mentalmente na barra de endereço ou via coleta) e identifique: o endpoint de busca, o parâmetro de consulta e os parâmetros de local, idade da vaga e paginação. Prefira uma API JSON se houver uma por trás do site (procure endpoints `/api/` nas chamadas do JavaScript da página, ou dados embutidos como `__NEXT_DATA__` — foi assim que o `gupy-search` foi feito, veja o `url-reference.md` dele); senão, planeje ler a página HTML de resultados.
+2. **Colete uma resposta de busca** para a busca de teste e identifique os campos de cada resultado: **id, título, empresa, local, data de publicação e URL**. Para HTML, anote as classes ou atributos que ancoram cada campo. Para JSON, anote os caminhos dos campos. No Brasil, procure também o **regime** (CLT, PJ, estágio), que vale ouro na avaliação.
+3. **Ache o padrão da página de detalhe** - a URL que devolve o texto completo de uma vaga, e onde ficam nela a descrição, o prazo, o regime e o link de candidatura.
+4. **Confira os requisitos de acesso e os termos.**
+   - Colete o `robots.txt` e veja se os caminhos de busca e de detalhe são proibidos.
+   - Se o portal exigir login para ver as vagas, **pare**: este padrão só funciona com páginas públicas. Diga à pessoa e sugira verificar se o portal tem uma API oficial.
+   - Se o `robots.txt` proibir os caminhos ou os termos do portal proibirem acesso automatizado, diga à pessoa com clareza e deixe-a decidir se segue para uso pessoal. Se seguir, o `SKILL.md` gerado **precisa** trazer um aviso destacado de uso apenas pessoal (copie o tom da seção "⚠️ Personal use only" do `linkedin-search`: volume baixo, nada de uso comercial ou em massa, responsabilidade própria).
+
+5. **Confira se o portal pode ser acessado sem credencial.** Alguns portais só devolvem conteúdo útil por um serviço de coleta de terceiros (uma API paga de desbloqueio/proxy). **Este passo nunca passa por cima do Passo 2.4:** se o `robots.txt` ou os termos do portal proíbem o acesso, isso se decide lá, e um serviço de coleta pago não muda a resposta. O caminho de credencial existe para portais cujo `robots.txt` permite o acesso, mas cuja proteção contra robôs bloqueia coletas comuns. Quando isso se aplicar e a coleta de teste só funcionar por esse serviço, diga à pessoa **antes de montar a skill** — um portal que cobra por consulta é outra proposta, diferente de um gratuito, e ela pode preferir pular. Anote qual serviço e qual variável de ambiente; as regras de uso estão no contrato das skills de portal, no Passo 3.
+
+Registre tudo o que achou — endpoints, parâmetros, âncoras de campos, peculiaridades —; você vai escrever isso no `url-reference.md` no Passo 3.
+
+---
+
+## Passo 3: Montar a skill
+
+**Referência canônica:** leia `.agents/skills/linkedin-search/` e `.agents/skills/gupy-search/` antes de gerar — são exemplos sem dependências desta mesma estrutura (o primeiro lê HTML, o segundo lê JSON). Copie a arquitetura, não a leitura específica de cada portal.
+
+Crie `.agents/skills/<nome>/` com:
 
 ```
-<name>/
-├── SKILL.md              # Skill definition with trigger phrases
-├── url-reference.md      # Endpoint documentation from Step 2
+<nome>/
+├── SKILL.md              # Definição da skill com frases de ativação
+├── url-reference.md      # Documentação dos endpoints do Passo 2
 └── cli/
     ├── package.json
     ├── tsconfig.json
     ├── README.md
     ├── src/
-    │   ├── cli.ts        # Arg parsing, help text, command dispatch
-    │   ├── helpers.ts    # Fetch with backoff, parsers, error writer
+    │   ├── cli.ts        # Leitura de opções, texto de ajuda, despacho de comandos
+    │   ├── helpers.ts    # Coleta com espera progressiva, leitores, gravação de erros
     │   └── commands/
     │       ├── search.ts
     │       └── detail.ts
     └── tests/
-        └── helpers.ts    # runCLI + parseJSON test utilities (copy from jobindex-search)
+        └── helpers.ts    # utilitários de teste runCLI + parseJSON (copie do gupy-search)
 ```
 
-### The portal-skill contract (every generated skill MUST honor this)
+### O contrato das skills de portal (toda skill gerada PRECISA seguir)
 
-These conventions are what make portal skills interchangeable for `/scrape` and for users reading any skill's docs:
+Estas convenções são o que torna as skills de portal intercambiáveis para o `/scrape` e para quem lê a documentação de qualquer skill:
 
-- **Commands:** `search` and `detail <id|url>`.
-- **Search flags:** `--query`/`-q`, `--jobage <days>` (posting age; map to the portal's parameter, note in SKILL.md if unsupported), `--page <n>` (1-indexed), `--limit <n>` (client-side cap), `--format json|table|plain` (default `json`). Add `--location`/`-l` if the portal supports location as a parameter; if it only supports location inside the keyword query, document that in SKILL.md the way `jobindex-search` does ("include the city in `--query`").
-- **JSON output shape:** `{ "meta": { "count": ..., "page": ... }, "results": [...] }` where each result has at least `id`, `title`, `company`, `location`, `date`, `url` (missing values are `null`, never omitted).
-- **Errors:** written to **stderr** as `{ "error": "...", "code": "..." }`, exit code `1`. Never write errors to stdout.
-- **Fetching:** an honest User-Agent that names the tool (`Mozilla/5.0 (compatible; <portal>-cli/1.0)`, the convention every shipped portal CLI follows) - never a full browser impersonation; if the portal refuses that UA, escalation to browser headers goes through the robots.txt gate in `.claude/skills/job-application-assistant/09-web-research.md`, not through the CLI's default. Exponential backoff with jitter on 429/5xx (max ~6 retries), `""`/`null` on 404 rather than a crash.
-- **HTML parsing:** split the response into per-result chunks and parse each independently, so one malformed card cannot break the rest (see `parseJobCards` in `linkedin-search/cli/src/helpers.ts`).
-- **Dependencies:** default to **zero runtime dependencies** (plain `bun` + `fetch` + regex parsing) like `linkedin-search` - `bun install` should only pull dev types. Only add a parsing library if the portal's markup genuinely defeats chunked regex parsing, and say so in the README.
-- **Credentials:** a skill that needs an API key (Step 2.5) reads it **only** from an environment variable named `<SERVICE>_API_TOKEN`. Never hardcode it, never accept it as a CLI flag (flags leak into shell history and process listings), and never write a real token into `url-reference.md`, a README example, or a test fixture. If the variable is unset, exit `1` with the standard stderr JSON error and code `MISSING_CREDENTIALS`, naming the variable to set - never fall through to an unauthenticated request that fails confusingly. The repo `.gitignore` covers `.env`; do not commit one.
+- **Comandos:** `search` e `detail <id|url>`.
+- **Opções de busca:** `--query`/`-q`, `--jobage <dias>` (idade da vaga; mapeie para o parâmetro do portal, ou filtre do lado da CLI e registre isso no SKILL.md se o portal não tiver), `--page <n>` (começando em 1), `--limit <n>` (limite do lado da CLI), `--format json|table|plain` (padrão `json`). Acrescente `--location`/`-l` se o portal aceitar local como parâmetro; se só aceitar o local dentro da consulta, documente isso no SKILL.md ("inclua a cidade no `--query`").
+- **Formato da saída JSON:** `{ "meta": { "count": ..., "page": ... }, "results": [...] }`, em que cada resultado tem pelo menos `id`, `title`, `company`, `location`, `date`, `url` (valores ausentes são `null`, nunca omitidos).
+- **Erros:** gravados no **stderr** como `{ "error": "...", "code": "..." }`, código de saída `1`. Nunca grave erros no stdout.
+- **Coleta:** um User-Agent honesto que diga o nome da ferramenta (`Mozilla/5.0 (compatible; <portal>-cli/1.0)`, a convenção que toda CLI de portal do projeto segue) — nunca se passar por um navegador completo, e **sem URLs no User-Agent** (toda URL literal nos fontes conta como host do portal na checagem de procedência do `/apply`); se o portal recusar esse UA, a escalada para cabeçalhos de navegador passa pelo filtro de `robots.txt` em `.claude/skills/job-application-assistant/09-web-research.md`, não pelo padrão da CLI. Espera progressiva com variação aleatória em 429/5xx (no máximo ~6 novas tentativas), `""`/`null` em 404 em vez de quebrar.
+- **Leitura de HTML:** divida a resposta em pedaços por resultado e leia cada um separadamente, para um cartão malformado não quebrar o resto (veja `parseJobCards` em `linkedin-search/cli/src/helpers.ts`).
+- **Dependências:** por padrão, **zero dependências de execução** (só `bun` + `fetch` + leitura por regex), como o `linkedin-search` e o `gupy-search` — o `bun install` só deve trazer os tipos de desenvolvimento. Só acrescente uma biblioteca de leitura se a marcação do portal realmente derrotar a leitura em pedaços por regex, e diga isso no README.
+- **Credenciais:** uma skill que precisa de chave de API (Passo 2.5) lê a chave **só** de uma variável de ambiente chamada `<SERVIÇO>_API_TOKEN`. Nunca a deixe fixa no código, nunca a aceite como opção da CLI (opções vazam para o histórico do shell e para a lista de processos), e nunca grave um token real no `url-reference.md`, num exemplo do README ou numa fixture de teste. Se a variável não estiver definida, saia com `1` com o erro JSON padrão no stderr e o código `MISSING_CREDENTIALS`, citando a variável a definir — nunca caia num pedido sem autenticação que falha de forma confusa. O `.gitignore` do repositório cobre o `.env`; não versione um.
 
-### File specifics
+### Detalhes dos arquivos
 
-- **`SKILL.md` frontmatter:** `name`, `version: 1.0.0`, a `description` written for skill triggering - it must name the portal, the market, and include trigger phrases in English **and** the market's language; `context: fork`; `allowed-tools: Bash(bun run .agents/skills/<name>/cli/src/cli.ts *)`.
-- **`SKILL.md` body:** what the skill searches, the personal-use warning if Step 2 found terms restrictions, command reference with flags, 4-6 usage examples using the user's market (real cities, realistic roles), output-format table, and a Notes section recording portal quirks found in Step 2. If Step 2.5 found the portal needs a credential, add a **Setup** section naming the service, the exact environment variable to export, and the fact that every call is billed - stated where the user reads it before running the skill, not after.
-- **`url-reference.md`:** the endpoints, parameters table, and response-structure notes from Step 2 - this is the file a future maintainer needs when the portal changes its markup.
-- **`package.json`:** name `<portal>-cli`, `"type": "module"`, scripts `start`, `test` (`bun test --timeout 30000`), and `typecheck` (`tsc --noEmit`); dev-only dependencies in the zero-dependency default.
-- **`tests/`:** copy `runCLI`/`parseJSON` from `jobindex-search/cli/tests/helpers.ts`, then add a small live smoke-test file: `search` with the test query returns exit code 0 and ≥1 result with non-null `id`/`title`/`url`; a bogus flag or missing required arg exits 1 with a JSON error on stderr.
+- **Frontmatter do `SKILL.md`:** `name`, `version: 1.0.0`, uma `description` escrita para ativar a skill — precisa citar o portal, o mercado e trazer frases de ativação em inglês **e** no idioma do mercado; `context: fork`; `allowed-tools: Bash(bun run .agents/skills/<name>/cli/src/cli.ts *)`.
+- **Corpo do `SKILL.md`:** o que a skill busca, o aviso de uso pessoal se o Passo 2 achou restrições nos termos, a referência de comandos com as opções, 4 a 6 exemplos de uso com o mercado da pessoa (cidades reais, cargos realistas), a tabela de formatos de saída e uma seção de Observações registrando as peculiaridades do portal achadas no Passo 2. Se o Passo 2.5 descobriu que o portal precisa de credencial, acrescente uma seção **Configuração** citando o serviço, a variável de ambiente exata a exportar e o fato de que toda chamada é cobrada — dito onde a pessoa lê antes de rodar a skill, não depois.
+- **`url-reference.md`:** os endpoints, a tabela de parâmetros e as notas sobre a estrutura da resposta do Passo 2 — é o arquivo de que uma pessoa mantenedora vai precisar quando o portal mudar a marcação.
+- **`package.json`:** nome `<portal>-cli`, `"type": "module"`, scripts `start`, `test` (`bun test --timeout 30000`) e `typecheck` (`tsc --noEmit`); só dependências de desenvolvimento no padrão sem dependências.
+- **`tests/`:** copie `runCLI`/`parseJSON` de `gupy-search/cli/tests/helpers.ts`, depois acrescente testes com `fetch` simulado (sem rede, para o CI ser determinístico) e um arquivo pequeno de teste ao vivo, ligado só por variável de ambiente: `search` com a busca de teste sai com código 0 e ≥1 resultado com `id`/`title`/`url` não nulos; uma opção falsa ou um argumento obrigatório faltando sai com 1 e um erro JSON no stderr.
 
 ---
 
-## Step 4: Test-Run a Live Query (MANDATORY)
+## Passo 4: Testar uma busca ao vivo (OBRIGATÓRIO)
 
-Never register a portal skill that has not returned real results. Markup assumptions from Step 2 routinely miss quirks that only show up live.
+Nunca registre uma skill de portal que não devolveu resultados reais. Suposições de marcação do Passo 2 costumam perder peculiaridades que só aparecem ao vivo.
 
-1. Install dev types and typecheck:
+1. Instale os tipos de desenvolvimento e confira a tipagem:
    ```bash
-   cd .agents/skills/<name>/cli && bun install && bun run typecheck
+   cd .agents/skills/<nome>/cli && bun install && bun run typecheck
    ```
-2. Run the live search with the user's test query:
+2. Rode a busca ao vivo com a busca de teste da pessoa:
    ```bash
-   bun run src/cli.ts search -q "<test query>" --limit 5 --format table
+   bun run src/cli.ts search -q "<busca de teste>" --limit 5 --format table
    ```
-3. Verify the results are real and complete: titles and companies are populated (not empty strings or HTML fragments), URLs resolve to the portal, dates parse. If fields come back null or garbled, fix the parsers in `helpers.ts` and re-run. Iterate until clean.
-4. Take one `id` from the results and run `detail`:
+3. Confira se os resultados são reais e completos: títulos e empresas preenchidos (não strings vazias nem pedaços de HTML), URLs que levam ao portal, datas que fazem sentido, acentos certos. Se os campos vierem nulos ou embaralhados, corrija os leitores em `helpers.ts` e rode de novo. Repita até ficar limpo.
+4. Pegue um `id` (ou a `url`) dos resultados e rode o `detail`:
    ```bash
    bun run src/cli.ts detail <id> --format plain
    ```
-   Verify the description is readable text (entities decoded, tags stripped, paragraph breaks preserved).
-5. Run the test suite: `bun run test`.
-6. Keep volume low during iteration - a handful of requests, not a crawl. If the portal rate-limits you mid-test, back off and tell the user.
+   Confira se a descrição é texto legível (entidades decodificadas, tags removidas, quebras de parágrafo preservadas).
+5. Rode a suíte de testes: `bun run test`.
+6. Mantenha o volume baixo durante as tentativas — um punhado de pedidos, não uma varredura. Se o portal limitar você no meio do teste, recue e avise a pessoa.
 
-Do not proceed to Step 5 until search, detail, and tests all pass.
+Não siga para o Passo 5 enquanto busca, detalhe e testes não passarem.
 
 ---
 
-## Step 5: Register
+## Passo 5: Registrar
 
-1. Ask whether the user wants the new portal added to their `/scrape` search strategy. If yes:
-   - The portal CLI itself is already picked up automatically by `/scrape` (it discovers `.agents/skills/*/SKILL.md`) — no further wiring is needed for CLI search/detail.
-   - **Pre-approval is per portal and deliberate.** `/scrape` runs the CLI through Bash, and the only standing grants are the per-portal entries in `.claude/settings.json`. Add `Bash(bun run .agents/skills/<name>/cli/src/cli.ts:*)` to `permissions.allow` there **and** to `ALLOWED_PERMISSIONS` in `tools/security_guards.py` in the same commit - the guard fails the fork's CI on a settings entry it does not know, which is the review step working as intended. Until both are in place, `/scrape` prompts on each call of this portal's CLI; the generated `SKILL.md`'s own `allowed-tools` line covers only turns that invoke that skill directly.
-   - Optionally add WebSearch/`site:` placeholder queries for that board in `.claude/skills/job-scraper/search-queries.md` (use the `[YOUR_JOB_BOARD]` style placeholders already there) so the fallback path still covers the board if the CLI is unavailable.
-2. Remind the user to add the install line for their own records if they maintain a fork README:
+1. Pergunte se a pessoa quer o portal novo na estratégia de busca do `/scrape`. Se quiser:
+   - A CLI do portal já é encontrada automaticamente pelo `/scrape` (ele descobre `.agents/skills/*/SKILL.md`) — não é preciso mais nenhuma ligação para busca e detalhe pela CLI.
+   - **A pré-aprovação é por portal e deliberada.** O `/scrape` roda a CLI pelo Bash, e as únicas permissões permanentes são as entradas por portal em `.claude/settings.json`. Acrescente `Bash(bun run .agents/skills/<nome>/cli/src/cli.ts:*)` a `permissions.allow` ali **e** a `ALLOWED_PERMISSIONS` em `tools/security_guards.py` no mesmo commit — o guarda reprova o CI do fork por uma entrada de settings que ele não conhece, e esse é o passo de revisão funcionando como deve. Até as duas estarem no lugar, o `/scrape` pede permissão a cada chamada da CLI deste portal; a linha `allowed-tools` do próprio `SKILL.md` gerado só cobre as rodadas que acionam aquela skill diretamente.
+   - Opcionalmente, acrescente buscas `site:` de reserva para esse portal em `.claude/skills/job-scraper/search-queries.md`, para o plano B continuar cobrindo o portal se a CLI não estiver disponível.
+2. Lembre a pessoa de anotar a linha de instalação, se ela mantiver um README no fork:
    ```bash
-   cd .agents/skills/<name>/cli && bun install && cd ../../../..
+   cd .agents/skills/<nome>/cli && bun install && cd ../../../..
    ```
-   (Skip if the skill is zero-dependency and they don't care about typecheck types.)
-3. Note that the skill auto-triggers from its `SKILL.md` description - no other wiring is needed.
-4. CI coverage is also automatic: the `cli-checks` job discovers every `.agents/skills/*/cli/package.json`, so the new CLI's `typecheck` and `test` scripts run on every push to the fork without editing the workflow.
+   (Pule se a skill não tiver dependências e a pessoa não se importar com os tipos do typecheck.)
+3. Explique que a skill é ativada sozinha pela descrição do `SKILL.md` — não precisa de mais nenhuma ligação.
+4. A cobertura de CI também é automática: o job `cli-checks` descobre todo `.agents/skills/*/cli/package.json`, então os scripts `typecheck` e `test` da CLI nova rodam a cada push no fork sem editar o workflow.
 
 ---
 
-## Step 6: Confirm
+## Passo 6: Confirmar
 
-Present a summary:
+Apresente um resumo:
 
-> **Portal skill `<name>` generated and verified.**
+> **Skill de portal `<nome>` gerada e verificada.**
 >
-> - Files: `.agents/skills/<name>/` (SKILL.md, url-reference.md, CLI with tests)
-> - Live test: `search "<test query>"` returned <N> results; `detail` verified on one posting
-> - Data source: <endpoint summary>; <personal-use warning noted, if applicable>
+> - Arquivos: `.agents/skills/<nome>/` (SKILL.md, url-reference.md, CLI com testes)
+> - Teste ao vivo: `search "<busca de teste>"` devolveu <N> resultados; `detail` verificado numa vaga
+> - Fonte de dados: <resumo do endpoint>; <aviso de uso pessoal registrado, se for o caso>
 >
-> Try it: `bun run .agents/skills/<name>/cli/src/cli.ts search -q "<test query>" --format table`
+> Experimente: `bun run .agents/skills/<nome>/cli/src/cli.ts search -q "<busca de teste>" --format table`
 >
-> Per upstream policy, market-specific skills like this live in your fork rather than being PR'd upstream. If the portal changes its markup later, `url-reference.md` records the parsing anchors to update.
+> Se o portal mudar a marcação depois, o `url-reference.md` registra as âncoras de leitura a atualizar.
 
 ---
 
-## Design Principles
+## Princípios de projeto
 
-- The generator is country-agnostic; its output is market-specific and stays in the user's fork. This matches the repo policy that upstream stays a universal template.
-- Investigation before scaffolding: the command never generates parsers from guesses - Step 2 fetches real responses first, and Step 4 verifies against live data before anything is registered.
-- The portal-skill contract keeps every generated skill interchangeable with the shipped ones: same commands, same flags, same output shape, same error convention.
-- Zero runtime dependencies by default, matching `linkedin-search` - a portal skill should run on a fresh clone with nothing but `bun`.
-- Access rules are surfaced, not silently bypassed: auth-walled portals are declined, robots.txt/ToS restrictions are reported to the user, and restricted portals get a prominent personal-use-only warning in the generated skill.
-- Credentials live in the environment, never in the repo: a generated skill reads its token from an environment variable, fails loudly when it is unset, and never commits it. Per-call cost is disclosed before the skill is generated, not discovered afterwards.
+- O gerador não depende de país; a saída é específica do mercado e fica no fork da pessoa.
+- Investigação antes da montagem: o comando nunca gera leitores a partir de chutes — o Passo 2 coleta respostas reais primeiro, e o Passo 4 verifica contra dados ao vivo antes de registrar qualquer coisa.
+- O contrato das skills de portal mantém toda skill gerada intercambiável com as que vêm no projeto: mesmos comandos, mesmas opções, mesmo formato de saída, mesma convenção de erros.
+- Zero dependências de execução por padrão, como o `linkedin-search` e o `gupy-search` — uma skill de portal deve rodar num clone novo só com o `bun`.
+- As regras de acesso aparecem, não são contornadas em silêncio: portais atrás de login são recusados, restrições de `robots.txt` e de termos são comunicadas à pessoa, e portais com restrição ganham um aviso destacado de uso apenas pessoal.
+- Credenciais vivem no ambiente, nunca no repositório: uma skill gerada lê o token de uma variável de ambiente, falha com clareza quando ela não está definida e nunca o versiona. O custo por chamada é informado antes de a skill ser gerada, não descoberto depois.

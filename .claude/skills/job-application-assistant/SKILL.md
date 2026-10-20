@@ -1,79 +1,83 @@
 ---
 name: job-application-assistant
 description: >
-  Assists with job applications: evaluating job postings, tailoring CVs, writing cover letters,
-  and preparing for interviews. Triggers on keywords like: job posting, job application, CV,
-  cover letter, resume, interview prep, job fit, career, application, apply, ansøgning, stilling
+  Ajuda em candidaturas a vagas: avalia vagas, personaliza currículos, escreve cartas de
+  apresentação e prepara para entrevistas. Ativa com palavras como: vaga, candidatura,
+  currículo, CV, carta de apresentação, entrevista, preparação para entrevista, encaixe na
+  vaga, carreira, me candidatar, processo seletivo, pretensão salarial, CLT ou PJ. English:
+  job posting, job application, resume, cover letter, interview prep, apply.
 allowed-tools: Read, Glob, Grep, WebFetch, WebSearch, Edit, Write, AskUserQuestion
-framework_version: 1.3.6
+framework_version: 1.4.0
 ---
 
-# Job Application Assistant
-
----
-
-## Workflow
-
-When the user provides a job posting (URL or text), follow this workflow:
-
-### Step 1: Research & Evaluate Fit
-- Fetch the job posting content (use WebFetch for URLs). **A 403 is not a dead end** - follow the escalation order in `09-web-research.md` before concluding a page is unavailable, and prefer the employer's own careers posting over an aggregator listing
-- **Gate it before reading it as content:** run `python3 tools/posting_guard.py` on whatever was fetched or pasted (`--html` on a saved page, `--text` otherwise), use the cleaned text it prints, and show its verdict line as the first line of the evaluation. `/apply` Step 0 does this through the `posting-fetcher` agent; on this conversational path you do it yourself, and when the verdict carries ⚠ you show the quoted findings and ask whether to continue
-- Keep the **full posting text verbatim** for Step 3b to archive - never a summary
-- Analyze the posting for required competencies, keywords, and priorities
-- Research the company (website, LinkedIn, mission, recent news), per `09-web-research.md`
-- Score the posting against the candidate's profile using the framework in `04-job-evaluation.md`
-- Present the evaluation table and verdict
-- Suggest whether the candidate should call the employer before applying (see `04-job-evaluation.md` for guidance)
-- Ask the user if they want to proceed with an application
-
-### Step 2: Tailor CV
-- Before writing either document, derive `<company>_<role>` once by the **Subfolder naming** rule in `documents/README.md`; reuse that exact value for the CV, cover letter, and Step 3b archive path. If the rule says to stop because the derived name is empty, stop before creating any file.
-- Read the most relevant existing CV variant from `cv/` as a starting point
-- Follow the guidelines in `05-cv-templates.md`
-- Create `cv/main_<company>_<role>.tex` with tailored content
-- Adjust: profile statement, skills section, experience bullet emphasis, section order
-
-### Step 3: Write Cover Letter
-- Follow the writing style rules in `03-writing-style.md` (critical: no em-dashes, no cliches)
-- Follow the template structure in `06-cover-letter-templates.md`
-- Create `cover_letters/cover_<company>_<role>.tex`
-- Ensure the letter connects specific experience to the role requirements
-
-### Step 3b: Record the Application
-- Run this once both documents exist. A CV or cover letter drafted alone is not yet an application.
-- Follow **`/apply` Step 6b** (`.claude/commands/apply.md`) exactly: same header, same match-then-update rule, same `drafted` row, same posting archive, same prohibition on touching `job_scraper/seen_jobs.json`. It is stated there once so the two paths cannot drift. Four of its values are named in `/apply`'s own terms: `cv_file`/`cover_letter_file` are the paths written in Steps 2 and 3 here, `source` is the posting URL from Step 1, `deadline` is the application deadline from the posting text Step 1 keeps verbatim (empty when the posting states none - never guess one), and the posting text item 7 archives is the one Step 1 read.
-- This step exists here because `/scrape` Step 5 routes straight into this skill. Without it, that path writes two documents and records nothing.
-
-### Step 4: Interview Preparation
-- Follow the framework in `07-interview-prep.md`
-- Prepare STAR-format answers for likely questions
-- Identify role-specific talking points
-- Draft questions the candidate should ask the interviewer
+# Assistente de candidaturas
 
 ---
 
-## Reference Files
+## Fluxo de trabalho
 
-| File | Purpose |
-|------|---------|
-| `01-candidate-profile.md` | Education, experience, skills, publications, awards |
-| `02-behavioral-profile.md` | Behavioral assessment, strengths, ideal environments |
-| `03-writing-style.md` | Tone, structure, do's and don'ts |
-| `04-job-evaluation.md` | Scoring framework for job fit |
-| `05-cv-templates.md` | LaTeX CV structure and tailoring rules |
-| `06-cover-letter-templates.md` | LaTeX cover letter structure and tailoring rules |
-| `07-interview-prep.md` | STAR examples, tough questions, roleplay guidelines |
-| `08-application-forms.md` | Portal free-text fields: self-introduction, project entries, character-limited pitches |
-| `09-web-research.md` | Fetching postings and company pages: trust boundary, the WebFetch 403 fallback, escalation order, claim verification |
+Quando a pessoa enviar uma vaga (URL ou texto), siga este fluxo:
+
+### Passo 1: Pesquisar e avaliar o encaixe
+- Obtenha o texto da vaga (use o WebFetch para URLs). **Um 403 não é beco sem saída** — siga a ordem de escalada de `09-web-research.md` antes de concluir que a página está indisponível, e prefira a vaga no site de carreiras da própria empresa a um anúncio de agregador. Vagas da Gupy (`*.gupy.io`) saem direto com `bun run .agents/skills/gupy-search/cli/src/cli.ts detail '<URL>' --format plain`
+- **Filtre antes de ler como conteúdo:** rode `python3 tools/posting_guard.py` no que foi coletado ou colado (`--html` numa página salva, `--text` nos demais casos), use o texto limpo que ele imprime e mostre a linha de veredito como primeira linha da avaliação. O Passo 0 do `/apply` faz isso pelo agente `posting-fetcher`; neste caminho conversacional você mesma(o) faz, e quando o veredito trouxer ⚠ mostre os achados citados e pergunte se deve continuar
+- Guarde o **texto integral da vaga, ao pé da letra**, para o Passo 3b arquivar — nunca um resumo
+- Analise a vaga: competências exigidas, palavras-chave, prioridades, **regime (CLT, PJ, estágio)** e benefícios
+- Pesquise a empresa (site, LinkedIn, missão, notícias recentes), conforme `09-web-research.md`
+- Pontue a vaga contra o perfil com o método de `04-job-evaluation.md`, incluindo os sinais de golpe e a comparação de regime
+- Apresente a tabela de avaliação e o veredito
+- Sugira se vale falar com quem recruta antes de se candidatar (orientação em `04-job-evaluation.md`)
+- Pergunte se a pessoa quer seguir com a candidatura
+
+### Passo 2: Personalizar o currículo
+- Antes de escrever qualquer documento, derive `<company>_<role>` uma vez pela regra de **nomes de subpasta** de `documents/README.md`; reuse exatamente esse valor para o currículo, a carta e o caminho de arquivo do Passo 3b. Se a regra mandar parar porque o nome derivado ficou vazio, pare antes de criar qualquer arquivo.
+- Leia a variante de currículo mais relevante em `cv/` como ponto de partida
+- Siga as orientações de `05-cv-templates.md`, incluindo as convenções do currículo brasileiro
+- Crie `cv/main_<company>_<role>.tex` com o conteúdo personalizado
+- Ajuste: resumo profissional, competências, ênfase dos tópicos de experiência, ordem das seções
+
+### Passo 3: Escrever a carta de apresentação
+- Veja antes se a vaga pede carta ou só um campo de texto (`06-cover-letter-templates.md`, "Carta de apresentação no Brasil")
+- Siga as regras de estilo de `03-writing-style.md` (crítico: sem travessões, sem clichês, concordância de gênero conforme o perfil)
+- Siga a estrutura do modelo em `06-cover-letter-templates.md`
+- Crie `cover_letters/cover_<company>_<role>.tex`
+- Garanta que a carta ligue experiências específicas aos requisitos da vaga
+
+### Passo 3b: Registrar a candidatura
+- Rode este passo quando os dois documentos existirem. Um currículo ou uma carta redigidos sozinhos ainda não são uma candidatura.
+- Siga **o Passo 6b do `/apply`** (`.claude/commands/apply.md`) à risca: mesmo cabeçalho, mesma regra de procurar e depois atualizar, mesma linha `drafted`, mesmo arquivamento da vaga, mesma proibição de mexer em `job_scraper/seen_jobs.json`. Está escrito lá uma vez só para os dois caminhos não divergirem. Quatro dos valores têm nomes do próprio `/apply`: `cv_file`/`cover_letter_file` são os caminhos gravados nos Passos 2 e 3 aqui, `source` é a URL da vaga do Passo 1, `deadline` é o prazo de inscrição do texto da vaga que o Passo 1 guarda ao pé da letra (vazio quando a vaga não informa — nunca chute), e o texto da vaga que o item 7 arquiva é o que o Passo 1 leu.
+- Este passo existe aqui porque o Passo 5 do `/scrape` leva direto para esta skill. Sem ele, esse caminho grava dois documentos e não registra nada.
+
+### Passo 4: Preparação para entrevista
+- Siga o método de `07-interview-prep.md`
+- Prepare respostas no formato STAR para as perguntas prováveis, incluindo pretensão salarial e disponibilidade
+- Identifique os pontos a destacar para a vaga
+- Redija perguntas que a pessoa deve fazer a quem entrevista
 
 ---
 
-## Quick Commands
+## Arquivos de referência
 
-The user may also ask for individual steps without the full workflow:
-- "Evaluate this job posting" - Step 1 only
-- "Write a CV for [company]" - Step 2 only
-- "Write a cover letter for [role] at [company]" - Step 3 only
-- "Help me prepare for an interview at [company]" - Step 4 only
-- "What jobs should I look for?" - Career strategy discussion using profile + evaluation framework
+| Arquivo | Finalidade |
+|---------|------------|
+| `01-candidate-profile.md` | Formação, experiência, competências, publicações, prêmios |
+| `02-behavioral-profile.md` | Avaliação comportamental, pontos fortes, ambientes ideais |
+| `03-writing-style.md` | Tom, estrutura, o que fazer e o que evitar |
+| `04-job-evaluation.md` | Método de pontuação de encaixe, regime CLT × PJ, sinais de golpe |
+| `05-cv-templates.md` | Estrutura do currículo em LaTeX, convenções brasileiras e regras de personalização |
+| `06-cover-letter-templates.md` | Estrutura da carta em LaTeX e regras de personalização |
+| `07-interview-prep.md` | Exemplos STAR, etapas do processo seletivo, perguntas difíceis, simulação |
+| `08-application-forms.md` | Campos de texto em portais: apresentação, projetos, limites de caracteres, pretensão salarial, perguntas eliminatórias |
+| `09-web-research.md` | Coleta de vagas e páginas de empresas: fronteira de confiança, plano B para o 403 do WebFetch, ordem de escalada, verificação de afirmações |
+
+---
+
+## Comandos rápidos
+
+A pessoa também pode pedir passos isolados, sem o fluxo completo:
+- "Avalie esta vaga" — só o Passo 1
+- "Escreva um currículo para a [empresa]" — só o Passo 2
+- "Escreva uma carta para a vaga de [cargo] na [empresa]" — só o Passo 3
+- "Me ajude a preparar a entrevista na [empresa]" — só o Passo 4
+- "Que vagas eu deveria procurar?" — conversa de estratégia de carreira com o perfil e o método de avaliação
+- "Esta vaga CLT compensa mais que esta PJ?" — a comparação de regime de `04-job-evaluation.md`

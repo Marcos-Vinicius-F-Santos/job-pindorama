@@ -20,20 +20,20 @@ RESEARCH = REPO / ".claude" / "skills" / "job-application-assistant" / "09-web-r
 class ArchiveWiring(unittest.TestCase):
     def setUp(self):
         text = APPLY.read_text(encoding="utf-8")
-        self.step6b = re.search(r"### Step 6b: Record the Application(.*?)(?=### Application-Form Fields)", text, re.DOTALL).group(1)
+        self.step6b = re.search(r"### Passo 6b: Registrar a candidatura(.*?)(?=### Campos de formulário)", text, re.DOTALL).group(1)
 
     def test_archive_stores_cleaned_text_with_counts_only(self):
-        item7 = re.search(r"7\. \*\*Archive the posting now\.\*\*(.*?)(?=\n\n|\Z)", self.step6b, re.DOTALL).group(1)
-        self.assertIn("verbatim", item7)  # still never a summary (test_apply_records_application pins it too)
+        item7 = re.search(r"7\. \*\*Arquive a vaga agora\.\*\*(.*?)(?=\n\n|\Z)", self.step6b, re.DOTALL).group(1)
+        self.assertIn("ao pé da letra", item7)  # still never a summary (test_apply_records_application pins it too)
         self.assertIn("posting_guard", item7)
-        self.assertIn("counts", item7)
-        self.assertRegex(item7, r"never .*excerpt", "removed content must not be re-archived as quotes")
+        self.assertIn("contagens", item7)
+        self.assertRegex(item7, r"nunca .*trechos", "removed content must not be re-archived as quotes")
 
 
 class InterviewWiring(unittest.TestCase):
     def test_step1_gates_the_archived_posting_in_text_mode(self):
         text = INTERVIEW.read_text(encoding="utf-8")
-        step1 = re.search(r"## Step 1: Load the Application Context(.*?)(?=\n## Step 2)", text, re.DOTALL).group(1)
+        step1 = re.search(r"## Passo 1: Carregar o contexto da candidatura(.*?)(?=\n## Passo 2)", text, re.DOTALL).group(1)
         self.assertIn("posting_guard", step1)
         self.assertIn("--text", step1)
 
@@ -44,9 +44,9 @@ class OtherFrontDoors(unittest.TestCase):
 
     def test_skill_step1_names_the_gate(self):
         text = (REPO / ".claude" / "skills" / "job-application-assistant" / "SKILL.md").read_text(encoding="utf-8")
-        step1 = re.search(r"### Step 1: Research & Evaluate Fit(.*?)(?=### Step 2)", text, re.DOTALL).group(1)
+        step1 = re.search(r"### Passo 1: Pesquisar e avaliar o encaixe(.*?)(?=### Passo 2)", text, re.DOTALL).group(1)
         self.assertIn("posting_guard", step1)
-        self.assertIn("framework_version: 1.3.6", text)
+        self.assertIn("framework_version: 1.4.0", text)
 
     def test_outcome_fresh_fetch_is_gated(self):
         text = (REPO / ".claude" / "commands" / "outcome.md").read_text(encoding="utf-8")
@@ -54,8 +54,8 @@ class OtherFrontDoors(unittest.TestCase):
 
     def test_interview_fetch_fallback_is_gated(self):
         text = INTERVIEW.read_text(encoding="utf-8")
-        step1 = re.search(r"## Step 1: Load the Application Context(.*?)(?=\n## Step 2)", text, re.DOTALL).group(1)
-        fallback = re.search(r"2\. \*\*Fallbacks\*\*(.*?)(?=\n3\. )", step1, re.DOTALL).group(1)
+        step1 = re.search(r"## Passo 1: Carregar o contexto da candidatura(.*?)(?=\n## Passo 2)", text, re.DOTALL).group(1)
+        fallback = re.search(r"2\. \*\*Planos B\*\*(.*?)(?=\n3\. )", step1, re.DOTALL).group(1)
         self.assertIn("posting_guard", fallback)
 
     def test_scratchpad_is_guarded_everywhere_the_gate_writes(self):
@@ -76,9 +76,9 @@ class OtherFrontDoors(unittest.TestCase):
 class TrustBoundaryWiring(unittest.TestCase):
     def test_09_trust_boundary_names_the_gate(self):
         text = RESEARCH.read_text(encoding="utf-8")
-        boundary = re.search(r"## Trust boundary(.*?)(?=\n## )", text, re.DOTALL).group(1)
+        boundary = re.search(r"## Fronteira de confiança(.*?)(?=\n## )", text, re.DOTALL).group(1)
         self.assertIn("posting_guard", boundary)
-        self.assertIn("framework_version: 1.1.5", text)
+        self.assertIn("framework_version: 1.2.0", text)
 
 
 if __name__ == "__main__":

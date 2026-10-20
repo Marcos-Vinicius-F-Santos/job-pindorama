@@ -1,110 +1,107 @@
-# freehire.me API reference
+# Referência da API do freehire.me
 
-The endpoints, parameters, and response shapes this skill depends on. This is the
-file to update if the freehire API changes. Base URL defaults to
-`https://freehire.me` and is overridable via the `FREEHIRE_API_URL` env var.
+Os endpoints, parâmetros e formatos de resposta de que esta skill depende. É o arquivo a
+atualizar se a API do freehire mudar. A URL base padrão é `https://freehire.me` e pode ser
+trocada pela variável de ambiente `FREEHIRE_API_URL`.
 
-## Authentication
+## Autenticação
 
-None for reads. `GET /api/v1/jobs/*` and `/companies/*` are public; only per-user
-tracking mutations (`apply`/`save`/`me`) require a bearer API key, and this skill
-does not use them.
+Nenhuma para leitura. `GET /api/v1/jobs/*` e `/companies/*` são públicos; só as mudanças de
+acompanhamento por usuário (`apply`/`save`/`me`) exigem uma chave de API bearer, e esta skill
+não as usa.
 
-Verified against the live API:
+Verificado contra a API real:
 
 | Endpoint | Status |
 |----------|--------|
 | `GET /api/v1/agent/jobs/search` | 200 |
-| `GET /api/v1/jobs/search` | 200 (the web variant; used by `--no-description`) |
+| `GET /api/v1/jobs/search` | 200 (a variante da web; usada pelo `--no-description`) |
 | `GET /api/v1/jobs/facets` | 200 |
 | `GET /api/v1/jobs/{slug}` | 200 |
-| `GET /api/v1/auth/me` | 401 (auth required — not used here) |
+| `GET /api/v1/auth/me` | 401 (exige autenticação — não usado aqui) |
 
 ## Envelope
 
-Every response is `{ "data": ..., "meta": {...}, "error": "..." }`. Lists put the
-array in `data` and pagination in `meta` (`{ total, limit, offset }`); a single
-item puts the object in `data`. Errors are `{ "error": "<message>" }` with a 4xx/5xx
-status (e.g. 404 → `{ "error": "not found" }`).
+Toda resposta é `{ "data": ..., "meta": {...}, "error": "..." }`. Listas põem o array em
+`data` e a paginação em `meta` (`{ total, limit, offset }`); um item único põe o objeto em
+`data`. Erros são `{ "error": "<mensagem>" }` com status 4xx/5xx (ex.: 404 → `{ "error": "not found" }`).
 
 ## `GET /api/v1/agent/jobs/search`
 
-The endpoint the skill's `search` command uses. Full-text + facet search over open
-jobs, returning `data: [job, …]` with `meta.total` = the estimated match count.
+O endpoint que o comando `search` da skill usa. Busca por texto completo + facetas nas vagas
+abertas, devolvendo `data: [vaga, …]` com `meta.total` = a contagem estimada.
 
-It runs the **same query** as the web-facing `/api/v1/jobs/search` — same `q`, same
-facets, same ranking, same pagination guard (`offset + limit ≤ 10000`) — and differs
-in one respect: it replaces the search index's truncated `description`
-preview with the posting's **full** description read from the database. That is what
-lets a search of N roles stay one request instead of N + 1.
+Roda a **mesma consulta** do `/api/v1/jobs/search` da web — mesmo `q`, mesmas facetas, mesma
+ordenação, mesmo limite de paginação (`offset + limit ≤ 10000`) — e difere num ponto: troca o
+trecho truncado de `description` do índice de busca pela descrição **completa** da vaga, lida
+do banco de dados. É isso que faz uma busca de N vagas ser um pedido só, em vez de N + 1.
 
-It always does so - there is no parameter to turn hydration off - so the skill's
-`--no-description` mode calls `/api/v1/jobs/search` instead. One extra parameter
-controls the rendering:
+Ele sempre faz isso — não há parâmetro para desligar —, então o modo `--no-description` da
+skill chama o `/api/v1/jobs/search`. Um parâmetro extra controla a apresentação:
 
-| Param | Maps to CLI flag | Notes |
-|-------|------------------|-------|
-| `description_format` | `--description-format` | `markdown` (the skill's default), `text`, or `html`. **An unrecognized value is not an error** — the API falls back to `html`, so the CLI validates the flag itself. |
+| Parâmetro | Opção da CLI | Observações |
+|-----------|--------------|-------------|
+| `description_format` | `--description-format` | `markdown` (o padrão da skill), `text` ou `html`. **Um valor não reconhecido não é erro** — a API cai para `html`, então a CLI valida a opção sozinha. |
 
-Hydration is best-effort per hit: a result whose row has vanished from the database
-(the index lagging a just-removed job) keeps the preview rather than being dropped,
-so `description` is a full text in practice but never guaranteed to be.
+A descrição completa é obtida na base do melhor esforço por resultado: um resultado cuja linha
+sumiu do banco (o índice atrasado em relação a uma vaga recém-removida) mantém o trecho em vez
+de ser descartado, então `description` é texto completo na prática, mas nunca garantido.
 
-A `404` from this path means the instance predates the endpoint (a self-hosted
-freehire behind `FREEHIRE_API_URL`), not a missing job; the CLI reports it as an
-error naming the path rather than as an empty result set.
+Um `404` neste caminho significa que a instância é anterior ao endpoint (um freehire
+auto-hospedado atrás do `FREEHIRE_API_URL`), não uma vaga ausente; a CLI informa como erro,
+citando o caminho, e não como lista vazia.
 
 ## `GET /api/v1/jobs/search`
 
-The web variant of the same search — identical query surface, but `description` is
-always the index's truncated preview. The skill calls it for `--no-description`,
-where reading every full body from the database would be wasted work.
+A variante da web da mesma busca — mesma superfície de consulta, mas `description` é sempre o
+trecho truncado do índice. A skill a chama no `--no-description`, quando ler todos os corpos
+completos do banco seria trabalho jogado fora.
 
-Query parameters used by the skill:
+Parâmetros de consulta usados pela skill:
 
-| Param | Maps to CLI flag | Notes |
-|-------|------------------|-------|
-| `q` | `--query` / `-q` | Keyword full-text query. Uppercase `OR` separates up to 5 alternatives (more is a 400); a leading `title:` restricts an alternative to the title. |
-| `limit` | `--limit` / `-n` | Page size. Default 25 in the CLI. |
-| `offset` | (derived) | `offset = (page - 1) * limit`. |
-| `posted_within_days` | `--jobage` | Restrict to postings from the last N days. |
-| `regions` | `--region` | Repeatable; OR within the facet. Values: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis`. `us` is a country (`countries`), not a region. |
-| `countries` | `--country` | Repeatable; ISO-3166 alpha-2 (lowercased). |
-| `cities` | `--city` | Repeatable; display-name city. |
-| `seniority` | `--seniority` | Repeatable; `junior`, `middle`, `senior`, `staff`, … |
-| `category` | `--category` | Repeatable; `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, … |
-| `skills` | `--skill` | Repeatable; canonical skill names. |
-| `company_slug` | `--company` | Single company. |
+| Parâmetro | Opção da CLI | Observações |
+|-----------|--------------|-------------|
+| `q` | `--query` / `-q` | Consulta por texto completo. `OR` em maiúsculas separa até 5 alternativas (mais que isso é um 400); um `title:` no começo restringe uma alternativa ao título. |
+| `limit` | `--limit` / `-n` | Tamanho da página. Padrão 25 na CLI. |
+| `offset` | (derivado) | `offset = (página - 1) * limit`. |
+| `posted_within_days` | `--jobage` | Restringe a vagas dos últimos N dias. |
+| `regions` | `--region` | Repetível; OU dentro da faceta. Valores: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis`. `us` é um país (`countries`), não uma região. |
+| `countries` | `--country` | Repetível; ISO-3166 alfa-2 (em minúsculas). Para o Brasil: `br`. |
+| `cities` | `--city` | Repetível; nome de exibição da cidade. |
+| `seniority` | `--seniority` | Repetível; `junior`, `middle`, `senior`, `staff`, … |
+| `category` | `--category` | Repetível; `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, … |
+| `skills` | `--skill` | Repetível; nomes canônicos de competências. |
+| `company_slug` | `--company` | Uma empresa. |
 | `work_mode` | `--remote` | `remote` \| `hybrid` \| `onsite`. |
-| any facet param | `--facet key=value` | Escape hatch for the long tail (e.g. `salary_min`, `visa_sponsorship`, `employment_type`, `english_level`). |
+| qualquer parâmetro de faceta | `--facet chave=valor` | Válvula de escape para o resto (ex.: `salary_min`, `visa_sponsorship`, `employment_type`, `english_level`). |
 
-Repeated params (`?seniority=senior&seniority=staff`) are ORed within a facet;
-different facets are ANDed (geography ORs into one location group). Deep paging is
-bounded server-side (`offset + limit ≤ 10000`).
+Parâmetros repetidos (`?seniority=senior&seniority=staff`) viram OU dentro da faceta; facetas
+diferentes viram E (a geografia vira OU num grupo de local). A paginação profunda é limitada
+no servidor (`offset + limit ≤ 10000`).
 
-### Job object (the fields the skill reads)
+### Objeto de vaga (os campos que a skill lê)
 
 ```jsonc
 {
-  "public_slug": "golang-zensar-2bxu6dxm", // -> result.id, and detail's <slug>
+  "public_slug": "golang-zensar-2bxu6dxm", // -> result.id, e o <slug> do detail
   "source": "oracle",
   "external_id": "…",
-  "url": "https://…",                       // the real posting URL (ATS host)
+  "url": "https://…",                       // a URL real da vaga (host do ATS)
   "title": "GOLANG",
   "company": "Zensar",
   "company_slug": "zensar",
-  "location": "India",                       // free-text ATS location
-  "description": "- …",                      // agent search: full text in the requested
-                                             // format; elsewhere HTML, stripped client-side
-  "skills": ["go", "kubernetes", …],         // dictionary facet (top-level)
-  "work_mode": "remote",                     // may be absent
-  "regions": ["apac"],                       // dictionary/hybrid facet
+  "location": "India",                       // local em texto livre, do ATS
+  "description": "- …",                      // busca do agente: texto completo no formato
+                                             // pedido; nos demais casos HTML, limpo na CLI
+  "skills": ["go", "kubernetes", …],         // faceta de dicionário (nível superior)
+  "work_mode": "remote",                     // pode faltar
+  "regions": ["apac"],                       // faceta de dicionário/híbrida
   "countries": ["in"],
   "cities": [],
   "collections": [],
-  "posted_at": "2026-07-06T00:00:00Z",       // -> result.date (nullable)
+  "posted_at": "2026-07-06T00:00:00Z",       // -> result.date (pode ser nulo)
   "created_at": "2026-07-06T15:25:…Z",
-  "enrichment": {                             // nested, typed; {} when unenriched
+  "enrichment": {                             // aninhado, tipado; {} quando não enriquecido
     "seniority": "senior",
     "category": "backend",
     "employment_type": "full_time",
@@ -113,33 +110,32 @@ bounded server-side (`offset + limit ≤ 10000`).
 }
 ```
 
-The internal numeric id is deliberately never exposed; `public_slug` is the stable
-identifier.
+O id numérico interno nunca é exposto de propósito; `public_slug` é o identificador estável.
 
 ## `GET /api/v1/jobs/{slug}`
 
-A single job by its `public_slug`. Returns the same job object in `data`. A closed
-posting is still served here (with a non-null `closed_at`); a missing slug is 404
-`{ "error": "not found" }`. The skill's `detail` command maps a 404 to a
-`NOT_FOUND` error on stderr.
+Uma vaga pelo `public_slug`. Devolve o mesmo objeto de vaga em `data`. Uma vaga encerrada
+continua sendo servida aqui (com `closed_at` não nulo); um slug ausente é 404
+`{ "error": "not found" }`. O comando `detail` da skill transforma um 404 num erro `NOT_FOUND`
+no stderr.
 
 ## `GET /api/v1/jobs/facets`
 
-The market's facet-value distributions under an optional filter — each facet's live
-values with counts. `data.facets` is `{ <facet>: { <value>: <count> } }`. This skill
-does not call it programmatically, but it is the vocabulary source the SKILL.md
-points users to (`?q=<role>` scopes the counts). Example:
-`GET /api/v1/jobs/facets?q=react`.
+As distribuições dos valores de faceta do mercado sob um filtro opcional — os valores atuais
+de cada faceta, com contagens. `data.facets` é `{ <faceta>: { <valor>: <contagem> } }`. Esta
+skill não o chama por programa, mas é a fonte de vocabulário que o SKILL.md indica
+(`?q=<cargo>` limita as contagens). Exemplo: `GET /api/v1/jobs/facets?q=react`.
 
-## Parsing notes
+## Observações de leitura
 
-- The response is JSON, so there is no HTML card parsing (unlike the scraping
-  portals). The only markup handling left client-side is `detail`'s: `/jobs/{slug}`
-  serves HTML, which `cleanHtml` (`cli/src/helpers.ts`) strips into readable text.
-  Search descriptions arrive already rendered by the API and are passed through
-  verbatim — stripping them again would undo the Markdown structure.
-- Fetch sends `User-Agent: MadsLorentzen/ai-job-search/1.0 (+https://github.com/MadsLorentzen/ai-job-search; freehire-search)`
-  and `Accept: application/json`, and uses exponential backoff with jitter on 429/5xx (max 6 retries). A connection error (API
-  unreachable) fails fast with a clear message — no retry, since it is not
-  transient server load — which is the graceful-degradation contract: an outage
-  degrades this source quickly instead of hanging the caller.
+- A resposta é JSON, então não há leitura de cartões HTML (ao contrário dos portais
+  raspados). O único tratamento de marcação que sobra na CLI é o do `detail`: o
+  `/jobs/{slug}` serve HTML, que o `cleanHtml` (`cli/src/helpers.ts`) transforma em texto
+  legível. As descrições da busca chegam já apresentadas pela API e passam sem mudança —
+  limpá-las de novo desfaria a estrutura em Markdown.
+- A coleta envia `User-Agent: MadsLorentzen/ai-job-search/1.0 (+https://github.com/MadsLorentzen/ai-job-search; freehire-search)`
+  e `Accept: application/json`, e usa espera progressiva com variação aleatória em 429/5xx
+  (no máximo 6 novas tentativas). Um erro de conexão (API inacessível) falha rápido, com
+  mensagem clara — sem nova tentativa, porque não é carga passageira do servidor —, que é o
+  contrato de degradação elegante: uma queda degrada esta fonte depressa, em vez de travar
+  quem chamou.

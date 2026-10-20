@@ -55,12 +55,12 @@ class ApplyRecordsApplication(unittest.TestCase):
     """/apply Step 6b writes the row that six other commands read."""
 
     def setUp(self):
-        self.step_6b = section(APPLY, "### Step 6b: Record the Application")
+        self.step_6b = section(APPLY, "### Passo 6b: Registrar a candidatura")
 
     def test_step_writes_a_drafted_row_with_both_document_paths(self):
         for fragment in (
             "| `status` | `drafted` |",
-            '| `cv_file`, `cover_letter_file` | the two paths listed under "Files Created"',
+            '| `cv_file`, `cover_letter_file` | os dois caminhos listados em "Arquivos criados"',
         ):
             self.assertIn(
                 fragment,
@@ -124,13 +124,13 @@ class ApplyRecordsApplication(unittest.TestCase):
         divergence the shared-header rule exists to prevent.
         """
         last_column = TRACKER_HEADER.rsplit(",", 1)[1]
-        outcome_step_1 = section(OUTCOME, "## Step 1: Load State and Identify the Application")
+        outcome_step_1 = section(OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura")
         for name, text in (
-            ("apply.md Step 6b", section(APPLY, "### Step 6b: Record the Application")),
+            ("apply.md Step 6b", section(APPLY, "### Passo 6b: Registrar a candidatura")),
             ("outcome.md Step 1", outcome_step_1),
         ):
             self.assertIn(
-                f"append `,{last_column}` to the header line",
+                f"acrescente `,{last_column}` só à linha de cabeçalho",
                 text,
                 f"{name}'s migration does not append the header's own last column "
                 f"({last_column!r}) - a tracker migrated by this command would not "
@@ -145,8 +145,8 @@ class ApplyRecordsApplication(unittest.TestCase):
         """
         text = APPLY.read_text(encoding="utf-8")
         self.assertLess(
-            text.index("### Step 6b: Record the Application"),
-            text.index("### Application-Form Fields"),
+            text.index("### Passo 6b: Registrar a candidatura"),
+            text.index("### Campos de formulário"),
             "Step 6b moved after the optional-artifact offer, which ends the turn "
             "on a question - the tracker row would be skipped whenever the user "
             "never answers",
@@ -154,7 +154,7 @@ class ApplyRecordsApplication(unittest.TestCase):
 
     def test_matched_row_is_never_moved_backwards(self):
         self.assertIn(
-            "never move it backwards",
+            "nunca a faça andar para trás",
             self.step_6b,
             "Step 6b lost the rule protecting a submitted row - re-running /apply "
             "to refresh a CV would reset a live interview back to drafted",
@@ -163,7 +163,7 @@ class ApplyRecordsApplication(unittest.TestCase):
     def test_redraft_marker_is_undated(self):
         """/outcome reads the latest dated note as the last activity."""
         self.assertIn(
-            "undated `redrafted` marker",
+            "marcador `redrafted` sem data",
             self.step_6b,
             "a dated redraft marker resets /outcome's days-quiet clock, hiding a "
             "genuinely quiet application from the follow-up offer",
@@ -171,16 +171,16 @@ class ApplyRecordsApplication(unittest.TestCase):
 
     def test_seen_jobs_is_left_alone(self):
         self.assertIn(
-            "Do not modify `job_scraper/seen_jobs.json`",
+            "Não modifique `job_scraper/seen_jobs.json`",
             self.step_6b,
             "drafting is not applying, and that file has no honest value for either",
         )
 
     def test_skill_defers_to_apply_rather_than_restating(self):
         """/scrape Step 5 routes into the skill, bypassing /apply entirely."""
-        step_3b = section(SKILL, "### Step 3b: Record the Application")
+        step_3b = section(SKILL, "### Passo 3b: Registrar a candidatura")
         self.assertIn(
-            "`/apply` Step 6b",
+            "Passo 6b do `/apply`",
             step_3b,
             "the skill's recording step no longer points at the canonical rule, so "
             "the two copies can drift",
@@ -198,36 +198,36 @@ class DraftedMeansDraftedToEveryReader(unittest.TestCase):
     """
 
     CASES = [
-        (HTML_REPORT, None, "`drafted` → **Drafted**",
+        (HTML_REPORT, None, "`drafted` → **Rascunho**",
          "a status with no bucket is dropped from every statistic"),
-        (HTML_REPORT, "## Step 2: Compute Summary Stats",
-         "excluded from every statistic below",
+        (HTML_REPORT, "## Passo 2: Calcular as estatísticas",
+         "fora de todas as estatísticas abaixo",
          "the headline count would include applications that were never sent"),
-        (OUTCOME, "## Step 2b: Follow-Up Branch", "neither final nor `drafted`",
+        (OUTCOME, "## Passo 2b: Ramo de follow-up", "nem final nem `drafted`",
          "it would chase an employer who received nothing"),
-        (OUTCOME, "## Step 4: Update the Tracker",
-         "overwrite its `date` column with the actual submission date",
+        (OUTCOME, "## Passo 4: Atualizar o tracker",
+         "sobrescreva a coluna `date` com a data real de envio",
          "the drafting date would be reported as the application date"),
-        (GMAIL_SYNC, None, "`drafted` rows stay in this set",
+        (GMAIL_SYNC, None, "Linhas `drafted` ficam neste conjunto",
          "excluding them discards the row that identifies a submitted-but-"
          "unrecorded application, which is the recovery #269 asks for"),
-        (GMAIL_SYNC, "## Step 5", "`drafted` -> `applied`, otherwise",
+        (GMAIL_SYNC, "## Passo 5", "`drafted` -> `applied`; nos demais casos",
          "the acknowledgement is the one email that proves a hand-submitted "
          "application was sent; classified as noise, the recovery never fires"),
-        (GMAIL_SYNC, "### Step 7a", "also set `date` to the email's date",
+        (GMAIL_SYNC, "### Passo 7a", "defina também a `date` como a data do e-mail",
          "the row would keep the drafting date after being proved submitted"),
-        (GMAIL_SYNC, "## Step 9: Staleness Check", "Skip `drafted` rows here",
+        (GMAIL_SYNC, "## Passo 9: Checagem de candidaturas paradas", "Pule as linhas `drafted` aqui",
          "an unsent draft reported as a forgotten application"),
-        (NOTION_SYNC, None, "omit when the status is `drafted`",
+        (NOTION_SYNC, None, "omita quando o status for `drafted`",
          "an 'Applied on' date for a job never applied to"),
-        (NOTION_SYNC, None, "not yet submitted",
+        (NOTION_SYNC, None, "ainda não enviadas",
          "page bodies are write-once, so calling drafts 'submitted documents' "
          "is permanent even after /outcome records the real submission"),
-        (SCRAPER, None, "do not add a second row",
+        (SCRAPER, None, "não acrescente uma segunda linha",
          "/scrape would duplicate the row Step 3b just wrote"),
-        (APPLY, "### Step 6b: Record the Application", "bare number, 0-100",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "número puro, de 0 a 100",
          "/upskill divides by fit_rating, so `72/100` or a verdict word breaks it"),
-        (APPLY, "### Step 6b: Record the Application", "append a new row",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "acrescente uma linha nova",
          "re-applying after a rejection would overwrite the old application"),
     ]
 
@@ -255,52 +255,52 @@ class ApplyArchivesThePosting(unittest.TestCase):
     """Step 6b must also write the posting text it is holding to the archive."""
 
     CASES = [
-        (APPLY, "## Step 0: Parse Input",
-         "full posting text verbatim",
+        (APPLY, "## Passo 0: Interpretar a entrada",
+         "texto integral da vaga, ao pé da letra",
          "by Step 6b the model may hold only a summary, so the archive gets a "
          "paraphrase - what /outcome Step 3.2 forbids"),
-        (APPLY, "### Step 6b: Record the Application",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
          "`documents/applications/<company>_<role>/job_posting.md`",
          "the one moment /apply provably holds the posting is spent again, and "
          "a pasted posting has no recovery path at all"),
-        (APPLY, "### Step 6b: Record the Application",
-         "never a fresh fetch",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "nunca uma coleta nova",
          "a model that no longer holds the text would re-fetch to comply, the "
          "dead-URL path this whole item exists to avoid"),
-        (APPLY, "### Step 6b: Record the Application",
-         "`/outcome` Step 1.4",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "Passo 1.4 do `/outcome`",
          "the derivation is no longer pinned to /outcome's, so a later edit to "
          "either can silently orphan the archive"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "4. Derive the archive folder name",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura",
+         "4. Derive o nome da pasta de arquivo",
          "apply.md item 7 defers its folder derivation to /outcome Step 1.4 by "
          "number; renumbering Step 1 leaves that citation dangling"),
-        (APPLY, "### Step 6b: Record the Application",
-         "**If the file already exists, leave it**",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "**Se o arquivo já existir, deixe-o como está**",
          "re-running /apply to refresh a CV would overwrite the posting that "
          "was actually applied against"),
-        (APPLY, "### Step 6b: Record the Application",
-         "keeps the older posting",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "mantém a vaga mais antiga",
          "the leave-it rule would read as if the folder is always fresh, hiding "
          "that a re-application to the same role collides with the old archive"),
-        (APPLY, "### Step 6b: Record the Application",
-         "left in place rather than written",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "foi mantido em vez de gravado",
          "the skip discards the current posting silently, and /interview preps "
          "against the earlier application's posting"),
-        (APPLY, "### Step 6b: Record the Application",
-         "never reconstruct it from memory",
+        (APPLY, "### Passo 6b: Registrar a candidatura",
+         "nunca a reconstrua de memória",
          "a model that reached Step 6b without the text could satisfy none of "
          "item 7's constraints, and would write a remembered posting instead"),
-        (SKILL, "### Step 1: Research & Evaluate Fit",
-         "full posting text verbatim",
+        (SKILL, "### Passo 1: Pesquisar e avaliar o encaixe",
+         "texto integral da vaga, ao pé da letra",
          "the /scrape path never runs /apply Step 0, so nothing stops it "
          "compressing the posting before Step 3b archives it"),
-        (SKILL, "### Step 3b: Record the Application",
-         "same posting archive",
+        (SKILL, "### Passo 3b: Registrar a candidatura",
+         "mesmo arquivamento da vaga",
          "the /scrape path reaches Step 3b without running /apply, and its "
          "closed enumeration of Step 6b's rules would omit the archive write"),
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "if it already exists, leave it",
+        (OUTCOME, "## Passo 3: Arquivar os materiais da candidatura",
+         "se já existir, deixe como está",
          "/outcome would overwrite /apply's archived posting with a re-fetch, "
          "the dead-URL branch the /apply write exists to avoid"),
     ]
@@ -321,59 +321,59 @@ class DeadlineSurvivesEveryWrite(unittest.TestCase):
     """
 
     CASES = [
-        (APPLY, "### Step 6b: Record the Application", "append `,deadline` to the header line only",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "acrescente `,deadline` só à linha de cabeçalho",
          "a mid-header insert shifts every existing row's values by one position"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "append `,deadline` to the header line only",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura",
+         "acrescente `,deadline` só à linha de cabeçalho",
          "the two commands must migrate identically, or whichever runs first sets the schema"),
-        (APPLY, "## Step 0: Parse Input", "application deadline",
+        (APPLY, "## Passo 0: Interpretar a entrada", "prazo de inscrição",
          "Step 6b's value is supposed to come from Step 0's extraction, so the extraction "
          "must be stated where the posting text is still held in full"),
-        (APPLY, "### Step 6b: Record the Application", "Never guess one",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "Nunca chute um",
          "the deadline must stay empty when the posting states none - a guessed date is "
          "the urgency clock firing on a date nobody set"),
-        (APPLY, "### Step 6b: Record the Application", "leave an existing deadline alone",
-         "absence is not a correction: a run that extracted no deadline must not blank "
+        (APPLY, "### Passo 6b: Registrar a candidatura", "mantenha um prazo existente",
+         "ausência não é correção: a run that extracted no deadline must not blank "
          "the one /apply already wrote"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "Deadline urgency",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura", "Urgência de prazo",
          "a drafted row has nothing applied so the quiet clock must not run on it - the "
          "deadline is the only clock that applies, and it must not be omitted"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "never chased",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura", "nunca é cobrada",
          "surfacing the deadline must not drag drafted rows into the follow-up offer"),
-        (OUTCOME, "## Step 4: Update the Tracker", "preserve every other field of the row",
+        (OUTCOME, "## Passo 4: Atualizar o tracker", "preserve todos os outros campos da linha",
          "a status update that rewrites the row would blank the deadline column"),
-        (GMAIL_SYNC, "### Step 7a: Write Approved Updates", "preserve every other field",
+        (GMAIL_SYNC, "### Passo 7a: Gravar as atualizações aprovadas", "preserve todos os outros campos",
          "the sync path rewrites the row too - it must carry the same preservation rule"),
-        (NOTION_SYNC, None, "**Deadline precedence: the tracker wins too**",
+        (NOTION_SYNC, None, "**Precedência de prazo: o tracker também vence**",
          "the tracker's deadline (written from the posting the application was actually "
          "built on) must override the scraper's stored value"),
-        (NOTION_SYNC, None, "tracker `deadline` column",
+        (NOTION_SYNC, None, "coluna `deadline` do tracker",
          "the Deadine property must name the tracker column as its source"),
-        (SKILL, "### Step 3b: Record the Application", "`deadline` is the application deadline",
+        (SKILL, "### Passo 3b: Registrar a candidatura", "`deadline` é o prazo de inscrição",
          "the /scrape path reaches Step 3b without running /apply Step 0, so it must "
          "still be told what the field is and where it comes from"),
         # The two properties the migration has to hold. Both are stated in the
         # prose of either file and neither was pinned, so either could be edited
         # away with a green suite - turning an agreed header-line append into a
         # row rewrite, which is a different and far riskier change.
-        (APPLY, "### Step 6b: Record the Application", "no data row is touched",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "nenhuma linha de dados é alterada",
          "a migration that rewrites rows is a different and far riskier change than "
          "one that appends to the header line, and only the second was agreed"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application", "no data row is touched",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura", "nenhuma linha de dados é alterada",
          "same rule, stated in both files, because either command may be the one that "
          "meets a legacy tracker first"),
-        (APPLY, "### Step 6b: Record the Application", "read as an empty deadline",
+        (APPLY, "### Passo 6b: Registrar a candidatura", "lidas como prazo vazio",
          "rows written before the migration have no fourteenth field; if that is not "
          "stated, a reader may treat the short row as malformed and drop it"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "read as an empty deadline",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura",
+         "lidas como prazo vazio",
          "same rule, stated in both files"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "one edit to an existing tracker",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura",
+         "única edição num tracker existente",
          "Step 4 forbids restructuring the CSV, so without this the header append reads "
          "as a violation of the same command's own rule and an implementer has a "
          "documented reason to skip the migration"),
-        (NOTION_SYNC, None, "never reconcile the two by picking the earlier or later date",
+        (NOTION_SYNC, None, "nunca concilie os dois escolhendo a data mais cedo ou mais tarde",
          "the tracker-wins rule says which source to prefer but does not forbid the "
          "plausible-looking min() of the two, which syncs a date the user never "
          "applied against"),
@@ -406,19 +406,19 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
     ROLES = ("Data Scientist", "ML Engineer", "ML Engineer II")
 
     CASES = [
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (OUTCOME, "## Passo 3: Arquivar os materiais da candidatura",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "the archive locator must derive the stem by the one documented rule, "
          "not invent a second derivation that drifts from it"),
-        (OUTCOME, "## Step 3: Archive the Application Materials",
-         "Never widen those globs to the company alone",
+        (OUTCOME, "## Passo 3: Arquivar os materiais da candidatura",
+         "Nunca amplie esses globs só para a empresa",
          "without the prohibition the next edit relaxes the glob when it finds "
          "no match, which is exactly the wrong-file-recorded-as-submitted case"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (INTERVIEW, "## Passo 1: Carregar o contexto da candidatura",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "interview's fallback must resolve the same stem /apply wrote"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "Never widen those globs to the company alone",
+        (INTERVIEW, "## Passo 1: Carregar o contexto da candidatura",
+         "Nunca amplie esses globs só para a empresa",
          "prep built from the sibling role's CV is a live-conversation failure"),
     ]
 
@@ -449,8 +449,8 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
 
     def test_the_cv_glob_selects_the_row_s_own_role(self):
         on_disk = self.drafted_files()
-        for path, heading in ((OUTCOME, "## Step 3: Archive the Application Materials"),
-                              (INTERVIEW, "## Step 1: Load the Application Context")):
+        for path, heading in ((OUTCOME, "## Passo 3: Arquivar os materiais da candidatura"),
+                              (INTERVIEW, "## Passo 1: Carregar o contexto da candidatura")):
             cv_glob = next(g for g in self.globs(path, heading) if g.startswith("cv/"))
             for role, expected in zip(self.ROLES, on_disk):
                 with self.subTest(file=path.name, role=role):
@@ -467,7 +467,7 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
         """`/add-template` makes `.typ` a real output; a hardcoded `.tex` misses it."""
         on_disk = self.drafted_files(ext=".typ")
         cv_glob = next(
-            g for g in self.globs(OUTCOME, "## Step 3: Archive the Application Materials")
+            g for g in self.globs(OUTCOME, "## Passo 3: Arquivar os materiais da candidatura")
             if g.startswith("cv/")
         )
         hits = fnmatch.filter(on_disk, self.resolve(cv_glob, self.ROLES[0]))
@@ -479,7 +479,7 @@ class FallbackGlobFindsOneRolesDocuments(unittest.TestCase):
 
 
 class ArchiveNameIsOnePathComponent(unittest.TestCase):
-    """`<company>_<role>` must derive a single path component.
+    """`<company>_<role>` must derive a único componente de caminho.
 
     `Novo Nordisk A/S` used to derive `novo_nordisk_a/s_<role>/`: every
     command that *derives* the path agrees and keeps working, while the
@@ -492,41 +492,41 @@ class ArchiveNameIsOnePathComponent(unittest.TestCase):
 
     CASES = [
         (DOCS_README, "## applications/",
-         "not a letter, digit or underscore is dropped",
+         "que não seja letra, dígito ou sublinhado é descartado",
          "the character rule is stated nowhere else; without it the naming "
          "convention leaves `/` untouched and the archive nests"),
         (DOCS_README, "## applications/",
-         "single path component",
+         "único componente de caminho",
          "the sentence that says why the rule exists; without it the next "
          "edit simplifies the rule back to spaces-only"),
-        (OUTCOME, "## Step 1: Load State and Identify the Application",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (OUTCOME, "## Passo 1: Carregar o estado e identificar a candidatura",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "Step 1.4 is the derivation every other writer cites; paraphrasing "
          "the rule here is how the two copies drifted apart originally"),
-        (APPLY, "### Requirement coverage (both documents)",
-         "the same rule `/outcome` Step 1.4 uses",
+        (APPLY, "### Cobertura dos requisitos (nos dois documentos)",
+         "a mesma regra que o Passo 1.4 do `/outcome` usa",
          "CV and cover-letter filenames use the same unsanitised values; a "
          "`/` there sends the draft to a path lualatex never writes a PDF "
          "back to, and the Step 4 compile check fails on a phantom path"),
-        (SKILL, "### Step 2: Tailor CV",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (SKILL, "### Passo 2: Personalizar o currículo",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "the /scrape path writes its documents before Step 3b consults /apply, "
          "so /apply's filename rule cannot protect it"),
-        (GMAIL_SYNC, "## Step 2: Load State",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (GMAIL_SYNC, "## Passo 2: Carregar o estado",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "gmail-sync both locates and creates archives; its old spaces-only "
          "paraphrase would split state across two folders"),
-        (INTERVIEW, "## Step 1: Load the Application Context",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (INTERVIEW, "## Passo 1: Carregar o contexto da candidatura",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "interview must read the same archive /apply and /outcome wrote"),
-        (INTERVIEW, "### 6. Logistics",
-         "archive folder derived in Step 1",
+        (INTERVIEW, "### 6. Logística",
+         "pasta de arquivo derivada no Passo 1",
          "interview must reuse its canonical read path when writing the prep pack"),
-        (NOTION_SYNC, "## Step 5: Write the Detail Page",
-         "by the **Subfolder naming** rule in `documents/README.md`",
+        (NOTION_SYNC, "## Passo 5: Escrever a página de detalhe",
+         "pela regra de **nomes de subpasta** de `documents/README.md`",
          "notion-sync otherwise reports that the sanitized local archive is absent"),
         (DOCS_README, "## applications/",
-         "If the derived name is empty",
+         "Se o nome derivado ficar vazio",
          "dropping untrusted punctuation can produce no component at all, which "
          "would write files directly under documents/applications"),
     ]
@@ -548,6 +548,7 @@ class ArchiveNameIsOnePathComponent(unittest.TestCase):
         return name or None
 
     DERIVATIONS = [
+        ("Itaú Unibanco S/A", "Cientista de Dados", "itaú_unibanco_sa_cientista_de_dados"),
         ("Novo Nordisk A/S", "Data Scientist", "novo_nordisk_as_data_scientist"),
         ("Acme", "Data Scientist / ML Engineer", "acme_data_scientist_ml_engineer"),
         ("Ørsted A/S", "ML Engineer", "ørsted_as_ml_engineer"),

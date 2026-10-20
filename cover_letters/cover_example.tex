@@ -1,12 +1,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Cover Letter - [Company], [Role]
+% Carta de apresentação - [Empresa], [Cargo]
 %
-% Example cover letter with placeholder content. This is the structural
-% reference for /apply (see 06-cover-letter-templates.md) and the CI smoke
-% test for cover.cls: it must always compile with xelatex to exactly 1 page.
-% It demonstrates the correct itemize pattern: the list sits OUTSIDE
-% \lettercontent{} (whose trailing \\ errors on \end{itemize}) and is
-% wrapped in Raleway-Medium so the bullet font matches the body.
+% Carta de exemplo com conteúdo de marcação. É a referência de estrutura
+% do /apply (veja 06-cover-letter-templates.md) e o teste de fumaça do CI
+% para o cover.cls: precisa sempre compilar com xelatex em exatamente 1
+% página. Mostra o padrão correto de itemize: a lista fica FORA do
+% \lettercontent{} (cujo \\ final dá erro no \end{itemize}) e é envolvida
+% em Raleway-Medium para a fonte dos tópicos ser a do corpo.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \documentclass[]{cover}
@@ -15,46 +15,47 @@
 \pagestyle{fancy}
 \fancyhf{}
 
-\rfoot{Page \thepage \hspace{0pt}}
+\rfoot{Página \thepage \hspace{0pt}}
 \thispagestyle{empty}
 \renewcommand{\headrulewidth}{0pt}
 \begin{document}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     TITLE NAME
+%     NOME NO TOPO
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\namesection{}{\Huge{[YOUR NAME]}}{  \href{mailto:your.email@example.com}{your.email@example.com} | [+XX XXXXXXXXXX] |  \urlstyle{same}\href{https://www.linkedin.com/in/yourprofile}{LinkedIn}
+\namesection{}{\Huge{[YOUR NAME]}}{  \href{mailto:your.email@example.com}{your.email@example.com} | [+55 (DDD) 9XXXX-XXXX] |  \urlstyle{same}\href{https://www.linkedin.com/in/seuperfil}{LinkedIn}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     MAIN COVER LETTER CONTENT
+%     CONTEÚDO DA CARTA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\currentdate{\today}
-\lettercontent{Dear [Hiring Manager / Team],}
+% Data por extenso, à mão: o \today sem configuração de idioma sai em inglês.
+\currentdate{[Cidade], [dia] de [mês] de [ano]}
+\lettercontent{Olá, [Nome da pessoa recrutadora / equipe],}
 
-\lettercontent{[Opening paragraph: name the role and where you found it, state your strongest connection to it in one sentence, and preview why you are a fit. Keep it to 2--3 sentences.]}
+\lettercontent{[Abertura: cite a vaga e onde a encontrou, diga numa frase a sua ligação mais forte com ela e antecipe por que você combina. Mantenha em 2 ou 3 frases.]}
 
-\lettercontent{[Body paragraph: your most relevant experience, framed toward the tasks in the posting. Follow with 3--5 concrete bullets:]}
+\lettercontent{[Corpo: a sua experiência mais relevante, voltada para as tarefas da vaga. Em seguida, 3 a 5 tópicos concretos:]}
 
 {\raggedright\fontspec[Path = OpenFonts/fonts/raleway/]{Raleway-Medium}\fontsize{11pt}{13pt}\selectfont
 \begin{itemize}
-    \item \textbf{[Achievement 1]:} [concrete result with a number where possible]
-    \item \textbf{[Achievement 2]:} [skill or project mapped to a posting requirement]
-    \item \textbf{[Achievement 3]:} [evidence for a nice-to-have requirement]
+    \item \textbf{[Conquista 1]:} [resultado concreto, com número sempre que der]
+    \item \textbf{[Conquista 2]:} [competência ou projeto ligado a um requisito da vaga]
+    \item \textbf{[Conquista 3]:} [evidência para um requisito desejável]
 \end{itemize}\par}
 \vspace{6pt}
 
-\lettercontent{[Connection paragraph: why this company specifically. Reference a verified specific: a product, a stated priority, a team. Never generic.]}
+\lettercontent{[Ligação com a empresa: por que esta empresa em particular. Cite algo específico e verificado: um produto, uma prioridade declarada, um time. Nunca genérico.]}
 
-\lettercontent{[Personal fit paragraph: behavioral strengths and what you bring to the team, 2--3 sentences.]}
+\lettercontent{[Encaixe pessoal: pontos fortes de comportamento e o que você traz para o time, em 2 ou 3 frases.]}
 
-\lettercontent{I look forward to hearing from you.}
+\lettercontent{Fico à disposição para conversarmos.}
 
 \begin{flushright}
-% Note: no trailing \\ inside \closing{} - cover.cls appends its own \\, and a
-% doubled break triggers "There's no line here to end."
-\closing{Kind regards,}
+% Observação: sem \\ no fim de \closing{} - o cover.cls já acrescenta o seu \\,
+% e uma quebra dupla gera "There's no line here to end."
+\closing{Atenciosamente,}
 
 \signature{[YOUR NAME]}
 \end{flushright}

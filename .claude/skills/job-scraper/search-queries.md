@@ -1,90 +1,104 @@
-# Search Queries for Job Scraper
+# Buscas para a busca de vagas
 
-<!-- SETUP: Customize these queries based on your skills, target roles, and location -->
+<!-- SETUP: personalize estas buscas com as suas competências, os cargos desejados e o local -->
 
-## Installed portal CLIs (primary for `/scrape`)
+## CLIs de portal instaladas (principais para o `/scrape`)
 
-`/scrape` discovers every portal skill under `.agents/skills/*/SKILL.md` and runs its CLI first. Shipped country-agnostic CLIs include `linkedin-search` and `freehire-search`; Danish demos and any skill you add with `/add-portal` are included the same way. You do **not** need a matching `site:` line below for those CLIs to run.
+O `/scrape` descobre cada skill de portal em `.agents/skills/*/SKILL.md` e roda a CLI dela primeiro. O projeto já vem com o `gupy-search` (Portal Gupy, o maior ATS do Brasil) e com as CLIs que funcionam em qualquer país, `linkedin-search` e `freehire-search`; qualquer skill que você acrescentar com o `/add-portal` entra do mesmo jeito. Você **não** precisa de uma linha `site:` abaixo para essas CLIs rodarem.
 
-The `site:` query templates in this file are the **WebSearch fallback** — for portals without a CLI, company career pages, or when a CLI fails.
+As buscas com `site:` deste arquivo são o **plano B pelo WebSearch** — para portais sem CLI, páginas de carreira de empresas, ou quando uma CLI falha.
 
-**Language scope:** write every query category in every language listed in your CLAUDE.md Languages table (typically 1-2, sometimes more). A posting requiring a language you have *not* declared, as a job condition, is excluded before scoring; a posting requiring a *higher level* than you declared in a language you *do* work in is flagged for your own judgment, not excluded — see `04-job-evaluation.md`'s Language Gate, the single source of truth for this rule. Translate each category's keywords rather than machine-translating word-for-word (e.g. "Frontend Developer" -> "Desarrollador Frontend", not a literal word-for-word translation) if you work in more than one language.
+**Idiomas das buscas:** escreva cada categoria em todos os idiomas da tabela de Idiomas do CLAUDE.md. No Brasil, vale escrever os cargos em português **e** no título em inglês que o mercado usa (muitas vagas de tecnologia anunciam "Data Engineer", "Product Manager", "Software Engineer" mesmo em português). Uma vaga que exige, como condição do trabalho, um idioma que você *não* declarou é excluída antes da pontuação; uma vaga que pede um nível *mais alto* que o declarado num idioma em que você trabalha é sinalizada para você decidir, não excluída — veja o filtro de idioma (Language Gate) do `04-job-evaluation.md`, a fonte única desta regra. Traduza as palavras-chave de cada categoria com naturalidade, sem tradução literal palavra por palavra (ex.: "Frontend Developer" -> "Desenvolvedor Frontend").
 
-## Search Sites
+## Sites de busca
 
-Primary (your market's job boards - scaffold one with `/add-portal`):
-- **[YOUR_JOB_BOARD]** - your market's largest general job board
-- **linkedin.com/jobs** - LinkedIn job listings (filter: [YOUR_COUNTRY] / [YOUR_CITY]); also covered by `linkedin-search` CLI
-- **[YOUR_INDUSTRY_JOB_BOARD]** - a niche/industry board for your field (optional)
-- **[YOUR_ADDITIONAL_JOB_BOARD]** - another major board for your market (optional)
+Principais (CLIs instaladas):
+- **Gupy** (`gupy-search`) — portal.gupy.io; filtre por `--state` (UF), `--location` (cidade), `--remote` e `--type` (clt, pj, estagio...)
+- **linkedin.com/jobs** (`linkedin-search`) — vagas do LinkedIn (filtro: [YOUR_COUNTRY] / [YOUR_CITY])
+- **freehire.me** (`freehire-search`) — agregador focado em tecnologia; use `--country BR` ou `--region latam`
 
-Secondary (company career pages via Google):
-- Direct Google searches with `site:` filters for known target companies
+Plano B pelo WebSearch (portais brasileiros sem CLI; crie uma com `/add-portal` se usar muito):
+- **vagas.com.br** — Vagas.com, grande portal generalista
+- **catho.com.br** — Catho, generalista
+- **infojobs.com.br** — InfoJobs, generalista
+- **br.indeed.com** — Indeed Brasil, agregador
+- **trampos.co** — vagas de comunicação, marketing, design e tecnologia
+- **programathor.com.br** — vagas de tecnologia
+- **[YOUR_INDUSTRY_JOB_BOARD]** — um portal de nicho da sua área (opcional)
 
-## Query Categories
+Secundário (páginas de carreira de empresas pelo Google):
+- Buscas diretas no Google com filtros `site:` para empresas-alvo conhecidas (muitas usam páginas `<empresa>.gupy.io` ou `<empresa>.vagas.solides.com.br`)
 
-Queries are grouped by priority. Write **each category in every language from your Languages table** (see Language scope above). Combine each query with your location terms (e.g. your city, region, or metro area) where the site supports it.
+## Categorias de busca
 
-**Organize by function, not job title.** The same underlying work carries different titles across companies and markets (a "Data Scientist" role at one employer may be posted as "Insights Analyst" or "Data Consultant" at another). Name each priority category after the function it covers, and list several plausible job titles as query variants within that category rather than betting an entire priority tier on one exact title string.
+As buscas são agrupadas por prioridade. Escreva **cada categoria em todos os idiomas da sua tabela de Idiomas** (veja "Idiomas das buscas" acima). Combine cada busca com os termos de local (cidade, UF, região metropolitana) quando o site permitir.
 
-### Priority 1: [YOUR_PRIMARY_ROLE_TYPE]
+**Organize por função, não por cargo.** O mesmo trabalho tem títulos diferentes em empresas diferentes (uma vaga de "Cientista de Dados" numa empresa pode aparecer como "Analista de Inteligência" ou "Consultor de Dados" em outra). Dê a cada categoria o nome da função que ela cobre e liste vários títulos plausíveis como variantes dentro dela, em vez de apostar uma faixa de prioridade inteira num único título exato. Lembre que vagas brasileiras costumam trazer o nível no título (júnior, pleno, sênior, "Jr", "Pl", "Sr").
 
-These match your strongest and most desired career direction.
+### Prioridade 1: [YOUR_PRIMARY_ROLE_TYPE]
+
+Combinam com a sua direção de carreira mais forte e mais desejada.
 
 ```
-site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_PRIMARY_JOB_TITLE_2]" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_KEY_SKILL]" [YOUR_CITY]
+gupy-search: -q "[YOUR_PRIMARY_JOB_TITLE_1]" --state [YOUR_REGION]
+gupy-search: -q "[YOUR_PRIMARY_JOB_TITLE_2]" --state [YOUR_REGION]
+site:vagas.com.br "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
 site:linkedin.com/jobs "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_COUNTRY]
 ```
 
-### Priority 2: [YOUR_DOMAIN_EXPERTISE]
+### Prioridade 2: [YOUR_DOMAIN_EXPERTISE]
 
-These match your domain expertise.
-
-```
-site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] OR [YOUR_REGION]
-site:[YOUR_JOB_BOARD] [YOUR_DOMAIN_KEYWORD_2] [YOUR_COUNTRY]
-site:linkedin.com/jobs [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] [YOUR_COUNTRY]
-```
-
-### Priority 3: [YOUR_ADJACENT_ROLE_TYPE]
-
-Adjacent roles you could pivot into.
+Combinam com o seu conhecimento de domínio.
 
 ```
-site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_1]" [YOUR_KEY_SKILL] [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
+gupy-search: -q "[YOUR_DOMAIN_KEYWORD_1]" --state [YOUR_REGION]
+site:vagas.com.br [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] OR [YOUR_REGION]
+site:linkedin.com/jobs [YOUR_DOMAIN_KEYWORD_2] [YOUR_CITY] [YOUR_COUNTRY]
 ```
 
-### Priority 4: Broader Technical / Consulting
+### Prioridade 3: [YOUR_ADJACENT_ROLE_TYPE]
 
-Wider net for general technical roles.
+Cargos vizinhos para onde você poderia migrar.
 
 ```
-site:[YOUR_JOB_BOARD] [YOUR_KEY_SKILL] developer [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_KEY_SKILL] developer" [YOUR_CITY]
-site:[YOUR_JOB_BOARD] "technical consultant" [YOUR_DOMAIN] [YOUR_CITY]
+gupy-search: -q "[YOUR_ADJACENT_TITLE_1]" --state [YOUR_REGION]
+site:catho.com.br "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
 ```
 
-## Location Filter
+### Prioridade 4: Técnico / consultoria mais amplo
 
-When evaluating results, verify the job location is within reasonable commute distance from your home. Define acceptable areas:
-- [YOUR_CITY] and surrounding areas
+Rede maior para vagas técnicas gerais.
+
+```
+gupy-search: -q "[YOUR_KEY_SKILL]" --remote
+site:linkedin.com/jobs "[YOUR_KEY_SKILL]" [YOUR_CITY]
+site:infojobs.com.br "consultor técnico" [YOUR_DOMAIN] [YOUR_CITY]
+```
+
+## Filtro de local
+
+Ao avaliar os resultados, confira se o local da vaga está a uma distância razoável de casa. Defina as áreas aceitáveis:
+- [YOUR_CITY] e arredores
 - [ACCEPTABLE_AREA_1]
 - [ACCEPTABLE_AREA_2]
-- [BORDERLINE_AREA] (borderline - ~X min by transit)
-- [TOO_FAR_AREA] (too far)
+- [BORDERLINE_AREA] (limite — ~X min de transporte público)
+- [TOO_FAR_AREA] (longe demais)
 
-## Language Filter
+Vagas remotas valem para qualquer lugar, **exceto** quando a vaga exige morar num estado ou cidade específicos ("remoto, residir em SP").
 
-Your working languages and levels are in CLAUDE.md's Languages table. When filtering scraped results, apply `04-job-evaluation.md`'s Language Gate: a posting requiring a language you haven't declared at all is excluded; a posting requiring a higher level than you declared in a language you do work in is not excluded, flag it clearly instead (see `job-scraper/SKILL.md`'s Step 3 "Quick Fit Assessment" for how the flag surfaces in `/scrape` output). Postings simply *written* in a language you don't work in, that don't require it on the job, are fine.
+## Filtro de idioma
 
-## Date Filter
+Os seus idiomas de trabalho e níveis estão na tabela de Idiomas do CLAUDE.md. Ao filtrar resultados coletados, aplique o filtro de idioma (Language Gate) do `04-job-evaluation.md`: uma vaga que exige um idioma que você não declarou de forma nenhuma é excluída; uma vaga que pede um nível mais alto que o declarado num idioma em que você trabalha não é excluída, e sim sinalizada com clareza (veja o Passo 3 "Avaliação rápida de encaixe" do `job-scraper/SKILL.md` para como o sinal aparece na saída do `/scrape`). Vagas só *escritas* num idioma em que você não trabalha, mas que não o exigem no dia a dia, tudo bem.
 
-Only include jobs posted within the last 14 days, or with an application deadline that has not yet passed. If a posting date cannot be determined, include it but flag as "date unknown".
+## Filtro de regime
 
-## Adapting Queries
+Se o CLAUDE.md lista um regime como deal-breaker (ex.: "não aceita PJ"), use `--type clt` na Gupy e marque como encaixe baixo as vagas desse regime vindas de outros portais.
 
-If the user specifies a focus area, select queries from the matching category and also generate 2-3 custom queries for that focus. For example:
-- "/scrape [focus_area]" -> relevant category queries + custom focus-specific queries
+## Filtro de data
+
+Inclua só vagas publicadas nos últimos 14 dias, ou com prazo de inscrição ainda não vencido. Se a data de publicação não puder ser determinada, inclua, mas sinalize como "data desconhecida".
+
+## Adaptando as buscas
+
+Se a pessoa indicar uma área de foco, escolha as buscas da categoria correspondente e gere também 2 ou 3 buscas sob medida para esse foco. Por exemplo:
+- "/scrape [area_de_foco]" -> buscas da categoria relevante + buscas sob medida para o foco

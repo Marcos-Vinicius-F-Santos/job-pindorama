@@ -47,7 +47,7 @@ def _substeps(step_body: str) -> dict[str, str]:
 
 class SetupStep3ContactBlocks(unittest.TestCase):
     def setUp(self):
-        self.step3 = _sections(COMMAND.read_text(encoding="utf-8"))["Step 3: Generate Profile Files"]
+        self.step3 = _sections(COMMAND.read_text(encoding="utf-8"))["Passo 3: Gerar os arquivos do perfil"]
         self.substeps = _substeps(self.step3)
 
     def _substep_for(self, filename: str) -> str:
@@ -57,7 +57,7 @@ class SetupStep3ContactBlocks(unittest.TestCase):
 
     def test_cv_templates_substep_fills_the_contact_block(self):
         body = self._substep_for("05-cv-templates.md")
-        self.assertIn("contact", body.lower())
+        self.assertIn("contato", body.lower())
         for token in ("[FIRST_NAME]", "[YOUR_EMAIL]", "[YOUR_PHONE]"):
             self.assertIn(token, body, f"the 05 substep must name {token} as something to replace")
 
@@ -68,8 +68,8 @@ class SetupStep3ContactBlocks(unittest.TestCase):
             self.assertIn(token, body, f"the 06 substep must name {token} as something to replace")
 
     def test_completion_summary_lists_the_cover_letter_templates(self):
-        step4 = _sections(COMMAND.read_text(encoding="utf-8"))["Step 4: Confirm & Next Steps"]
-        summary = step4.split("**Privacy note:**")[0]
+        step4 = _sections(COMMAND.read_text(encoding="utf-8"))["Passo 4: Confirmar e próximos passos"]
+        summary = step4.split("**Aviso de privacidade:**")[0]
         self.assertIn("06-cover-letter-templates.md", summary)
 
 
@@ -97,7 +97,7 @@ class SetupPathAWritesIntoSectionsTheShippedFilesHave(unittest.TestCase):
     """Step A7 named 02-behavioral-profile.md sections that do not exist.
 
     "Strongest Behavioral Traits" and "How [Candidate] Works Best" are not
-    headings in the shipped file ("Strongest Behaviors", "How You Work Best"
+    headings in the shipped file ("Comportamentos mais fortes", "Como você trabalha melhor"
     are), so the "add only to these sections" rule pointed at nothing. The
     section names are read from the bullet and checked against the file's
     `##` headings, with the placeholder-free spelling required: a reader
@@ -130,19 +130,19 @@ class SetupPathAProjectsIngestion(unittest.TestCase):
         self.sections = _sections(self.text)
 
     def test_step0_scan_includes_projects(self):
-        step0 = self.sections["Step 0: Welcome & Choose Path"]
+        step0 = self.sections["Passo 0: Boas-vindas e escolha do caminho"]
         self.assertIn("projects/", step0)
 
     def test_step_a1_inventory_includes_projects(self):
         self.assertIn("**projects/**:", self.text)
 
     def test_step_a3_parsing_includes_projects_spec(self):
-        self.assertIn("`projects/` documents:", self.text)
-        self.assertIn("measurable outcomes", self.text)
+        self.assertIn("Documentos de `projects/`:", self.text)
+        self.assertIn("resultados mensuráveis", self.text)
 
     def test_step_a5_and_a6_map_to_independent_projects(self):
-        self.assertIn("## Independent Projects", self.text)
-        self.assertIn("New independent project:", self.text)
+        self.assertIn("## Projetos independentes", self.text)
+        self.assertIn("Novo projeto independente:", self.text)
 
 
 if __name__ == "__main__":

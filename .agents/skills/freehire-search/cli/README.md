@@ -1,96 +1,96 @@
 # freehire-cli
 
-CLI for searching the [freehire.me](https://freehire.me) job aggregator across
-**many markets** (tech-focused), via its public JSON API.
+CLI para buscar vagas no agregador [freehire.me](https://freehire.me) em **vários mercados**
+(focado em tecnologia), pela API JSON pública dele.
 
-**Data source**: freehire.me REST API (`/api/v1/agent/jobs/search`, `/api/v1/jobs/search` for `--no-description`, `/api/v1/jobs/facets`, `/api/v1/jobs/{slug}`).
-**Authentication**: None required — reads are public (only tracking mutations need a key, and those are out of scope here).
-**Dependencies**: None (plain `bun` + `fetch`). `bun install` is optional and only pulls dev type defs.
+**Fonte de dados**: API REST do freehire.me (`/api/v1/agent/jobs/search`, `/api/v1/jobs/search` para o `--no-description`, `/api/v1/jobs/facets`, `/api/v1/jobs/{slug}`).
+**Autenticação**: nenhuma — a leitura é pública (só as mudanças de acompanhamento precisam de chave, e estão fora do escopo aqui).
+**Dependências**: nenhuma (só `bun` + `fetch`). O `bun install` é opcional e só traz as definições de tipos.
 
-> **Hosted-service dependency.** This skill talks to freehire.me, a personal
-> project maintained on a **best-effort basis with no formal SLA**. If the API is
-> unreachable the CLI exits non-zero with a clear error rather than hanging, so an
-> outage degrades gracefully instead of breaking the caller. Point `FREEHIRE_API_URL`
-> at a self-hosted [freehire](https://github.com/strelov1/freehire) backend to swap
-> the source.
+> **Dependência de um serviço hospedado.** Esta skill conversa com o freehire.me, um projeto
+> pessoal mantido na **base do melhor esforço, sem SLA formal**. Se a API estiver inacessível,
+> a CLI sai com código diferente de zero e um erro claro, em vez de travar, então uma queda
+> degrada com elegância em vez de quebrar quem chamou. Aponte o `FREEHIRE_API_URL` para um
+> backend [freehire](https://github.com/strelov1/freehire) auto-hospedado para trocar a fonte.
 
-## Installation
+## Instalação
 
 ```bash
 cd .agents/skills/freehire-search/cli
-bun install   # optional — only installs TypeScript dev types
+bun install   # opcional — só instala os tipos do TypeScript
 ```
 
-The CLI runs without any install because it has zero runtime dependencies.
+A CLI roda sem instalar nada, porque não tem dependências de execução.
 
-## Self-hosting / base URL
+## Auto-hospedagem / URL base
 
-The base URL defaults to `https://freehire.me` and is overridable with an env var:
+A URL base padrão é `https://freehire.me` e pode ser trocada por uma variável de ambiente:
 
 ```bash
 FREEHIRE_API_URL=http://localhost:8080 bun run src/cli.ts search -q "go"
 ```
 
-The freehire backend is MIT-licensed and stands up with one command via Docker
-Compose (`make up` → API on `:8080`, same `/api/v1/...` paths).
+O backend do freehire tem licença MIT e sobe com um comando via Docker Compose
+(`make up` → API em `:8080`, mesmos caminhos `/api/v1/...`).
 
-## Commands
+## Comandos
 
-| Command | Description |
-|---------|-------------|
-| `search` | Search jobs by keyword and facet filters |
-| `detail` | Fetch full detail for a single job by its slug |
+| Comando | Descrição |
+|---------|-----------|
+| `search` | Busca vagas por palavra-chave e filtros de faceta |
+| `detail` | Obtém o detalhe completo de uma vaga pelo slug |
 
-`search` accepts `--format json|table|plain` (default `json`); `detail` accepts `--format json|plain`.
-All errors are written to **stderr** as `{ "error": "...", "code": "..." }` with exit code `1`.
-One diagnostic is a warning instead: a `--region` value outside the documented vocabulary
-prints `{ "warning": "...", "code": "REGION_VALUE_UNKNOWN" }` to stderr after the results,
-and exits `0`, leaving stdout a valid JSON document.
+O `search` aceita `--format json|table|plain` (padrão `json`); o `detail` aceita `--format json|plain`.
+Todos os erros vão para o **stderr** como `{ "error": "...", "code": "..." }`, com código de saída `1`.
+Um diagnóstico é aviso, não erro: um valor de `--region` fora do vocabulário documentado imprime
+`{ "warning": "...", "code": "REGION_VALUE_UNKNOWN" }` no stderr depois dos resultados e sai com
+`0`, deixando o stdout como um documento JSON válido. As mensagens de ajuda e de erro da CLI
+estão em inglês (código do projeto original).
 
-`search` hits the API's agent endpoint, so every JSON result already carries the
-posting's **full** description (Markdown by default, `--description-format
-text|html` to change it). `detail` remains for looking a single posting up by
-slug — including a closed one, which search does not return.
+O `search` usa o endpoint para agentes da API, então todo resultado JSON já traz a descrição
+**completa** da vaga (Markdown por padrão; `--description-format text|html` para mudar). O
+`detail` continua existindo para ler uma vaga pelo slug — inclusive uma encerrada, que a busca
+não devolve.
 
-## Quick examples
+## Exemplos rápidos
 
 ```bash
-# Senior backend roles, table view
-bun run src/cli.ts search -q "backend engineer" --seniority senior --limit 10 --format table
+# Backend sênior no Brasil, em tabela
+bun run src/cli.ts search -q "backend" --seniority senior --country BR --limit 10 --format table
 
-# Remote React roles in the EU
-bun run src/cli.ts search -q "react" --remote remote --region eu --format table
+# React remoto na América Latina
+bun run src/cli.ts search -q "react" --remote remote --region latam --format table
 
-# DevOps roles in Germany posted in the last 14 days
-bun run src/cli.ts search --category devops --country DE --jobage 14 --format table
+# DevOps no Brasil publicadas nos últimos 14 dias
+bun run src/cli.ts search --category devops --country BR --jobage 14 --format table
 
-# Full detail for one job (slug from a search result's id)
+# Detalhe completo de uma vaga (o slug é o id de um resultado da busca)
 bun run src/cli.ts detail golang-zensar-2bxu6dxm --format plain
 ```
 
-See `../SKILL.md` for the full flag reference and the hosted-dependency note.
+Veja o `../SKILL.md` para a referência completa das opções e a nota sobre a dependência do serviço hospedado.
 
-## Search flags
+## Opções de busca
 
-| Flag | Alias | Description |
-|------|-------|-------------|
-| `--query` | `-q` | Keywords (title / skill / role). Full-text; optional. `a OR b` matches either (uppercase `OR`, max 5 alternatives); a leading `title:` searches the job title only. |
-| `--jobage` | | Posted within N days (`posted_within_days`). |
-| `--page` | | 1-indexed page. Default 1. |
-| `--limit` | `-n` | Results per page (API limit). Default 25. |
-| `--region` | | Macro-region(s), comma = OR: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis` (e.g. `eu,uk`). A country such as `us` goes in `--country`. |
-| `--country` | | ISO-3166 alpha-2 code(s). |
-| `--city` | | City name(s). |
-| `--seniority` | | Seniority level(s). |
-| `--category` | | Role category(ies). |
-| `--skill` | | Canonical skill(s). |
-| `--company` | | Company slug. |
+| Opção | Apelido | Descrição |
+|-------|---------|-----------|
+| `--query` | `-q` | Palavras-chave (cargo / competência / função). Texto completo; opcional. `a OR b` casa com qualquer uma (`OR` em maiúsculas, no máximo 5 alternativas); um `title:` no começo busca só no título. |
+| `--jobage` | | Publicadas nos últimos N dias (`posted_within_days`). |
+| `--page` | | Página, começando em 1. Padrão 1. |
+| `--limit` | `-n` | Resultados por página (limite da API). Padrão 25. |
+| `--region` | | Macrorregião(ões), vírgula = OU: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis` (ex.: `latam`). Um país, como `br` ou `us`, vai em `--country`. |
+| `--country` | | Código(s) ISO-3166 alfa-2. |
+| `--city` | | Nome(s) de cidade. |
+| `--seniority` | | Nível(is) de senioridade. |
+| `--category` | | Categoria(s) de função. |
+| `--skill` | | Competência(s) canônica(s). |
+| `--company` | | Slug da empresa. |
 | `--remote` | | `remote` \| `hybrid` \| `onsite` (`work_mode`). |
-| `--facet` | | Any other facet as `key=value` (repeatable). |
+| `--facet` | | Qualquer outra faceta como `chave=valor` (repetível). |
 | `--format` | | `json` \| `table` \| `plain`. |
-| `--description-format` | | `markdown` (default) \| `text` \| `html` — how each result's full description is rendered (`json` output only). |
+| `--description-format` | | `markdown` (padrão) \| `text` \| `html` — como a descrição completa de cada resultado é apresentada (só na saída `json`). |
 
-Facet values come from freehire's controlled vocabularies. Discover the live
-values (with counts) for a market at
-[`/api/v1/jobs/facets`](https://freehire.me/api/v1/jobs/facets), or narrow it,
-e.g. `https://freehire.me/api/v1/jobs/facets?q=react`.
+Os valores de faceta vêm dos vocabulários controlados do freehire. Descubra os valores atuais
+(com contagens) de um mercado em
+[`/api/v1/jobs/facets`](https://freehire.me/api/v1/jobs/facets), ou limite, ex.:
+`https://freehire.me/api/v1/jobs/facets?q=react`.

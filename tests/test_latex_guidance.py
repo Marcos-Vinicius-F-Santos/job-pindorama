@@ -105,7 +105,7 @@ class TestSpecialCharacterGuidance(unittest.TestCase):
         self.assertIsNotNone(body)
         self.assertRegex(
             body,
-            re.compile(r"silent", re.IGNORECASE),
+            re.compile(r"silent|sil[eê]ncio", re.IGNORECASE),
             "the % failure mode must be called out as silent - it is the "
             "reason this section exists (a clean compile with the rest of "
             "the bullet gone)",
