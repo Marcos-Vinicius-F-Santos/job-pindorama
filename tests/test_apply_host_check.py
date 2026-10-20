@@ -228,6 +228,8 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
         urls = [
             "https://br.linkedin.com/jobs/view/999999",
             "https://www.linkedin.com/jobs/view/888888",
+            "https://afya.gupy.io/jobs/12749301",
+            "https://portal.gupy.io/job-search/term=analista",
             "https://freehire.me/jobs/golang-zensar-2bxu6dxm",
         ]
         for url in urls:
