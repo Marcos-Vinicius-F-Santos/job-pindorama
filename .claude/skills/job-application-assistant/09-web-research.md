@@ -1,5 +1,5 @@
 ---
-framework_version: 1.2.0
+framework_version: 1.2.1
 ---
 
 # Pesquisa e coleta na web
@@ -56,7 +56,7 @@ Um comando faz a nova tentativa inteira: roda o filtro de `robots.txt` acima (sa
 
 O status HTTP é informação, não veredito: o corpo de um `403` ainda diz o que o site respondeu. Só a saída `2` (esquema não suportado, falha de transporte, resposta grande demais) significa que nada foi obtido.
 
-> **No Windows:** o `curl` que vem com o sistema pode não suportar `--compressed`, e o `fetch_page.py` falha com `curl exit 2`. Se isso acontecer, instale um curl completo (por exemplo, o do Git for Windows ou via `winget install cURL.cURL`) e garanta que ele vem primeiro no PATH.
+> **No Windows:** o `curl` que vem com o sistema (em `System32`) não tem decodificadores de compressão. O `fetch_page.py` detecta isso pelo `curl --version` e só passa `--compressed` a um curl que o suporte, então funciona com o curl nativo, sem instalar nada.
 
 ### Lendo o texto extraído
 

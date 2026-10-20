@@ -63,14 +63,47 @@ MAX_REDIRECTS = 5
 MAX_BYTES = 10 * 1024 * 1024
 
 
-def build_curl_argv(url: str, out: Path) -> list:
-    """The one curl invocation this script ever runs. GET, bounded, `--` last."""
+# Content-Encoding decoders a curl build lists under "Features:". A build with
+# none of them rejects `--compressed` outright (exit 2, "the installed libcurl
+# version doesn't support this"). The curl.exe Windows ships in System32 is such
+# a build, and a bare `curl` argv resolves there before anything on PATH, so
+# installing a fuller curl does not help - the flag has to be conditional.
+COMPRESSION_FEATURES = {"libz", "brotli", "zstd"}
+
+
+def curl_supports_compression(version_output: str) -> bool:
+    """True when `curl --version` output lists at least one decoder feature."""
+    for line in version_output.splitlines():
+        if line.startswith("Features:"):
+            return bool(COMPRESSION_FEATURES & set(line.split()[1:]))
+    return False
+
+
+def probe_curl_compression() -> bool:
+    """Ask the curl this script will actually run whether it can decode."""
+    try:
+        proc = subprocess.run(
+            ["curl", "--version"], capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return proc.returncode == 0 and curl_supports_compression(proc.stdout)
+
+
+def build_curl_argv(url: str, out: Path, compressed: bool = True) -> list:
+    """The one curl invocation this script ever runs. GET, bounded, `--` last.
+
+    `compressed` is False for a curl build with no decoders (see
+    COMPRESSION_FEATURES); without the flag curl sends no Accept-Encoding, so
+    servers answer uncompressed and nothing else changes.
+    """
     return [
         "curl", "-sSL",
         "--max-redirs", str(MAX_REDIRECTS),
         "--max-time", str(TIMEOUT_SECONDS),
         "--max-filesize", str(MAX_BYTES),
-        "--compressed",
+        *(["--compressed"] if compressed else []),
         "-A", BROWSER,
         "-H", f"Accept: {ACCEPT}",
         "-H", f"Accept-Language: {ACCEPT_LANGUAGE}",
@@ -82,7 +115,7 @@ def build_curl_argv(url: str, out: Path) -> list:
 
 def fetch_with_curl(url: str, out: Path) -> str:
     proc = subprocess.run(
-        build_curl_argv(url, out),
+        build_curl_argv(url, out, compressed=probe_curl_compression()),
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=TIMEOUT_SECONDS + 15,
     )

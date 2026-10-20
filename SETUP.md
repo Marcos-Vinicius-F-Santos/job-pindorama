@@ -368,7 +368,7 @@ Planeje as atualizações desde o primeiro dia:
 Confira se o Bun está instalado e se você rodou `python tools/install_portal_clis.py`. As ferramentas precisam de acesso à internet para buscar vagas. Se a Gupy parar de responder, rode `/scrape health gupy` — o portal pode ter mudado a rota de busca (veja `.agents/skills/gupy-search/url-reference.md`).
 
 ### `fetch_page.py` falha com "curl exit 2" no Windows
-O `curl` que vem com o Windows não suporta `--compressed`. Instale um curl completo (`winget install cURL.cURL`, ou use o que vem com o Git for Windows) e garanta que ele vem primeiro no PATH.
+Versões antigas do `fetch_page.py` sempre passavam `--compressed`, que o `curl` nativo do Windows (em `System32`) recusa. A versão atual consulta o `curl --version` e só passa a opção quando o curl tem decodificadores. Se o erro aparecer, atualize o repositório. Instalar outro curl não resolve sozinho: um programa que chama `curl` sem caminho encontra o do `System32` antes do PATH.
 
 ### Erros de compilação LaTeX
 - Currículo: usa `lualatex` (o pdflatex costuma falhar no MiKTeX recente com erros de expansão de fonte do `fontawesome5`; o lualatex compila os mesmos arquivos sem problema)
