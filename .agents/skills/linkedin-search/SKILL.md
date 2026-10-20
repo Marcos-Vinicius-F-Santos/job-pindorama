@@ -2,102 +2,104 @@
 name: linkedin-search
 version: 1.0.0
 description: >
-  Use this skill whenever the user wants to search for jobs in any location or
-  market, find job listings, or look up a specific job posting — in any country,
-  city, or remotely. Invoke for open positions, vacancies, and hiring across any
-  sector or role (software, data, design, marketing, finance, legal, operations,
-  etc.). The location is always supplied explicitly by the user. Trigger phrases:
-  find a job, job search, search for jobs, job openings, vacancies, hiring,
-  positions open, remote jobs, "are there any X jobs in <place>", look up this
-  job posting.
+  Use esta skill sempre que a pessoa quiser buscar vagas em qualquer local ou
+  mercado, encontrar anúncios de emprego ou ler uma vaga específica do LinkedIn —
+  em qualquer país, cidade ou remoto. Serve para vagas abertas e contratações em
+  qualquer setor ou função (software, dados, design, marketing, finanças, jurídico,
+  operações etc.). O local é sempre informado explicitamente. Frases de ativação:
+  buscar vaga, procurar emprego, vagas abertas, vagas no LinkedIn, vagas remotas,
+  "tem vaga de X em <lugar>?", ler esta vaga do LinkedIn. English: find a job,
+  job search, job openings, vacancies, remote jobs.
 context: fork
-enabled: true  # set to false to keep this portal installed but have /scrape skip it
+enabled: true  # false mantém o portal instalado, mas o /scrape passa a pular ele
 allowed-tools: Bash(bun run .agents/skills/linkedin-search/cli/src/cli.ts *)
 ---
 
-# LinkedIn Search Skill
+# Busca no LinkedIn
 
-Search live job listings from LinkedIn's public job board for **any country/region**
-(and remote). No authentication, no API key, and **zero runtime dependencies** — it runs
-with just `bun`. The location is always passed explicitly, so the same skill works for a
-forker in any market out of the box.
+Busca vagas ativas no quadro público de vagas do LinkedIn para **qualquer país ou região**
+(e remoto). Sem autenticação, sem chave de API e **sem dependências de execução** — roda
+só com o `bun`. O local é sempre passado explicitamente, então a mesma skill funciona em
+qualquer mercado.
 
-> This is a country-agnostic worked example of the repo's job-portal-skill pattern.
-> LinkedIn's `jobs-guest` endpoints are global and the HTML parsing is country-independent;
-> only the `--location` you pass changes per market.
+> Este é um exemplo do padrão de skill de portal que funciona em qualquer país. As rotas
+> `jobs-guest` do LinkedIn são globais e a leitura do HTML não depende do país; só o
+> `--location` muda por mercado.
 
-## ⚠️ Personal use only
+## ⚠️ Só para uso pessoal
 
-This uses LinkedIn's public job pages; automated access is against LinkedIn's Terms of
-Service, so **keep volume low and don't use it commercially or for bulk data collection.**
-Run it on your own responsibility.
+Esta skill usa as páginas públicas de vagas do LinkedIn; acesso automatizado vai contra os
+Termos de Serviço do LinkedIn, então **mantenha o volume baixo e não use para fins comerciais
+nem para coleta de dados em massa.** O uso é por sua conta e risco.
 
-## When to use this skill
+## Quando usar
 
-- Search for job openings in a given location (any country/city) or remotely
-- Filter by recency (posted today / last 7 / 14 / 30 days) or workplace type (remote/hybrid/onsite)
-- Get the full description of a specific job listing
+- Buscar vagas num local (qualquer país ou cidade) ou remotas
+- Filtrar por data (publicadas hoje / nos últimos 7 / 14 / 30 dias) ou por modelo de trabalho (remoto/híbrido/presencial)
+- Obter a descrição completa de uma vaga específica
 
-## Commands
+## Comandos
 
-### Search job listings
+### Buscar vagas
 
 ```bash
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search --location "<place>" [flags]
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search --location "<lugar>" [opções]
 ```
 
-Key flags:
-- `--location <text>` / `-l <text>` — **required.** A LinkedIn place string, e.g. `"Mumbai, Maharashtra, India"`, `"Berlin, Germany"`, `"London, United Kingdom"`, or `"Remote"`.
-- `--query <text>` / `-q <text>` — keyword search (title, skill, role). Recommended.
-- `--jobage <days>` — posted within N days: `1`, `7`, `14`, `30`. Omit for all postings.
-- `--jobage-minutes <n>` — posted within N minutes (sub-day precision, e.g. `30`). Conflicts with `--jobage` — pass only one.
-- `--remote <mode>` — `remote`, `hybrid`, or `onsite` (workplace-type filter).
-- `--page <n>` — page number (1-indexed, 10 results per page).
-- `--limit <n>` / `-n <n>` — cap total results emitted (client-side).
-- `--format json|table|plain` — default `json`.
+Opções principais:
+- `--location <texto>` / `-l <texto>` — **obrigatória.** Um nome de lugar do LinkedIn, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Brasil"` ou `"Remote"`.
+- `--query <texto>` / `-q <texto>` — busca por palavra-chave (cargo, competência, função). Recomendada.
+- `--jobage <dias>` — publicadas nos últimos N dias: `1`, `7`, `14`, `30`. Omita para todas.
+- `--jobage-minutes <n>` — publicadas nos últimos N minutos (precisão menor que um dia, ex.: `30`). Conflita com `--jobage` — passe só uma.
+- `--remote <modo>` — `remote`, `hybrid` ou `onsite` (filtro de modelo de trabalho).
+- `--page <n>` — número da página (começando em 1, 10 resultados por página).
+- `--limit <n>` / `-n <n>` — limita o total de resultados emitidos (do lado da CLI).
+- `--format json|table|plain` — padrão `json`.
 
-### Fetch full job detail
+### Detalhe completo da vaga
 
 ```bash
 bun run .agents/skills/linkedin-search/cli/src/cli.ts detail <id|url> [--format json|plain]
 ```
 
-`id` is the job ID from `search` results (e.g. `4426311357`). You may also pass a full
-LinkedIn `jobs/view/...` URL or a `urn:li:jobPosting:...` URN. Returns the full description,
-seniority, employment type, job function, and industries.
+`id` é o ID da vaga nos resultados do `search` (ex.: `4426311357`). Também dá para passar
+uma URL completa `jobs/view/...` do LinkedIn ou uma URN `urn:li:jobPosting:...`. Devolve a
+descrição completa, a senioridade, o tipo de contratação, a função e os setores.
 
-## Usage examples
+## Exemplos de uso
 
 ```bash
-# Data engineer roles in Bengaluru, last 30 days
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "data engineer" -l "Bengaluru, Karnataka, India" --jobage 30 --format table
+# Engenharia de dados em São Paulo, últimos 30 dias
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engenheiro de dados" -l "São Paulo, Brasil" --jobage 30 --format table
 
-# Product manager roles in Berlin, remote
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "product manager" -l "Berlin, Germany" --remote remote --format table
+# Product manager no Brasil, remoto
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "product manager" -l "Brasil" --remote remote --format table
 
-# Any role, fully remote
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "paralegal" -l "Remote" --format table
+# Qualquer função, totalmente remota
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "analista jurídico" -l "Remote" --format table
 
-# Engineer roles, remote, posted in the last 30 minutes
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engineer" -l "Remote" --jobage-minutes 30 --format table
+# Engenharia, remoto, publicadas nos últimos 30 minutos
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engenheiro" -l "Brasil" --jobage-minutes 30 --format table
 
-# Full details for a specific job
+# Detalhe completo de uma vaga
 bun run .agents/skills/linkedin-search/cli/src/cli.ts detail 4426311357 --format plain
 ```
 
-## Output formats
+## Formatos de saída
 
-| Format | Best for |
-|--------|----------|
-| `json` | Default — programmatic use, passing IDs to `detail` |
-| `table` | Quick human-readable scanning |
-| `plain` | Reading a single job's full detail (`detail` command) |
+| Formato | Para quê |
+|---------|----------|
+| `json` | Padrão — uso por programa, passar IDs ao `detail` |
+| `table` | Olhar rápido |
+| `plain` | Ler o detalhe completo de uma vaga (comando `detail`) |
 
-All errors are written to **stderr** as `{ "error": "...", "code": "..." }` and the process exits with code `1`.
+Todos os erros vão para o **stderr** como `{ "error": "...", "code": "..." }`, e o processo sai com código `1`.
 
-## Notes
+## Observações
 
-- Data is from LinkedIn's public `jobs-guest` endpoints — no credentials required.
-- Page size is fixed at 10 results per page.
-- LinkedIn may rate-limit; the CLI retries 429/5xx with exponential backoff. Keep volume low (see ToS note above).
-- Job IDs are numeric (e.g. `4426311357`) — pass them as-is to `detail`.
+- Os dados vêm das rotas públicas `jobs-guest` do LinkedIn — sem credenciais.
+- O tamanho da página é fixo em 10 resultados.
+- O LinkedIn pode limitar as requisições; a CLI tenta de novo em 429/5xx com espera progressiva. Mantenha o volume baixo (veja o aviso de Termos de Serviço acima).
+- IDs de vaga são numéricos (ex.: `4426311357`) — passe-os como estão ao `detail`.
+- Vagas brasileiras do LinkedIn muitas vezes são publicadas pela Gupy ou por outro ATS: quando o detalhe trouxer o link de candidatura de um ATS, prefira a página da empresa (veja `09-web-research.md`).
+- As mensagens de ajuda e de erro da CLI continuam em inglês (código do projeto original).

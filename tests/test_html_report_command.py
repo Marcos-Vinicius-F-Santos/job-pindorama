@@ -65,7 +65,7 @@ class HtmlReportTrackerFieldTests(unittest.TestCase):
     def test_step1_parses_every_canonical_tracker_column(self):
         text = COMMAND_FILE.read_text(encoding="utf-8")
         match = re.search(
-            r"Parse every row into a record with fields:\n\s+((?:`[^`]+`,?\s*)+)",
+            r"Leia cada linha como um registro com os campos:\n\s+((?:`[^`]+`,?\s*)+)",
             text,
         )
         self.assertIsNotNone(match, "Step 1 field enumeration not found")
@@ -79,7 +79,7 @@ class HtmlReportTrackerFieldTests(unittest.TestCase):
         tell a swapped order from the correct one, and the order is what the
         table shows the reader."""
         text = COMMAND_FILE.read_text(encoding="utf-8")
-        match = re.search(r"### Table: columns to include\n\n(.+)\n", text)
+        match = re.search(r"### Tabela: colunas a incluir\n\n(.+)\n", text)
         self.assertIsNotNone(match, "Step 3 table column list not found")
         line = match.group(1)
         self.assertIn(
@@ -99,17 +99,17 @@ class HtmlReportGitignoreTests(unittest.TestCase):
         interviewed and was then rejected carries status `rejected` and would
         never count as having reached Interview, so a finished search reads
         as though nobody ever interviewed (review finding F10, 2026-08-19).
-        The stage checkboxes merged from outcome.md in Step 1.2 are the
+        The caixas de etapa merged from outcome.md in Step 1.2 are the
         history; the funnel must be told to use them."""
         text = COMMAND_FILE.read_text(encoding="utf-8")
         self.assertIn(
-            "stage checkboxes",
-            text.split("## Step 3")[0].split("## Step 2")[1],
+            "caixas de etapa",
+            text.split("## Passo 3")[0].split("## Passo 2")[1],
             "Step 2's funnel definition must derive stage-reached from the "
-            "merged outcome.md stage checkboxes",
+            "merged outcome.md caixas de etapa",
         )
         self.assertIn(
-            "not current status",
+            "não pelo status atual",
             text,
             "the funnel rule must say explicitly that current status alone undercounts",
         )
@@ -122,11 +122,11 @@ class HtmlReportGitignoreTests(unittest.TestCase):
         text = COMMAND_FILE.read_text(encoding="utf-8")
         self.assertIn(
             "`offer_declined`",
-            text.split("## Step 3")[0].split("## Step 2")[1],
+            text.split("## Passo 3")[0].split("## Passo 2")[1],
             "the rejection-rate definition must address offer_declined",
         )
         self.assertIn(
-            "not rejections",
+            "não são recusas",
             text,
             "the rate must exclude candidate-initiated outcomes explicitly",
         )

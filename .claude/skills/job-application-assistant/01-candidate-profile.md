@@ -1,39 +1,43 @@
 ---
-framework_version: 1.1.1
+framework_version: 1.2.0
 ---
 
-# Candidate Profile
+# Perfil da pessoa candidata
 
-<!-- SETUP: This file is populated by running /setup -->
-<!-- After running /setup, all sections will be filled with your actual information -->
+<!-- SETUP: este arquivo é preenchido pelo /setup -->
+<!-- Depois do /setup, todas as seções terão as suas informações reais -->
 
-## Identity
-- **Name:** [YOUR_NAME]
-- **Location:** [YOUR_ADDRESS]
-- **Phone:** [YOUR_PHONE]
-- **Email:** [YOUR_EMAIL]
+## Identidade
+- **Nome:** [YOUR_NAME]
+- **Local:** [YOUR_ADDRESS]
+- **Telefone:** [YOUR_PHONE]
+- **E-mail:** [YOUR_EMAIL]
 - **LinkedIn:** [YOUR_LINKEDIN_URL]
 - **GitHub:** [YOUR_GITHUB_URL]
-- **Status:** [YOUR_EMPLOYMENT_STATUS]
-- **Constraints:** [YOUR_COMMUTE_OR_LOCATION_CONSTRAINTS]
+- **Situação:** [YOUR_EMPLOYMENT_STATUS]
+- **Restrições:** [YOUR_COMMUTE_OR_LOCATION_CONSTRAINTS]
+- **Gênero gramatical nos textos:** [YOUR_GRAMMATICAL_GENDER]
+  <!-- Como concordar adjetivos e particípios sobre você em português ("formada"/"formado",
+  "especialista experiente"). Valores: feminino, masculino ou neutro. "Neutro" faz os textos
+  evitarem a flexão ("tenho formação em" em vez de "sou formada em"). Nunca deduzido do nome. -->
 
-### Languages
-<!-- Every language you can work in professionally, with your honest level. Used by the
-Language Gate in 04-job-evaluation.md and by job-scraper/search-queries.md's query-language
-generation. Omit any language you don't actually work in - an undeclared language is treated as
-a hard no, not a gap to smooth over. -->
+### Idiomas
+<!-- Todo idioma em que você trabalha profissionalmente, com o seu nível honesto. Usado pelo
+filtro de idioma (Language Gate) em 04-job-evaluation.md e pela geração de buscas em
+job-scraper/search-queries.md. Omita idiomas em que você não trabalha de fato: idioma não
+declarado é tratado como "não", não como lacuna a disfarçar. -->
 
-| Language | Level | Notes |
-|----------|-------|-------|
-| [LANGUAGE] | [LEVEL, e.g. "Native" / "C2" / "B1/B2 (conversational)"] | [optional] |
+| Idioma | Nível | Observações |
+|--------|-------|-------------|
+| [LANGUAGE] | [LEVEL, ex.: "Nativo" / "C2" / "B1/B2 (conversação)" / "Intermediário"] | [opcional] |
 
-## Education
+## Formação
 
-| Degree | Period | Institution | Key Topics |
-|--------|--------|-------------|------------|
+| Curso | Período | Instituição | Temas principais |
+|-------|---------|-------------|------------------|
 | [DEGREE] | [YEARS] | [INSTITUTION] | [TOPICS] |
 
-## Professional Experience
+## Experiência profissional
 
 ### [JOB_TITLE] - [COMPANY] ([START] - [END])
 [LOCATION]
@@ -41,33 +45,34 @@ a hard no, not a gap to smooth over. -->
 - [RESPONSIBILITY_OR_ACHIEVEMENT_2]
 - [RESPONSIBILITY_OR_ACHIEVEMENT_3]
 
-<!-- Add more roles as needed -->
+<!-- Acrescente mais cargos se precisar. Indique o regime quando ajudar a contar a trajetória
+(CLT, PJ, estágio): é útil para o /setup e para a avaliação de vagas. -->
 
-## Independent Projects
-<!-- Projects outside of employment: freelance, open source, personal -->
+## Projetos independentes
+<!-- Projetos fora do emprego: freelas, código aberto, pessoais -->
 - **[PROJECT_NAME]**: [DESCRIPTION]
 
-## Technical Skills
+## Competências técnicas
 
-### Programming & ML
+### Programação e ML
 - **[LANGUAGE]** ([PROFICIENCY]): [FRAMEWORKS_AND_LIBRARIES]
 - [OTHER_SKILLS]
 
-### Domain Expertise
+### Conhecimento de domínio
 - [DOMAIN_1]
 - [DOMAIN_2]
 
-### Software & Tools
+### Softwares e ferramentas
 - [TOOL_LIST]
 
-## Publications
-<!-- List peer-reviewed publications, if any -->
+## Publicações
+<!-- Publicações revisadas por pares, se houver (link do Lattes ou do Google Scholar ajuda) -->
 1. [AUTHOR_LIST] ([YEAR]). [TITLE]. [JOURNAL]. [DOI_LINK]
 
-## Awards
+## Prêmios
 - [AWARD] - [EVENT] ([YEAR])
 
-## References
+## Referências
 - [NAME], [TITLE], [COMPANY] ([EMAIL], [PHONE])
 
-More references available upon request.
+Outras referências disponíveis mediante solicitação.

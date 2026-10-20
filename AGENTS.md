@@ -1,19 +1,19 @@
 ---
-framework_version: 1.0.0
+framework_version: 1.1.0
 ---
 
-# Agent Guidelines: AI Job Search
+# Orientações para agentes: job-pindorama
 
-This workspace is structured to manage job search activities, scraper tools, CVs, cover letters, and interview preparation.
+Este espaço de trabalho organiza a busca de emprego: ferramentas de busca de vagas, currículos, cartas de apresentação e preparação para entrevistas, adaptados ao mercado brasileiro. Converse em português do Brasil, a menos que a pessoa escreva em outro idioma.
 
-## Thin-Pointer Design (Single Source of Truth)
+## Ponteiros finos (fonte única da verdade)
 
-To prevent duplication and configuration drift across different AI agent frameworks (Claude Code, Google Antigravity, Codex, Cursor, Gemini CLI, etc.), this workspace uses a unified thin-pointer design. All agent runtimes should load the canonical specifications and candidate profiles from the files and directories below:
+Para evitar duplicação e divergência de configuração entre diferentes ambientes de agentes de IA (Claude Code, Google Antigravity, Codex, Cursor, Gemini CLI etc.), este espaço de trabalho usa um desenho de ponteiros finos. Todo ambiente de agente deve carregar as especificações canônicas e os perfis a partir dos arquivos e pastas abaixo:
 
-1. **Personal Candidate Profile:**
-   - The candidate profile, contact details, education, and target preferences are defined in [CLAUDE.md](CLAUDE.md) and the individual profile methodology files under [.claude/skills/job-application-assistant/](.claude/skills/job-application-assistant/) (specifically `01-*.md` etc.).
-2. **Canonical Workflow Specifications:**
-   - The step-by-step instructions and triggers for tasks (setup, scrape, rank, apply, upskill, interview) are defined in the [.claude/](.claude/) directory (specifically under `.claude/skills/` and `.claude/commands/`).
-   - Do not duplicate these rules or specifications. Treat `.claude/` files as the single source of truth.
-3. **Portal Search Skills:**
-   - Job-portal search CLIs live under [.agents/skills/](.agents/skills/) in the portable Agent Skills format (with a `SKILL.md` per portal). Codex and Antigravity discover these automatically; the `/scrape` workflow in [.claude/skills/job-scraper/](.claude/skills/job-scraper/) orchestrates them.
+1. **Perfil da pessoa candidata:**
+   - O perfil, os contatos, a formação e as preferências de busca estão no [CLAUDE.md](CLAUDE.md) e nos arquivos de método do perfil em [.claude/skills/job-application-assistant/](.claude/skills/job-application-assistant/) (especificamente `01-*.md` etc.).
+2. **Especificações canônicas do fluxo:**
+   - As instruções passo a passo e os gatilhos das tarefas (setup, scrape, rank, apply, upskill, interview) estão na pasta [.claude/](.claude/) (especificamente em `.claude/skills/` e `.claude/commands/`).
+   - Não duplique essas regras ou especificações. Trate os arquivos de `.claude/` como a fonte única da verdade.
+3. **Skills de busca em portais:**
+   - As CLIs de busca em portais de vagas ficam em [.agents/skills/](.agents/skills/), no formato portátil de Agent Skills (um `SKILL.md` por portal: `gupy-search`, `linkedin-search`, `freehire-search`). O Codex e o Antigravity as descobrem sozinhos; o fluxo do `/scrape` em [.claude/skills/job-scraper/](.claude/skills/job-scraper/) as orquestra.

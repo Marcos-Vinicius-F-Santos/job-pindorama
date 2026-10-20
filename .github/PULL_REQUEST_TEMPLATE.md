@@ -1,15 +1,16 @@
-<!-- Heads-up before you publish: if you built this in a personalized fork
-     (your profile data, your market's job portals, another AI runtime),
-     note that GitHub points new PRs at the UPSTREAM repo by default.
-     Those adaptations live in forks - see CONTRIBUTING.md - and get
-     discovered via the pinned "Community forks & adaptations" discussion (#78).
-     Check the "base repository" dropdown above before you continue. -->
+<!-- Atenção antes de publicar: se você construiu isto num fork personalizado
+     (com os seus dados de perfil), saiba que o GitHub aponta PRs novos para o
+     repositório de ORIGEM por padrão. Confira a lista "base repository" acima
+     antes de continuar. Melhorias no núcleo do fluxo, que valem para qualquer
+     país, vão para o projeto original (MadsLorentzen/ai-job-search); a
+     adaptação para o Brasil fica aqui - veja o CONTRIBUTING.md. -->
 
-## What changed and why
+## O que mudou e por quê
 
-## Failing case / reproduction (for fixes)
+## Caso de falha / como reproduzir (para correções)
 
-## Verification
-<!-- What you ran, per CONTRIBUTING: python3 tools/lint_skills.py,
-     python3 tools/check_framework_version.py, bun test / bun run typecheck
-     in touched CLIs, python3 -m unittest discover -s tests -->
+## Verificação
+<!-- O que você rodou, conforme o CONTRIBUTING: python tools/lint_skills.py,
+     python tools/check_framework_version.py, python tools/security_guards.py,
+     bun test / bun run typecheck nas CLIs alteradas,
+     python -m unittest discover -s tests -t . -->

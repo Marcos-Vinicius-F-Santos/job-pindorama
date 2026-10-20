@@ -1,146 +1,148 @@
-# /html-report - Generate Application Tracker Dashboard
+# /html-report - Gerar o painel de candidaturas
 
-Generate a self-contained HTML dashboard from `job_search_tracker.csv` and the application archives under `documents/applications/`. The output is a single `.html` file — no server, no dependencies — that can be opened directly in a browser.
+Gere um painel HTML autossuficiente a partir de `job_search_tracker.csv` e dos arquivos de candidatura em `documents/applications/`. A saída é um único arquivo `.html` — sem servidor, sem dependências — que abre direto no navegador. O painel é todo em português do Brasil.
 
-## Step 0: Parse Arguments
+## Passo 0: Interpretar os argumentos
 
-- No argument → output to `reports/application-dashboard.html`
-- A path argument (e.g. `/html-report ~/Desktop/report.html`) → use that path
-- `--open` flag → after writing, tell the user to open the file (cannot open a browser directly)
+- Sem argumento → grava em `reports/application-dashboard.html`
+- Um caminho como argumento (ex.: `/html-report ~/Desktop/relatorio.html`) → usa esse caminho
+- Opção `--open` → depois de gravar, diga à pessoa para abrir o arquivo (você não consegue abrir um navegador diretamente)
 
-Create `reports/` if it does not exist.
+Crie `reports/` se não existir.
 
 ---
 
-## Step 1: Collect Data
+## Passo 1: Reunir os dados
 
-Read in parallel:
+Leia em paralelo:
 
-1. **`job_search_tracker.csv`** — the primary source. Parse every row into a record with fields:
+1. **`job_search_tracker.csv`** — a fonte principal. Leia cada linha como um registro com os campos:
    `date`, `company`, `sector`, `role`, `role_type`, `channel`, `status`, `contact_person`, `fit_rating`, `notes`, `cv_file`, `cover_letter_file`, `source`, `deadline`
 
-   Rows written before `deadline` existed have thirteen fields and no fourteenth value. Treat the missing field as empty - never drop the row, and never infer a deadline from its `date`.
+   Linhas gravadas antes de `deadline` existir têm treze campos e nenhum décimo quarto valor. Trate o campo ausente como vazio — nunca descarte a linha, e nunca deduza um prazo a partir da `date` dela.
 
-2. **`documents/applications/*/outcome.md`** — for each resolved application, read the outcome file to get the exact interview stages reached (the checkboxes) and any notes. Merge this into the matching tracker row by company+role fuzzy match (lowercase, ignore punctuation). If an archive exists for a row but there is no match, attach it as extra context anyway.
+2. **`documents/applications/*/outcome.md`** — para cada candidatura resolvida, leia o arquivo de resultado para obter as etapas de entrevista exatas alcançadas (as caixas marcadas) e as observações. Junte isso à linha do tracker correspondente por empresa+cargo com correspondência aproximada (minúsculas, ignorando pontuação). Se houver um arquivo para uma linha sem correspondência, anexe-o como contexto extra mesmo assim.
 
-Status normalisation — map tracker values to six canonical buckets before computing stats:
-- `drafted` → **Drafted** (documents written by `/apply`, not yet submitted)
-- `applied` → **Active** (resume submitted, no further signal)
-- `interview` → **Interview**
-- `offer` → **Offer**
-- `hired` → **Hired**
-- `rejected` / `no_response` / `no response` / `offer_declined` / `offer declined` / `withdrawn` → **Rejected/Closed**
-- anything else → **Rejected/Closed**, and name the unrecognised value once in the status breakdown — matching is case-insensitive
+Normalização de status — leve os valores do tracker a seis categorias canônicas antes de calcular as estatísticas:
+- `drafted` → **Rascunho** (documentos gravados pelo `/apply`, ainda não enviados)
+- `applied` → **Ativa** (currículo enviado, nenhum sinal adicional)
+- `interview` → **Entrevista**
+- `offer` → **Proposta**
+- `hired` → **Contratação**
+- `rejected` / `no_response` / `no response` / `offer_declined` / `offer declined` / `withdrawn` → **Recusada/Encerrada**
+- qualquer outro valor → **Recusada/Encerrada**, e cite o valor não reconhecido (unrecognised) uma vez no detalhamento por status — a correspondência não diferencia maiúsculas
 
-   The bucket map tolerates the legacy space spellings on read so nothing written before
-   the canonical forms were locked drops out of the stats; the **Tracker status vocabulary**
-   in `/outcome` is the authoritative set.
-
----
-
-## Step 2: Compute Summary Stats
-
-From the normalised data compute:
-
-**Drafted rows are excluded from every statistic below** — they were never submitted. Report the Drafted count on its own, and include it only in the status breakdown.
-
-- **Total applications**
-- **By status bucket:** count per bucket
-- **By sector:** count per unique sector value
-- **By channel:** portal vs online vs referral vs other
-- **By year/season:** group by the `date` field (which may be a year like `2025` or a full date)
-- **Funnel rates:** what % progressed past resume screen (reached Interview or beyond). Compute stage-reached from history, not current status: an application counts as having reached a stage when its current status implies it **or** its merged `outcome.md` stage checkboxes (Step 1.2) show the stage was reached - a `rejected` row whose outcome file ticks an interview stage reached Interview, and a `hired` row reached every stage before Hired. Current status alone structurally undercounts every earlier stage: a finished search would read as though nobody ever interviewed.
-- **Rejection rate:** true rejections (`rejected`, `no_response`) ÷ applications with a final outcome. `offer_declined` (the candidate turned the offer down - a success) and `withdrawn` (candidate-initiated) are not rejections and stay out of the numerator; Interview and Offer rows are still unresolved, so they stay out of the denominator along with Active. The Rejected/Closed status *bucket* still groups all closed rows for the doughnut - the rate just must not reuse the bucket blindly.
+   O mapa de categorias aceita as grafias antigas com espaço na leitura, para nada gravado antes
+   de as formas canônicas serem fixadas sumir das estatísticas; o **Vocabulário de status do tracker**
+   do `/outcome` é o conjunto oficial.
 
 ---
 
-## Step 3: Generate the HTML
+## Passo 2: Calcular as estatísticas
 
-Write a single self-contained HTML file. All CSS is inline in a `<style>` block. All JS is inline in a `<script>` block. Draw the doughnut and bar charts as hand-generated inline SVG — no Chart.js, no CDN, no external dependencies of any kind. The report must render fully offline on every open.
+A partir dos dados normalizados, calcule:
 
-**Escaping (required):** HTML-escape every CSV/outcome-file value (`&` `<` `>` `"` `'`) before interpolating it into the page — this includes table cells, `title` attributes on truncated notes, and any text placed inside SVG (`<text>` labels, chart tooltips). Notes and company names copied from job postings routinely contain these characters; unescaped, they break the layout or inject markup into a page the user opens routinely.
+**Linhas em Rascunho ficam fora de todas as estatísticas abaixo** — nunca foram enviadas. Informe a contagem de Rascunho à parte, e inclua-a só no detalhamento por status.
+
+- **Total de candidaturas**
+- **Por categoria de status:** contagem por categoria
+- **Por setor:** contagem por valor único de setor
+- **Por canal:** portal × online × indicação × outro
+- **Por ano/temporada:** agrupe pelo campo `date` (que pode ser um ano como `2025` ou uma data completa)
+- **Taxas do funil:** que % passou da triagem de currículo (chegou à Entrevista ou além). Calcule a etapa alcançada pelo histórico, não pelo status atual: uma candidatura conta como tendo alcançado uma etapa quando o status atual a implica **ou** quando as caixas de etapa do `outcome.md` juntado (Passo 1.2) mostram que a etapa foi alcançada — uma linha `rejected` cujo arquivo de resultado marca uma etapa de entrevista chegou à Entrevista, e uma linha `hired` passou por todas as etapas antes da Contratação. Usar só o status atual subconta todas as etapas anteriores por construção: uma busca terminada pareceria uma em que ninguém foi entrevistado.
+- **Taxa de recusa:** recusas de verdade (`rejected`, `no_response`) ÷ candidaturas com desfecho final. `offer_declined` (a pessoa recusou a proposta — um sucesso) e `withdrawn` (desistência da pessoa) não são recusas e ficam fora do numerador; linhas em Entrevista e Proposta ainda não estão resolvidas, então ficam fora do denominador junto com as Ativas. A *categoria* Recusada/Encerrada continua agrupando todas as linhas encerradas para o gráfico de rosca — a taxa só não pode reutilizar a categoria às cegas.
+
+---
+
+## Passo 3: Gerar o HTML
+
+Grave um único arquivo HTML autossuficiente, com `<html lang="pt-BR">`. Todo o CSS fica inline num bloco `<style>`. Todo o JS fica inline num bloco `<script>`. Desenhe os gráficos de rosca e de barras como SVG inline gerado à mão — sem Chart.js, sem CDN, sem dependência externa de nenhum tipo. O relatório precisa abrir completo sem internet, sempre.
+
+**Escape (obrigatório):** faça o escape HTML de todo valor vindo do CSV ou dos arquivos de resultado (`&` `<` `>` `"` `'`) antes de interpolá-lo na página — isso inclui células de tabela, atributos `title` de observações truncadas e qualquer texto posto dentro do SVG (rótulos `<text>`, dicas dos gráficos). Observações e nomes de empresa copiados de vagas trazem esses caracteres com frequência (C&A, P&G); sem escape, quebram o layout ou injetam marcação numa página que a pessoa abre o tempo todo.
+
+**Datas:** mostre as datas no formato brasileiro `DD/MM/AAAA` na tabela, mantendo a ordenação pela data ISO.
 
 ### Layout
 
 ```
 ┌─────────────────────────────────────────────┐
-│  🔍 Job Search Dashboard    Generated: DATE  │
+│  🔍 Painel da busca de emprego  Gerado: DATA │
 ├──────┬──────┬──────┬──────┬──────┬───────────┤
-│Sent  │Draft │Active│Inter-│Offer │Rejected/  │  ← stat cards
-│  N   │  N   │  N   │view N│  N   │Closed   N │
+│Envia-│Rascu-│Ativas│Entre-│Propo-│Recusadas/ │  ← cartões de números
+│das N │nho N │  N   │vista │sta N │Encerradas │
 ├──────┴──────┴──────┴──────┴──────┴───────────┤
-│  Status breakdown (doughnut) │ By sector (bar)│  ← charts row
+│  Status (rosca)          │ Por setor (barras) │  ← linha de gráficos
 ├─────────────────────────────────────────────  ┤
-│  By channel (bar)  │  Funnel (horizontal bar) │  ← charts row
+│  Por canal (barras)  │  Funil (barras horiz.) │  ← linha de gráficos
 ├──────────────────────────────────────────────  ┤
-│  Applications  [Status ▾] [Sector ▾] [🔍 ...]│  ← table with filters
-│  date │ company │ sector │ role │ status │ ... │
+│  Candidaturas  [Status ▾] [Setor ▾] [🔍 ...]  │  ← tabela com filtros
+│  data │ empresa │ setor │ cargo │ status │ ... │
 │  ...                                          │
 └───────────────────────────────────────────────┘
 ```
 
-### Design spec
+### Especificação visual
 
-- **Colour palette:** CSS custom properties. Status colours:
-  - Drafted: `#64748b` (slate)
-  - Active: `#3b82f6` (blue)
-  - Interview: `#f59e0b` (amber)
-  - Offer: `#8b5cf6` (purple)
-  - Hired: `#22c55e` (green)
-  - Rejected/Closed: `#ef4444` (red)
-- **Font:** system-ui stack, no web fonts
-- **Stat cards:** white background, subtle shadow, large bold number, label below, left border in status colour
-- **Charts:** contained in a 2-column grid on wide screens, stacked on narrow
-- **Table:**
-  - Alternating row shading
-  - Status column uses a coloured pill/badge
-  - `source` column renders as a hyperlink if the value is a URL (starts with `http`)
-  - Empty cells render as `—`
-  - Client-side filter: a text search input filters rows across company + role + sector; the status and sector dropdowns filter independently; all three combine (AND)
-  - Rows are sorted newest-first by default (by `date` descending, then alphabetically by company)
-- **Responsive:** usable at 900px+, not broken below that
-- **Footer:** "Generated by Claude Code · ai-job-search · {ISO date}"
+- **Paleta:** propriedades CSS personalizadas. Cores por status:
+  - Rascunho: `#64748b` (ardósia)
+  - Ativa: `#3b82f6` (azul)
+  - Entrevista: `#f59e0b` (âmbar)
+  - Proposta: `#8b5cf6` (roxo)
+  - Contratação: `#22c55e` (verde)
+  - Recusada/Encerrada: `#ef4444` (vermelho)
+- **Fonte:** pilha system-ui, sem fontes da web
+- **Cartões de números:** fundo branco, sombra sutil, número grande em negrito, rótulo abaixo, borda esquerda na cor do status
+- **Gráficos:** numa grade de 2 colunas em telas largas, empilhados em telas estreitas
+- **Tabela:**
+  - Linhas com sombreamento alternado
+  - A coluna de status usa uma etiqueta colorida
+  - A coluna `source` vira link se o valor for uma URL (começa com `http`)
+  - Células vazias aparecem como `—`
+  - Filtro no navegador: um campo de busca filtra as linhas por empresa + cargo + setor; os menus de status e de setor filtram de forma independente; os três se combinam (E)
+  - Linhas ordenadas da mais nova para a mais antiga por padrão (por `date` decrescente, depois pela empresa em ordem alfabética)
+- **Responsivo:** usável a partir de 900px, sem quebrar abaixo disso
+- **Rodapé:** "Gerado pelo Claude Code · job-pindorama (baseado no ai-job-search) · {data ISO}"
 
-### Charts (inline SVG)
+### Gráficos (SVG inline)
 
-1. **Status doughnut** — slices for each status bucket, colours from the palette above
-2. **By sector bar** (horizontal) — company count per sector, sorted descending
-3. **By channel bar** — online / referral / other
-4. **Application funnel** (horizontal bar) — Applied → Interview → Offer → Hired, each bar = count reaching that stage, derived per Step 2's funnel rule (current status **plus** the merged `outcome.md` stage checkboxes), so a candidate who interviewed and was later rejected still counts in the Interview bar
+1. **Rosca de status** — fatias por categoria de status, com as cores da paleta acima
+2. **Barras por setor** (horizontais) — quantidade por setor, em ordem decrescente
+3. **Barras por canal** — online / indicação / outro
+4. **Funil de candidaturas** (barras horizontais) — Enviada → Entrevista → Proposta → Contratação, cada barra = quantas chegaram àquela etapa, derivado pela regra de funil do Passo 2 (status atual **mais** as caixas de etapa do `outcome.md` juntado), para quem foi entrevistado e depois recusado ainda contar na barra de Entrevista
 
-Build each chart as a hand-written `<svg>` element: compute bar lengths/doughnut arc angles from the stats in Step 2 and emit the `<rect>`/`<path>`/`<circle>` and `<text>` elements directly — no charting library, no `<canvas>`. Each `<svg>` has `role="img"` and an `aria-label` summarizing the chart (e.g. "Status breakdown: 3 Active, 2 Interview, 1 Offer"). Wrap each in a `<div class="chart-card">` with an `<h3>` title above. Remember to escape any label/value text drawn into `<text>` nodes per the escaping rule above.
+Monte cada gráfico como um elemento `<svg>` escrito à mão: calcule o comprimento das barras e os ângulos dos arcos da rosca a partir das estatísticas do Passo 2 e emita os elementos `<rect>`/`<path>`/`<circle>` e `<text>` diretamente — sem biblioteca de gráficos, sem `<canvas>`. Cada `<svg>` tem `role="img"` e um `aria-label` resumindo o gráfico (ex.: "Status: 3 Ativas, 2 Entrevista, 1 Proposta"). Envolva cada um num `<div class="chart-card">` com um título `<h3>` acima. Lembre de fazer o escape de todo rótulo ou valor desenhado em nós `<text>`, conforme a regra de escape acima.
 
-### Table: columns to include
+### Tabela: colunas a incluir
 
-`Date` · `Deadline` · `Company` · `Role` · `Sector` · `Channel` · `Status` · `Notes` (truncated to 80 chars with `title` tooltip for full text) · `Source` (link or `—`)
+`Date` · `Deadline` · `Company` · `Role` · `Sector` · `Channel` · `Status` · `Notes` (truncadas em 80 caracteres, com dica `title` mostrando o texto completo) · `Source` (link ou `—`)
 
-Columns with only empty values across all rows may be omitted.
-
----
-
-## Step 4: Write and Confirm
-
-Write the complete HTML to the output path using the Write tool.
-
-Then present:
-
-> **Dashboard generated:** `<output path>`
->
-> Open it in any browser — no server needed.
->
-> **Summary:**
-> - Applications sent: N · drafted, not yet sent: N
-> - Active: N · Interview: N · Hired: N · Rejected/Closed: N
-> - Funnel: N% progressed past resume screen
->
-> Re-run `/html-report` any time after adding new entries via `/apply` or `/outcome` to refresh the dashboard.
+Mostre os cabeçalhos em português: Data · Prazo · Empresa · Cargo · Setor · Canal · Status · Observações · Origem. Colunas vazias em todas as linhas podem ser omitidas.
 
 ---
 
-## Design Principles
+## Passo 4: Gravar e confirmar
 
-- **Self-contained.** One file, fully offline — charts are inline SVG, no CDN or external requests of any kind.
-- **Data-only.** This command reads and renders; it never writes to the tracker or archive.
-- **Idempotent.** Re-running overwrites the previous report at the same path — no accumulation.
-- **Graceful on sparse data.** With only a few rows (as now), charts render correctly for small N; the table is the primary value. Do not suppress charts just because N is small.
-- **No fabrication.** Every number in the report comes directly from the CSV or outcome files. Do not infer or estimate missing fields.
+Grave o HTML completo no caminho de saída com a ferramenta Write.
+
+Depois apresente:
+
+> **Painel gerado:** `<caminho de saída>`
+>
+> Abra em qualquer navegador — não precisa de servidor.
+>
+> **Resumo:**
+> - Candidaturas enviadas: N · rascunhadas, ainda não enviadas: N
+> - Ativas: N · Entrevista: N · Contratação: N · Recusadas/Encerradas: N
+> - Funil: N% passaram da triagem de currículo
+>
+> Rode `/html-report` de novo sempre que acrescentar entradas via `/apply` ou `/outcome`, para atualizar o painel.
+
+---
+
+## Princípios de projeto
+
+- **Autossuficiente.** Um arquivo, totalmente offline — os gráficos são SVG inline, sem CDN nem pedido externo de nenhum tipo.
+- **Só dados.** Este comando lê e desenha; nunca grava no tracker nem no arquivo.
+- **Idempotente.** Rodar de novo sobrescreve o relatório anterior no mesmo caminho — sem acúmulo.
+- **Elegante com poucos dados.** Com poucas linhas, os gráficos aparecem corretamente para N pequeno; a tabela é o valor principal. Não esconda gráficos só porque N é pequeno.
+- **Nada inventado.** Todo número do relatório vem direto do CSV ou dos arquivos de resultado. Não deduza nem estime campos ausentes.

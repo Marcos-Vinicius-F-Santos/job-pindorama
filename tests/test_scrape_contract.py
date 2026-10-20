@@ -5,7 +5,7 @@ the spec itself and compare it against the real portal CLIs, so a drift on
 either side fails with a clean diff.
 
 Why this test exists: .claude/skills/job-scraper/SKILL.md Step 2 promises
-"Search output already includes title, company, location, date, and URL" for
+"A saída da busca já traz title, company, location, date, and URL" for
 every portal CLI, and Step 4.75's degraded scan flags "company null or empty
 on every result" as a half-working parser. A CLI that quietly stops emitting
 those fields flags the portal as degraded on every /scrape run while CI stays
@@ -31,7 +31,7 @@ PORTAL_CLIS = sorted((REPO_ROOT / ".agents" / "skills").glob("*-search"))
 # Derived, never copied: a hardcoded field list drifts in lockstep with
 # nothing - if Step 2's prose drops or adds a field, the known-good portals
 # and this pin would keep agreeing forever while the contract changed.
-_CONTRACT_SENTENCE = re.compile(r"Search output already includes ([a-zA-Z0-9\s,]+)\.", re.MULTILINE)
+_CONTRACT_SENTENCE = re.compile(r"A saída da busca já traz ([a-zA-Z0-9\s,]+)\.", re.MULTILINE)
 
 
 def derive_contract_fields() -> frozenset[str]:
@@ -39,7 +39,7 @@ def derive_contract_fields() -> frozenset[str]:
     match = _CONTRACT_SENTENCE.search(text)
     if match is None:
         raise AssertionError("Step 2 contract sentence not found in job-scraper/SKILL.md")
-    fields_text = re.sub(r"\s+and\s+", ",", match.group(1))
+    fields_text = re.sub(r"\s+(?:and|e)\s+", ",", match.group(1))
     fields = {f.strip().lower() for f in fields_text.split(",") if f.strip()}
     return frozenset(fields)
 
@@ -78,7 +78,7 @@ class ScrapeSearchOutputContractTests(unittest.TestCase):
 # Step 4's storage schema, derived the same way as the Step 2 contract above:
 # the field list lives in the spec, never duplicated here, so a schema change
 # fails this test instead of silently agreeing with a stale copy.
-_STEP4_SCHEMA_BLOCK = re.compile(r"Add ALL fetched jobs.*?```json(.*?)```", re.DOTALL)
+_STEP4_SCHEMA_BLOCK = re.compile(r"Acrescente TODAS as vagas coletadas.*?```json(.*?)```", re.DOTALL)
 
 
 def derive_stored_fields() -> frozenset[str]:
@@ -131,7 +131,7 @@ class SeenJobsPostingDateTests(unittest.TestCase):
         self.assertIn("`posted_date`", text, "posted_date is in the schema but never documented")
         self.assertRegex(
             text,
-            r"never infer a posting date",
+            r"nunca deduza uma data de publicação",
             "posted_date must carry the same never-backfill rule as `deadline`",
         )
 
@@ -143,13 +143,13 @@ class SeenJobsDedupContinuityTests(unittest.TestCase):
         text = SCRAPER_SKILL.read_text(encoding="utf-8")
         self.assertRegex(
             text,
-            r"URL matches any existing `(?:job_scraper/)?seen_jobs\.json` entry, regardless of\s+that entry's key",
+            r"URL corresponder a qualquer entrada existente em `(?:job_scraper/)?seen_jobs\.json`, qualquer\s+que seja a chave dela",
             "legacy seen_jobs entries must be matched by URL during the key-rule transition",
         )
 
     def test_step4_presentation_mentions_url_deduplication(self):
         text = SCRAPER_SKILL.read_text(encoding="utf-8")
-        self.assertRegex(text, r"matched by URL or\s+company\+title")
+        self.assertRegex(text, r"por URL ou\s+empresa\+título")
 
 
 if __name__ == "__main__":

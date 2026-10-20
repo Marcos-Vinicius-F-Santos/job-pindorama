@@ -1,61 +1,62 @@
 # linkedin-cli
 
-CLI for searching jobs on LinkedIn's public job listings, for **any country/region**
-(and remote), across any sector.
+CLI para buscar vagas nos anúncios públicos do LinkedIn, para **qualquer país ou região**
+(e remotas), em qualquer setor.
 
-**Data source**: LinkedIn `jobs-guest` endpoints (`seeMoreJobPostings/search` and `jobPosting/<id>`).
-**Authentication**: None required.
-**Dependencies**: None (plain `bun` + `fetch`). `bun install` is optional and only pulls dev type defs.
+**Fonte de dados**: rotas `jobs-guest` do LinkedIn (`seeMoreJobPostings/search` e `jobPosting/<id>`).
+**Autenticação**: nenhuma.
+**Dependências**: nenhuma (só `bun` + `fetch`). O `bun install` é opcional e só traz as definições de tipos.
 
-> **Personal use only.** This uses LinkedIn's public job pages; automated access is against
-> LinkedIn's Terms of Service. Keep volume low, don't use it commercially or for bulk data
-> collection, and run it on your own responsibility.
+> **Só para uso pessoal.** Usa as páginas públicas de vagas do LinkedIn; acesso automatizado
+> vai contra os Termos de Serviço do LinkedIn. Mantenha o volume baixo, não use para fins
+> comerciais nem para coleta em massa, e use por sua conta e risco.
 
-## Installation
+## Instalação
 
 ```bash
 cd .agents/skills/linkedin-search/cli
-bun install   # optional — only installs TypeScript dev types
+bun install   # opcional — só instala os tipos do TypeScript
 ```
 
-The CLI runs without any install because it has zero runtime dependencies.
+A CLI roda sem instalar nada, porque não tem dependências de execução.
 
-## Commands
+## Comandos
 
-| Command | Description |
-|---------|-------------|
-| `search` | Search for job listings (`--location` required) |
-| `detail` | Fetch full detail for a single job listing |
+| Comando | Descrição |
+|---------|-----------|
+| `search` | Busca vagas (`--location` obrigatório) |
+| `detail` | Obtém o detalhe completo de uma vaga |
 
-`search` accepts `--format json|table|plain` (default `json`); `detail` accepts `--format json|plain`.
-All errors are written to **stderr** as `{ "error": "...", "code": "..." }` with exit code `1`.
+O `search` aceita `--format json|table|plain` (padrão `json`); o `detail` aceita `--format json|plain`.
+Todos os erros vão para o **stderr** como `{ "error": "...", "code": "..." }`, com código de saída `1`.
+As mensagens de ajuda e de erro da CLI estão em inglês (código do projeto original).
 
-## Quick examples
+## Exemplos rápidos
 
 ```bash
-# Software roles in Hyderabad, last 7 days
-bun run src/cli.ts search -q "backend engineer" -l "Hyderabad, Telangana, India" --jobage 7 --format table
+# Backend em Belo Horizonte, últimos 7 dias
+bun run src/cli.ts search -q "desenvolvedor backend" -l "Belo Horizonte, Minas Gerais, Brasil" --jobage 7 --format table
 
-# Design roles in London
-bun run src/cli.ts search -q "product designer" -l "London, United Kingdom" --format table
+# Design em São Paulo
+bun run src/cli.ts search -q "product designer" -l "São Paulo, Brasil" --format table
 
-# Fully remote
-bun run src/cli.ts search -q "technical writer" -l "Remote" --remote remote --format table
+# Totalmente remoto
+bun run src/cli.ts search -q "redator técnico" -l "Brasil" --remote remote --format table
 
-# Full detail for one job
+# Detalhe completo de uma vaga
 bun run src/cli.ts detail 4426311357 --format plain
 ```
 
-See `../SKILL.md` for the full flag reference and the Terms-of-Service note.
+Veja o `../SKILL.md` para a referência completa das opções e o aviso sobre os Termos de Serviço.
 
-## Search flags
+## Opções de busca
 
-| Flag | Alias | Description |
-|------|-------|-------------|
-| `--location` | `-l` | **Required.** Place string, e.g. `"Mumbai, Maharashtra, India"`, `"Berlin, Germany"`, `"Remote"`. |
-| `--query` | `-q` | Keywords (title / skill / role). Recommended. |
-| `--jobage` | | Posted within N days: `1`, `7`, `14`, `30`. |
+| Opção | Apelido | Descrição |
+|-------|---------|-----------|
+| `--location` | `-l` | **Obrigatória.** Nome do lugar, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Remote"`. |
+| `--query` | `-q` | Palavras-chave (cargo / competência / função). Recomendada. |
+| `--jobage` | | Publicadas nos últimos N dias: `1`, `7`, `14`, `30`. |
 | `--remote` | | `remote` \| `hybrid` \| `onsite`. |
-| `--page` | | 1-indexed page (10 results/page). |
-| `--limit` | `-n` | Cap results emitted. |
+| `--page` | | Página, começando em 1 (10 resultados por página). |
+| `--limit` | `-n` | Limita os resultados emitidos. |
 | `--format` | | `json` \| `table` \| `plain`. |

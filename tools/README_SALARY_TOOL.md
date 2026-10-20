@@ -1,44 +1,44 @@
-# Salary Benchmark Tool
+# Ferramenta de referência salarial
 
-## What is this?
+## O que é?
 
-The salary lookup tool (`salary_lookup.py`) lets you benchmark company salaries against a baseline from your own data. It's used during the `/apply` workflow to show how a company's compensation compares to market rates.
+A ferramenta de consulta salarial (`salary_lookup.py`) compara os salários de uma empresa com uma referência, a partir dos seus próprios dados. Ela é usada no fluxo do `/apply` para mostrar como a remuneração de uma empresa se compara com o mercado.
 
-**This tool is optional.** If you don't have salary data, the salary step is simply skipped during `/apply`.
+**A ferramenta é opcional.** Se você não tiver dados salariais, o passo de salário é simplesmente pulado no `/apply`, e a avaliação usa fontes públicas (guias salariais de consultorias, Glassdoor Brasil, Novo CAGED), dizendo qual usou.
 
-## How it works
+## Como funciona
 
-The tool reads a `salary_data.json` file in the repo root containing company salary benchmarks. It uses fuzzy matching to find companies by name, handling Danish/Nordic characters, legal suffixes (A/S, ApS), and common spelling variations.
+A ferramenta lê um arquivo `salary_data.json` na raiz do repositório com referências salariais por empresa. Ela usa correspondência aproximada para achar empresas pelo nome, lidando com acentos (busque "Itau" e ela acha "Itaú"), sufixos societários brasileiros (Ltda., S.A., S/A, SA, ME, EPP, EIRELI, SLU), palavras como "Grupo", "Holding" e "Participações", e partes entre parênteses ou depois de vírgula ("Banco Santander (Brasil) S.A.", "Lojas Renner, Filial Recife"). "Brasil" **não** é removido do nome de propósito: senão "Banco do Brasil" viraria só "Banco".
 
-The data format supports any index-based or absolute salary data. For example:
-- Index 100 = median salary, higher is better
-- Absolute salary values in your currency
-- Any custom metric you want to track
+O formato aceita dados por índice ou valores absolutos. Por exemplo:
+- Index 100 = median salary (índice 100 = salário mediano; maior é melhor)
+- Valores absolutos de salário em reais
+- Qualquer métrica própria que você queira acompanhar
 
-## Data format
+## Formato dos dados
 
-The tool expects `salary_data.json` with this structure:
+A ferramenta espera um `salary_data.json` com esta estrutura:
 
 ```json
 {
   "metadata": {
-    "source": "My Union Statistics 2025",
+    "source": "Pesquisa salarial 2026",
     "index_baseline": 100,
-    "index_label": "Index",
-    "baseline_description": "Index 100 = median salary for private sector"
+    "index_label": "Índice",
+    "baseline_description": "Índice 100 = salário mediano do setor privado"
   },
   "companies": [
     {
-      "company": "Novo Nordisk A/S",
-      "city": "Bagsværd",
+      "company": "Mercado Livre Ltda.",
+      "city": "Osasco",
       "categories": {
         "all_employees": { "count": 500, "index": 108.5 },
         "engineering": { "count": 120, "index": 112.3 }
       }
     },
     {
-      "company": "Ørsted A/S",
-      "city": "Fredericia",
+      "company": "WEG S.A.",
+      "city": "Jaraguá do Sul",
       "categories": {
         "all_employees": { "count": 200, "index": 105.2 }
       }
@@ -47,78 +47,85 @@ The tool expects `salary_data.json` with this structure:
 }
 ```
 
-### Fields
+### Campos
 
-- **metadata.source**: Where the data comes from (for reference)
-- **metadata.index_baseline**: The baseline value (e.g., 100 for index-based data)
-- **metadata.index_label**: Label for the index column in output
-- **metadata.baseline_description**: Human-readable explanation of the baseline
-- **companies[].company**: Company name (required)
-- **companies[].city**: City/location (optional, used for filtering)
-- **companies[].categories**: Named salary categories, each with `count` and/or `index`
+- **metadata.source**: de onde vêm os dados (para referência)
+- **metadata.index_baseline**: o valor de referência (ex.: 100 para dados por índice; 0 para valores absolutos)
+- **metadata.index_label**: rótulo da coluna de índice na saída
+- **metadata.baseline_description**: explicação legível da referência
+- **companies[].company**: nome da empresa (obrigatório)
+- **companies[].city**: cidade/local (opcional, usado para filtrar)
+- **companies[].categories**: categorias salariais com nome, cada uma com `count` e/ou `index`
 
-## Setup options
+## Opções de configuração
 
-### Option A: Create salary_data.json manually
+### Opção A: criar o salary_data.json à mão
 
-Create the file by hand with data from any source: union statistics, Glassdoor, salary surveys, networking, or personal research.
+Crie o arquivo à mão com dados de qualquer fonte: pesquisas salariais, guias de consultorias de recrutamento, Glassdoor, conversas com pessoas da área ou pesquisa própria.
 
-### Option B: Convert from Excel
+### Opção B: converter de uma planilha Excel
 
-If you have salary data in an Excel file:
+Se você tem os dados numa planilha Excel:
 
 ```bash
 pip install openpyxl
-python3 tools/convert_salary_excel.py path/to/salary-data.xlsx \
-  --source "My Salary Data 2025" \
+python3 tools/convert_salary_excel.py caminho/para/salarios.xlsx \
+  --source "Minha pesquisa salarial 2026" \
   --baseline 100 \
-  --baseline-desc "Index 100 = median salary"
+  --baseline-desc "Índice 100 = salário mediano"
 ```
 
-On Windows, use `py` if that is how Python is exposed on your PATH. If your system uses `python` instead of `python3`, substitute that in the examples.
+No Windows, use `py` ou `python` conforme o seu PATH. Se o seu sistema usa `python` em vez de `python3`, troque nos exemplos.
 
-The converter auto-detects the Excel layout:
-- Looks for a "Company"/"Firma" column and an optional "City"/"By" column
-- Treats remaining columns as salary data (auto-pairs count/index columns)
+O conversor detecta a organização da planilha sozinho:
+- Procura uma coluna "Empresa" (ou "Company"/"Firma") e uma coluna opcional "Cidade" (ou "City"/"By")
+- Trata as demais colunas como dados salariais e junta os pares de quantidade e índice pela categoria: "Qtd. funcionários TI" + "Salário médio TI" viram a categoria `ti`
+- Reconhece cabeçalhos acentuados ("Salário", "Média", "Remuneração", "Índice", "Quantidade", "Funcionários", "Colaboradores")
+- Lê números no formato brasileiro (`12.345,67`) e no americano (`12,345.67`)
+- Descarta colunas de identificação (`ID`, `CPF`, `Matrícula`), que nunca são dado salarial
 
-### Option C: Build from research
+### Opção C: montar a partir de pesquisa
 
-Start with an empty template and add companies as you research them:
+Comece com um modelo vazio e acrescente empresas à medida que pesquisar:
 
 ```json
 {
   "metadata": {
-    "source": "Personal research",
+    "source": "Pesquisa própria",
     "index_baseline": 0,
-    "index_label": "Monthly salary (DKK)",
-    "baseline_description": "Approximate monthly salary before tax"
+    "index_label": "Salário mensal bruto CLT (R$)",
+    "baseline_description": "Salário mensal aproximado, bruto, em regime CLT"
   },
   "companies": [
     {
-      "company": "Example Corp",
-      "city": "Copenhagen",
+      "company": "Acme Tecnologia Ltda.",
+      "city": "São Paulo",
       "categories": {
-        "entry_level": { "index": 42000 },
-        "senior": { "index": 55000 }
+        "junior": { "index": 5500 },
+        "pleno": { "index": 9000 },
+        "senior": { "index": 14000 }
       }
     }
   ]
 }
 ```
 
-## Usage
+Deixe claro no `index_label` se o valor é **bruto CLT** ou **valor PJ**: os dois não se comparam diretamente (veja a seção de regime em `04-job-evaluation.md`).
+
+## Uso
 
 ```bash
-python3 salary_lookup.py "Novo Nordisk"
-python3 salary_lookup.py "Ørsted" --city "Fredericia"
-python3 salary_lookup.py "COWI" --json
+python3 salary_lookup.py "Mercado Livre"
+python3 salary_lookup.py "WEG" --city "Jaraguá do Sul"
+python3 salary_lookup.py "Itau" --json
 python3 salary_lookup.py --list-all
-python3 salary_lookup.py --validate      # pre-flight check your salary_data.json
+python3 salary_lookup.py --validate      # confere o seu salary_data.json antes de usar
 ```
 
-## Important notes
+## Observações importantes
 
-- The data file (`salary_data.json`) is **excluded from git** (see `.gitignore`). Your salary data may be proprietary or confidential.
-- If the data file is missing, `salary_lookup.py` exits with a helpful error message and the `/apply` workflow skips the salary benchmark step.
-- The fuzzy matcher handles Danish company name variations: legal suffixes, Nordic characters, anglicized spellings, and partial matches.
-- `--validate` checks your data file for malformed category values and duplicate company names and prints a report, without performing a lookup.
+- O arquivo de dados (`salary_data.json`) **fica fora do git** (veja o `.gitignore`). Os seus dados salariais podem ser proprietários ou confidenciais.
+- Se o arquivo de dados não existir, o `salary_lookup.py` sai com uma mensagem de erro útil e o fluxo do `/apply` pula o passo de referência salarial.
+- A correspondência aproximada lida com variações de nomes de empresas brasileiras: sufixos societários, acentos e correspondências parciais.
+- `--validate` confere o arquivo atrás de categorias malformadas e nomes de empresa duplicados e imprime um relatório, sem fazer consulta.
+- As mensagens de saída da ferramenta continuam em inglês (por compatibilidade com o projeto original); os nomes de empresa e de cidade aparecem como estão no arquivo.

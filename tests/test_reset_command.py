@@ -117,7 +117,7 @@ def setup_step3_skill_files():
     repo-relative path. Non-skill targets (CLAUDE.md, cv/main_example.tex)
     are dropped: /reset profile's scope is skill files only.
     """
-    step3 = section(SETUP.read_text(encoding="utf-8"), "## Step 3:", "## Step 4:")
+    step3 = section(SETUP.read_text(encoding="utf-8"), "## Passo 3:", "## Passo 4:")
     files = set()
     for target in re.findall(r"^###\s+\d+\.\s+\w+\s+`([^`]+)`", step3, re.MULTILINE):
         if (REPO / target).exists():
@@ -221,7 +221,7 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
 
     Two of them drifted from the files they rewrite. The behavioral-profile
     skeleton used "Strongest Behavioral Traits" / "How I Work Best" / "Growth
-    Areas" where the shipped file has "Strongest Behaviors" / "How You Work
+    Areas" where the shipped file has "Comportamentos mais fortes" / "How You Work
     Best" / "Growth Areas (frame positively in applications)", and dropped
     "Core Behavioral Drives" - the structured assessment table /setup collects
     and /interview reads - so one reset left the file's headings permanently
@@ -260,11 +260,11 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
 
     def test_fork_heading_check_rejects_a_renamed_dropped_or_reordered_heading(self):
         # The fork branch above never runs in upstream CI, so pin its strictness here.
-        skeleton = ["## Identity", "## Education", "## Awards"]
-        self.assertTrue(appear_in_order(skeleton, ["## Identity", "## Education", "## Certifications", "## Awards"]))
-        self.assertFalse(appear_in_order(skeleton, ["## Identity", "## Schooling", "## Awards"]))
-        self.assertFalse(appear_in_order(skeleton, ["## Identity", "## Awards"]))
-        self.assertFalse(appear_in_order(skeleton, ["## Education", "## Identity", "## Awards"]))
+        skeleton = ["## Identidade", "## Formação", "## Prêmios"]
+        self.assertTrue(appear_in_order(skeleton, ["## Identidade", "## Formação", "## Certificações", "## Prêmios"]))
+        self.assertFalse(appear_in_order(skeleton, ["## Identidade", "## Schooling", "## Prêmios"]))
+        self.assertFalse(appear_in_order(skeleton, ["## Identidade", "## Prêmios"]))
+        self.assertFalse(appear_in_order(skeleton, ["## Formação", "## Identidade", "## Prêmios"]))
 
     def test_full_file_skeletons_keep_the_framework_version_frontmatter(self):
         # The shipped files open with a `framework_version` marker that
@@ -297,20 +297,20 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
     def test_candidate_skeleton_keeps_the_languages_table_under_identity(self):
         # 04-job-evaluation.md's Language Gate and job-scraper/search-queries.md
         # both read "your Languages table" from 01-candidate-profile.md. The
-        # skeleton had `## Identity` with nothing under it, so after a reset the
+        # skeleton had `## Identidade` with nothing under it, so after a reset the
         # gate and the scraper looked for a table the file no longer had. Both
-        # the `### Languages` heading and the table header row are derived from
+        # the `### Idiomas` heading and the table header row are derived from
         # the shipped file; the placeholder data row is deliberately not kept.
         shipped = (SKILL_DIR / "01-candidate-profile.md").read_text(encoding="utf-8")
-        start = shipped.index("### Languages")
+        start = shipped.index("### Idiomas")
         header_rows = [
             line for line in shipped[start:].splitlines()[1:]
             if line.startswith("|")
         ][:2]
         self.assertEqual(len(header_rows), 2, "the shipped Languages table must have a header and a separator row")
         block = skeleton_block(self.reset, "01-candidate-profile.md")
-        identity = block[block.index("## Identity"): block.index("## Education")]
-        self.assertIn("### Languages", identity, "the Languages table must sit under Identity, as shipped")
+        identity = block[block.index("## Identidade"): block.index("## Formação")]
+        self.assertIn("### Idiomas", identity, "the Languages table must sit under Identity, as shipped")
         for row in header_rows:
             with self.subTest(row=row):
                 self.assertIn(row, identity)
@@ -320,11 +320,11 @@ class TestResetTargetsTheHeadingsTheShippedFilesHave(unittest.TestCase):
         # (reset.md anchor phrase, file, heading the replacement must re-emit)
         cases = (
             (
-                r"locate the section that begins with the line `([^`]+)`",
+                r"localize a seção que começa com a linha `([^`]+)`",
                 "05-cv-templates.md",
             ),
             (
-                r"The entire `([^`]+)` section",
+                r"A seção `([^`]+)` inteira",
                 "07-interview-prep.md",
             ),
         )

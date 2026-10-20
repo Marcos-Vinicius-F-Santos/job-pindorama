@@ -33,27 +33,27 @@ class TestForkWarningsAtTheDecisionPoint(unittest.TestCase):
     def assert_warns(self, body: str, where: str):
         self.assertRegex(
             body,
-            re.compile(r"public", re.IGNORECASE),
+            re.compile(r"public|públic", re.IGNORECASE),
             f"{where}'s fork section must say the fork will be public",
         )
         self.assertIn(
-            "personal data",
+            "dados pessoais",
             body,
             f"{where}'s fork section must say /setup writes personal data into tracked files",
         )
         self.assertRegex(
             body,
-            re.compile(r"section 8|§8|#8-pulling", re.IGNORECASE),
+            re.compile(r"section 8|seção 8|§8|#8-", re.IGNORECASE),
             f"{where}'s fork section must point at SETUP.md section 8's private-remote recipe",
         )
 
     def test_readme_quick_start_warns_next_to_the_fork_command(self):
-        body = section(README.read_text(encoding="utf-8"), "### 1. Fork and clone")
+        body = section(README.read_text(encoding="utf-8"), "### 1. Fork e clone")
         self.assertIn("gh repo fork", body, "sanity: the fork command lives in this section")
         self.assert_warns(body, "README")
 
     def test_setup_guide_warns_next_to_the_fork_command(self):
-        body = section(SETUP_GUIDE.read_text(encoding="utf-8"), "## 2. Fork and clone")
+        body = section(SETUP_GUIDE.read_text(encoding="utf-8"), "## 2. Fork e clone")
         self.assertIn("gh repo fork", body, "sanity: the fork command lives in this section")
         self.assert_warns(body, "SETUP.md")
 
@@ -67,7 +67,7 @@ class TestSetupChecksOriginBeforeWriting(unittest.TestCase):
             "/setup must check where the working copy would publish to",
         )
         preflight_at = text.index("git remote get-url origin")
-        writes_at = text.index("## Step 3: Generate Profile Files")
+        writes_at = text.index("## Passo 3: Gerar os arquivos do perfil")
         self.assertLess(
             preflight_at,
             writes_at,
@@ -75,7 +75,7 @@ class TestSetupChecksOriginBeforeWriting(unittest.TestCase):
             "existing Step 4 note fires after everything is already on disk",
         )
         self.assertIn(
-            "public",
+            "públic",
             text[max(0, preflight_at - 2000) : preflight_at + 2000].lower(),
             "the preflight must be about public visibility, not just remote presence",
         )

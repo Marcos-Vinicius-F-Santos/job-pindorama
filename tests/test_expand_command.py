@@ -28,28 +28,28 @@ class ExpandCommandTests(unittest.TestCase):
             "documents/linkedin/",
             "documents/diplomas/",
             "documents/references/",
-            "GitHub Profile",
+            "Perfil do GitHub",
         ]
         for src in sources:
             self.assertIn(src, text, f"expand.md must include discovery source: {src}")
 
     def test_expand_maps_github_projects_to_independent_projects_section(self):
         text = EXPAND_COMMAND_FILE.read_text(encoding="utf-8")
-        self.assertIn("## Independent Projects", text)
-        self.assertIn("Independent Projects & Portfolio", text)
+        self.assertIn("## Projetos independentes", text)
+        self.assertIn("Projetos independentes e portfólio", text)
         self.assertIn("GitHub — repo-name", text)
-        self.assertIn("Portfolio & projects grounded in code", text)
+        self.assertIn("Portfólio e projetos apoiados em código", text)
         self.assertNotIn("documents/projects/", text)
 
     def test_behavioral_additions_name_sections_the_shipped_file_has(self):
         # Step 5 told the model to append to "Strongest Behavioral Traits" or
         # "How I Work Best" and to "match existing structure" - but the shipped
         # 02-behavioral-profile.md has neither heading (it has "Strongest
-        # Behaviors" and "How You Work Best"), so the addition either landed
+        # Behaviors" and "Como você trabalha melhor"), so the addition either landed
         # in a duplicate near-identical section or was dropped. Derived from
         # the shipped file so a renamed heading fails here until /expand follows.
         text = EXPAND_COMMAND_FILE.read_text(encoding="utf-8")
-        start = text.index("### Additions to `02-behavioral-profile.md`")
+        start = text.index("### Acréscimos ao `02-behavioral-profile.md`")
         section = text[start: text.index("---", start)]
         quoted = re.findall(r'"([^"]+)"', section)
         self.assertTrue(quoted, "the 02-behavioral-profile step must name its target sections")
@@ -63,8 +63,8 @@ class ExpandCommandTests(unittest.TestCase):
 
     def test_expand_enforces_additive_and_confirmation_principles(self):
         text = EXPAND_COMMAND_FILE.read_text(encoding="utf-8")
-        self.assertIn("Additive only", text)
-        self.assertIn("User confirms before writing", text)
+        self.assertIn("Só acréscimos", text)
+        self.assertIn("A pessoa confirma antes de gravar", text)
         self.assertIn("`all`", text)
         self.assertIn("`review`", text)
         self.assertIn("`skip`", text)

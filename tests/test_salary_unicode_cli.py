@@ -21,7 +21,7 @@ class UnicodeSalaryCLI(unittest.TestCase):
         # fixture next to an isolated copy of the CLI, never a user's dataset.
         names = [
             "腾讯", "東京 AI", "北京 AI", "Acme Corp", "Café Étoile",
-            "Nestlé Danmark A/S", "Ørsted A/S", "Mærsk A/S", "Åland A/S",
+            "Nestlé Brasil Ltda.", "São Martinho S.A.", "Itaú Unibanco S.A.", "Açúcar Guarani S/A",
         ]
         data = {"companies": [
             {"company": name, "categories": {"all_employees": {"index": 105}}}
@@ -52,11 +52,11 @@ class UnicodeSalaryCLI(unittest.TestCase):
         self.assertEqual(self.lookup("acme"), ["Acme Corp"])
 
     def test_ascii_query_finds_accented_company(self):
-        self.assertEqual(self.lookup("Nestle"), ["Nestlé Danmark A/S"])
+        self.assertEqual(self.lookup("Nestle"), ["Nestlé Brasil Ltda."])
 
-    def test_nordic_spelling_variants_survive_accent_folding(self):
-        for query, expected in [("Orsted", "Ørsted A/S"),
-                                ("Maersk", "Mærsk A/S"),
-                                ("Aaland", "Åland A/S")]:
+    def test_portuguese_accents_fold_for_ascii_queries(self):
+        for query, expected in [("Sao Martinho", "São Martinho S.A."),
+                                ("Itau Unibanco", "Itaú Unibanco S.A."),
+                                ("Acucar Guarani", "Açúcar Guarani S/A")]:
             with self.subTest(query=query):
                 self.assertEqual(self.lookup(query), [expected])

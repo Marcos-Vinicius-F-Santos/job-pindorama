@@ -1,152 +1,152 @@
-# /notion-sync - Push Ranked Jobs and Applications to a Notion Database
+# /notion-sync - Enviar vagas pontuadas e candidaturas para um banco de dados do Notion
 
-You are publishing a **read-only view** of the job search into the user's Notion workspace: one database row per job, with a detailed page per shortlisted match. The repo files stay the system of record - `job_scraper/seen_jobs.json` owns scraped/ranked jobs and `job_search_tracker.csv` owns applications. Notion is a disposable presentation layer on top of them; nothing ever syncs back.
+Você vai publicar uma **visão só de leitura** da busca de emprego no espaço do Notion da pessoa: uma linha de banco de dados por vaga, com uma página detalhada para cada vaga da lista final. Os arquivos do repositório continuam sendo o registro oficial — `job_scraper/seen_jobs.json` é dono das vagas coletadas e pontuadas, e `job_search_tracker.csv` é dono das candidaturas. O Notion é uma camada de apresentação descartável por cima deles; nada volta de lá.
 
-This command requires the **Notion MCP server** (OAuth). It reads state, upserts pages, and stops - it never ranks, applies, or edits repo files. Notion is the in-tree reference binding; the sync contract itself is tool-agnostic (see "Adapting to Another Tool" at the end - only the two sections marked *(Notion binding)* are tool-specific).
+Este comando exige o **servidor MCP do Notion** (OAuth). Ele lê o estado, insere ou atualiza páginas e para — nunca pontua, candidata nem edita arquivos do repositório. O Notion é a integração de referência que vem no projeto; o contrato de sincronização em si independe de ferramenta (veja "Adaptando para outra ferramenta" no fim — só as duas seções marcadas *(integração Notion)* são específicas da ferramenta).
 
-## Lane: `/html-report` vs `/notion-sync`
+## Raia: `/html-report` × `/notion-sync`
 
-Both present the same tracker data; they own different moments. `/html-report` is the **deep-review lane**: a self-contained offline dashboard with charts and a filterable table, regenerated at your desk. `/notion-sync` is the **glanceable lane**: the current state of the pipeline, reachable anywhere Notion runs (desktop, web, phone). They compose rather than compete - after `/outcome` records a result, re-run either or both to refresh the views.
+Os dois apresentam os mesmos dados do tracker; servem a momentos diferentes. O `/html-report` é a **raia de revisão profunda**: um painel offline autossuficiente com gráficos e tabela filtrável, gerado de novo na sua mesa. O `/notion-sync` é a **raia de olhada rápida**: o estado atual do funil, acessível onde o Notion rodar (computador, web, celular). Eles se somam em vez de competir — depois que o `/outcome` registrar um resultado, rode um ou os dois de novo para atualizar as visões.
 
-Follow these steps **in order**.
-
----
-
-## Step 0: Parse Input
-
-`$ARGUMENTS` may contain:
-
-- Nothing → sync ranked jobs with score ≥ 60 (Good Fit and above) plus every tracked application
-- `--min-score <N>` → override the score threshold
-- `--all` → sync every ranked job regardless of score
-- `--rebuild` → re-fetch and rewrite page bodies too (see Step 5 - normally bodies are write-once)
+Siga estes passos **na ordem**.
 
 ---
 
-## Step 1: Preflight the Connection *(Notion binding)*
+## Passo 0: Interpretar a entrada
 
-The command is **silently optional**: when the destination is not reachable, the outcome is one clear message and a clean exit - nothing else in the framework notices this command exists.
+`$ARGUMENTS` pode conter:
 
-1. Check that Notion MCP tools are available in this session (tool names starting with `mcp__notion__` or similar). Determine this from the session's own tool list **only** - never by running shell commands like `claude mcp list`, which would interrupt the user with a permission prompt before the graceful exit. If the tools are not available, stop and tell the user how to connect:
-   > Notion MCP isn't connected. Run `claude mcp add --transport http notion https://mcp.notion.com/mcp`, then start a **new session** (servers added mid-session are only picked up on restart), run `/mcp` there to complete the OAuth login, and re-run `/notion-sync`.
-2. Verify the connection with one cheap call (e.g. a workspace search). An auth error → tell the user to re-authenticate via `/mcp` and stop. Never retry in a loop.
-3. The Notion MCP server is interactively authenticated, so "connected but not authenticable right now" (expired OAuth, headless/CI context where the login flow cannot run) gets the same graceful exit as "not configured": state the reason in one line and stop. This includes the configured-but-unauthenticated state where the server exposes only its auth handshake and no data tools - **never initiate the OAuth flow from this command and never ask whether to authenticate now**; the one line points at `/mcp` and the command ends there. Authenticating is the user's move, made outside this command.
-
----
-
-## Step 2: Build the Sync Set (local data only - no external calls yet)
-
-Validate the cheap, local precondition before creating anything external. A run with nothing to sync must exit with **zero side effects** - no database created, no state file written.
-
-1. Read `job_scraper/seen_jobs.json` and `job_search_tracker.csv` (either may be missing).
-2. Select `job_scraper/seen_jobs.json` entries with status `ranked` whose `rank_score` meets the threshold from Step 0. `--all` lifts the threshold entirely.
-3. Every tracker row joins the sync set (an applied-to job always syncs, ranked or not), matched to `job_scraper/seen_jobs.json` entries case-insensitively on company + title where possible (the tracker's `role` column against the entry's `title` field — entries carry `title`, not `role`). Tracker rows with no `job_scraper/seen_jobs.json` entry sync too - build their Key as `<company>_<role>` lowercased with underscores.
-4. `job_scraper/seen_jobs.json` entries with status `expired` join the sync set regardless of score as update-only candidates. An entry selected only because it is `expired` and has no matching tracker row can update an existing page, but never creates a page or writes a body. If a matching tracker row exists, it remains an ordinary sync item and tracker status precedence applies.
-5. **Status precedence:** the tracker wins. A job that is `ranked` in `job_scraper/seen_jobs.json` but `interview` in the tracker syncs as `interview`. Jobs only in `job_scraper/seen_jobs.json` keep their stored status. **Deadline precedence: the tracker wins too** - the tracker's `deadline` (written by `/apply` from the posting the application was actually built on) overrides the `job_scraper/seen_jobs.json` value; jobs only in `job_scraper/seen_jobs.json` keep the scraper's stored deadline. Omit the property when neither states one, and **never reconcile the two by picking the earlier or later date** - both were read from the posting at different times, and the safe-looking `min()` substitutes a date the user never applied against.
-6. **If the sync set is empty** (no ranked entries meet the threshold and there are no tracker rows), say "Nothing to sync - run `/scrape` and `/rank` first" (or, when jobs exist but all score below the threshold, say so and suggest `--min-score`/`--all`) and **stop**.
-7. State the counts before touching the destination: how many rows will be created or checked, and the threshold in effect.
+- Nada → sincroniza vagas pontuadas com nota ≥ 60 (Good Fit para cima) mais todas as candidaturas registradas
+- `--min-score <N>` → muda o limite de nota
+- `--all` → sincroniza toda vaga pontuada, qualquer que seja a nota
+- `--rebuild` → coleta de novo e reescreve também o corpo das páginas (veja o Passo 5 — normalmente o corpo é escrito uma vez só)
 
 ---
 
-## Step 3: Load Sync State and Locate the Database *(Notion binding)*
+## Passo 1: Checar a conexão *(integração Notion)*
 
-1. Read `job_scraper/notion_sync.json`. Structure:
+O comando é **opcional em silêncio**: quando o destino não está acessível, o resultado é uma mensagem clara e uma saída limpa — nada mais no projeto percebe que este comando existe.
+
+1. Confira se as ferramentas MCP do Notion estão disponíveis nesta sessão (nomes de ferramenta começando com `mcp__notion__` ou parecido). Determine isso **só** pela lista de ferramentas da própria sessão — nunca rodando comandos de shell como `claude mcp list`, que interromperiam a pessoa com um pedido de permissão antes da saída elegante. Se as ferramentas não estiverem disponíveis, pare e diga à pessoa como conectar:
+   > O MCP do Notion não está conectado. Rode `claude mcp add --transport http notion https://mcp.notion.com/mcp`, depois abra uma **sessão nova** (servidores acrescentados no meio da sessão só entram ao reiniciar), rode `/mcp` lá para concluir o login OAuth e rode `/notion-sync` de novo.
+2. Verifique a conexão com uma chamada barata (ex.: uma busca no espaço de trabalho). Erro de autenticação → diga à pessoa para autenticar de novo via `/mcp` e pare. Nunca tente de novo em loop.
+3. O servidor MCP do Notion é autenticado de forma interativa, então "conectado, mas sem como autenticar agora" (OAuth vencido, contexto sem interface ou de CI onde o login não roda) recebe a mesma saída elegante que "não configurado": diga o motivo numa linha e pare. Isso inclui o estado configurado-mas-não-autenticado, em que o servidor expõe só o aperto de mão de autenticação e nenhuma ferramenta de dados — **nunca inicie o fluxo OAuth por este comando e nunca pergunte se deve autenticar agora**; a única linha aponta para o `/mcp` e o comando termina ali. Autenticar é um passo da pessoa, feito fora deste comando.
+
+---
+
+## Passo 2: Montar o conjunto de sincronização (só dados locais — nenhuma chamada externa ainda)
+
+Valide a pré-condição local e barata antes de criar qualquer coisa externa. Uma execução sem nada a sincronizar precisa sair com **zero efeitos colaterais** — nenhum banco de dados criado, nenhum arquivo de estado gravado.
+
+1. Leia `job_scraper/seen_jobs.json` e `job_search_tracker.csv` (qualquer um pode não existir).
+2. Selecione as entradas de `job_scraper/seen_jobs.json` com status `ranked` cuja `rank_score` atinge o limite do Passo 0. O `--all` tira o limite.
+3. Toda linha do tracker entra no conjunto de sincronização (uma vaga a que a pessoa se candidatou sempre sincroniza, pontuada ou não), associadas às entradas de `job_scraper/seen_jobs.json` sem diferenciar maiúsculas por empresa + título sempre que possível (a coluna `role` do tracker contra o campo `title` da entrada — as entradas têm `title`, não `role`). Linhas do tracker sem entrada em `job_scraper/seen_jobs.json` também sincronizam — monte a Chave delas como `<company>_<role>` em minúsculas com sublinhados.
+4. Entradas de `job_scraper/seen_jobs.json` com status `expired` entram no conjunto de sincronização, qualquer que seja a nota, como candidatas só a atualização. Uma entrada escolhida só por estar `expired` e sem linha correspondente no tracker (uma "entrada só-encerrada") pode atualizar uma página existente, mas nunca cria página nem escreve corpo. Se existir uma linha correspondente no tracker, ela continua sendo um item comum da sincronização e vale a precedência de status do tracker.
+5. **Precedência de status:** o tracker vence. Uma vaga `ranked` em `job_scraper/seen_jobs.json` mas `interview` no tracker sincroniza como `interview`. Vagas só em `job_scraper/seen_jobs.json` mantêm o status gravado. **Precedência de prazo: o tracker também vence** — o `deadline` do tracker (gravado pelo `/apply` a partir da vaga em que a candidatura foi de fato montada) prevalece sobre o valor de `job_scraper/seen_jobs.json`; vagas só em `job_scraper/seen_jobs.json` mantêm o prazo gravado pelo `/scrape`. Omita a propriedade quando nenhum dos dois informar, e **nunca concilie os dois escolhendo a data mais cedo ou mais tarde** — os dois foram lidos da vaga em momentos diferentes, e o `min()` de aparência segura troca por uma data contra a qual a pessoa nunca se candidatou.
+6. **Se o conjunto de sincronização estiver vazio** (nenhuma entrada pontuada atinge o limite e não há linhas no tracker), diga "Nada para sincronizar — rode `/scrape` e `/rank` primeiro" (ou, quando houver vagas mas todas abaixo do limite, diga isso e sugira `--min-score`/`--all`) e **pare**.
+7. Informe as contagens antes de tocar o destino: quantas linhas serão criadas ou conferidas, e o limite em vigor.
+
+---
+
+## Passo 3: Carregar o estado da sincronização e localizar o banco de dados *(integração Notion)*
+
+1. Leia `job_scraper/notion_sync.json`. Estrutura:
    ```json
    { "database_id": "...", "database_url": "...", "last_sync": "YYYY-MM-DD" }
    ```
-2. If it exists, verify the database id still resolves in Notion. If the database was deleted, treat this as a first run.
-3. **First run:** search the workspace for a database named "Job Search Pipeline". If none exists and the sync set contains only expired-only entries (`job_scraper/seen_jobs.json` entries with status `expired` and no matching tracker row), stop without asking where to create a database and without creating the database or writing `job_scraper/notion_sync.json`: there are no existing pages to update. Otherwise, if no database exists, ask the user where to create it (top-level page or an existing page they name), then create it with exactly these properties:
+2. Se existir, verifique se o id do banco de dados ainda existe no Notion. Se o banco foi apagado, trate como primeira execução.
+3. **Primeira execução:** procure no espaço de trabalho um banco de dados chamado "Funil da busca de emprego". Se não existir e o conjunto de sincronização tiver só entradas só-encerradas (entradas de `job_scraper/seen_jobs.json` com status `expired` e sem linha correspondente no tracker), pare sem perguntar onde criar um banco de dados e sem criar o banco de dados nem gravar `job_scraper/notion_sync.json`: não há páginas existentes para atualizar. Caso contrário, se o banco não existir, pergunte à pessoa onde criá-lo (página de nível superior ou uma página existente que ela citar) e crie com exatamente estas propriedades:
 
-   | Property | Type | Values / notes |
-   |----------|------|----------------|
-   | Name | title | `<Role> — <Company>` |
-   | Company | rich text | |
-   | Score | number | 0-100 from `rank_score` |
-   | Verdict | select | Strong Fit / Good Fit / Moderate Fit / Weak Fit / Poor Fit |
-   | Status | select | `ranked` / `drafted` / `applied` / `interview` / `offer` / `hired` / `rejected` / `no_response` / `offer_declined` / `withdrawn` / `expired` — canonical tracker spellings per **Tracker status vocabulary** in `/outcome`; Notion options grow to match as values appear |
-   | Fit | select | high / medium / low (scraper quick-fit) |
-   | Deadline | date | tracker `deadline` column, falling back to `job_scraper/seen_jobs.json`'s `deadline` when the row has none; omit when neither states one |
-   | First seen | date | |
-   | Ranked | date | `rank_date` from `job_scraper/seen_jobs.json`; omit when not ranked |
-   | Applied on | date | tracker `date` column; omit when not in the tracker, and omit when the status is `drafted` |
-   | Channel | select | tracker `channel` column (e.g. portal / email / referral); options grow as values appear |
-   | CV file | rich text | tracker `cv_file` column - the filename only, never document content |
-   | Cover letter | rich text | tracker `cover_letter_file` column - the filename only, never document content |
-   | URL | url | posting URL |
-   | Key | rich text | the job's key in `job_scraper/seen_jobs.json` - dedup anchor, never edited by hand |
+   | Propriedade | Tipo | Valores / observações |
+   |-------------|------|-----------------------|
+   | Nome | title | `<Cargo> — <Empresa>` |
+   | Empresa | rich text | |
+   | Nota | number | 0-100, de `rank_score` |
+   | Veredito | select | Strong Fit / Good Fit / Moderate Fit / Weak Fit / Poor Fit |
+   | Status | select | `ranked` / `drafted` / `applied` / `interview` / `offer` / `hired` / `rejected` / `no_response` / `offer_declined` / `withdrawn` / `expired` — grafias canônicas do tracker segundo o **Vocabulário de status do tracker** do `/outcome`; as opções do Notion crescem à medida que os valores aparecem |
+   | Encaixe | select | high / medium / low (avaliação rápida do `/scrape`) |
+   | Prazo | date | coluna `deadline` do tracker, recorrendo ao `deadline` de `job_scraper/seen_jobs.json` quando a linha não tiver; omita quando nenhum dos dois informar |
+   | Vista em | date | |
+   | Pontuada em | date | `rank_date` de `job_scraper/seen_jobs.json`; omita quando não pontuada |
+   | Candidatura em | date | coluna `date` do tracker; omita quando não estiver no tracker, e omita quando o status for `drafted` |
+   | Canal | select | coluna `channel` do tracker (ex.: portal / email / indicação); as opções crescem à medida que os valores aparecem |
+   | Arquivo do CV | rich text | coluna `cv_file` do tracker — só o nome do arquivo, nunca o conteúdo do documento |
+   | Carta | rich text | coluna `cover_letter_file` do tracker — só o nome do arquivo, nunca o conteúdo do documento |
+   | URL | url | URL da vaga |
+   | Chave | rich text | a chave da vaga em `job_scraper/seen_jobs.json` — âncora de deduplicação, nunca editada à mão |
 
-   The tracker-sourced properties (Applied on, Channel, CV file, Cover letter) stay empty for jobs that have no tracker row. CV file and Cover letter fill in once `/apply` records the draft; Applied on stays empty until `/outcome` records the submission. Only filenames ever sync; document contents stay local.
+   As propriedades vindas do tracker (Candidatura em, Canal, Arquivo do CV, Carta) ficam vazias para vagas sem linha no tracker. Arquivo do CV e Carta são preenchidos quando o `/apply` registra o rascunho; Candidatura em fica vazia até o `/outcome` registrar o envio. Só nomes de arquivo sincronizam; o conteúdo dos documentos fica local.
 
-4. **Existing database with missing properties:** if the located database predates a schema addition (a property from the table above does not exist), add the missing properties to the database before upserting. Never remove or retype existing properties.
-5. Write `job_scraper/notion_sync.json` with the database id and URL. This file is personal state and is gitignored - never commit it.
-
----
-
-## Step 4: Upsert Database Rows
-
-For each job in the sync set:
-
-1. Query the database for a page whose `Key` equals the job's key.
-2. **No match** → if the job is an expired-only entry, skip it - do not create a page or write a body. Otherwise, create the page with all properties from the Step 3 table, then write its body (Step 5).
-3. **Match, expired-only entry** → update **Status only** to `expired`. Do not update other properties or touch the page body.
-4. **Match, any other effective status** → update **properties only**: Status, Score, Verdict, Deadline, Ranked, Applied on, Channel, CV file, Cover letter. Properties are the always-current surface (bodies are write-once), so tracker updates recorded by `/outcome` reach the destination exclusively through them. Do not touch the page body - the user may have added their own notes there, and clobbering them breaks trust in the whole view. (`--rebuild` is the sole exception for non-expired jobs.)
-5. Never delete or archive pages, even for jobs that turned `expired` - set Status to `expired` instead. Rows the user added to the database by hand (no `Key` value) are invisible to this command.
-
-**Normalise the Status value before writing.** The tracker may hold legacy space spellings (`no response`, `offer declined`) from before the canonical forms were locked. Map them to `no_response` / `offer_declined` per the **Tracker status vocabulary** in `/outcome` before setting Status on create or update - never push a space form to Notion, which would auto-create a separate select option per unique string. Pre-existing space-form options in an existing database simply go unused; Notion never auto-removes select options.
-
-Batch politely: if the MCP server rate-limits, back off and continue; report any page that failed rather than retrying indefinitely.
+4. **Banco de dados existente com propriedades faltando:** se o banco localizado for anterior a um acréscimo de esquema (uma propriedade da tabela acima não existe), acrescente as propriedades que faltam antes de inserir ou atualizar. Nunca remova nem mude o tipo de propriedades existentes.
+5. Grave `job_scraper/notion_sync.json` com o id e a URL do banco de dados. Este arquivo é estado pessoal e é ignorado pelo git — nunca o versione.
 
 ---
 
-## Step 5: Write the Detail Page (new pages only)
+## Passo 4: Inserir ou atualizar as linhas do banco
 
-The page body is what makes a row worth clicking. Build it **only from stored data and actually fetched content**:
+Para cada vaga do conjunto de sincronização:
 
-1. Never write or rebuild a body for an expired-only entry, including when `--rebuild` is set. Step 4 skips an expired-only entry when no matching page exists.
-2. **Fit summary** - a short section from `job_scraper/seen_jobs.json` fields: score, verdict, quick-fit level, first-seen and ranked dates. If the job is in the tracker, add the application timeline (date applied, channel, current status, dated notes from the `notes` column) and name the submitted documents from `cv_file`/`cover_letter_file` (filenames only - the documents themselves never sync). **When the status is `drafted`, write "drafted YYYY-MM-DD, not yet submitted" instead of a date applied, and call the files drafts rather than submitted documents** (page bodies are write-once - Step 4.4).
-3. **The posting** - WebFetch the job URL and write a readable digest: what the role is, key requirements, practical details (location, deadline, salary if stated). Retry a 403 with browser headers per `.claude/skills/job-application-assistant/09-web-research.md` first. If the fetch still fails or redirects to a listing page, write "Posting no longer available (checked YYYY-MM-DD)" - **never reconstruct a posting from memory**.
-4. **Links** - the posting URL; derive `<company>_<role>` by the **Subfolder naming** rule in `documents/README.md`, and if that archive exists locally, name its path (plain text - the destination cannot link into the filesystem).
+1. Consulte o banco de dados por uma página cuja `Chave` seja igual à chave da vaga.
+2. **Sem correspondência** → se a vaga for uma entrada só-encerrada, pule — não crie página nem escreva corpo. Caso contrário, crie a página com todas as propriedades da tabela do Passo 3 e depois escreva o corpo dela (Passo 5).
+3. **Correspondência, entrada só-encerrada** → atualize **só o Status** para `expired`. Não atualize outras propriedades nem toque no corpo da página.
+4. **Correspondência, qualquer outro status efetivo** → atualize **só as propriedades**: Status, Nota, Veredito, Prazo, Pontuada em, Candidatura em, Canal, Arquivo do CV, Carta. As propriedades são a superfície sempre atual (o corpo é escrito uma vez só), então as atualizações do tracker registradas pelo `/outcome` chegam ao destino exclusivamente por elas. Não toque no corpo da página — a pessoa pode ter acrescentado as próprias notas ali, e atropelá-las quebra a confiança na visão inteira. (O `--rebuild` é a única exceção para vagas que não estão encerradas.)
+5. Nunca apague nem arquive páginas, mesmo de vagas que viraram `expired` — ponha o Status em `expired`. Linhas que a pessoa acrescentou à mão no banco (sem valor de `Chave`) são invisíveis para este comando.
 
-Keep the page under ~40 blocks; this is a briefing, not a mirror of the posting.
+**Normalize o valor de Status antes de gravar.** O tracker pode ter grafias antigas com espaço (`no response`, `offer declined`) de antes de as formas canônicas serem fixadas. Converta-as em `no_response` / `offer_declined` segundo o **Vocabulário de status do tracker** do `/outcome` antes de definir o Status ao criar ou atualizar — nunca envie uma forma com espaço ao Notion, o que criaria automaticamente uma opção de seleção separada para cada string única. Opções com espaço já existentes num banco simplesmente ficam sem uso; o Notion nunca remove opções de seleção sozinho.
+
+Respeite o ritmo do servidor: se o MCP limitar as requisições, recue e continue; informe qualquer página que falhou em vez de tentar indefinidamente.
 
 ---
 
-## Step 6: Report
+## Passo 5: Escrever a página de detalhe (só páginas novas)
+
+O corpo da página é o que faz uma linha valer o clique. Monte-o **só a partir de dados gravados e de conteúdo de fato coletado**:
+
+1. Nunca escreva nem refaça o corpo de uma entrada só-encerrada, nem mesmo com `--rebuild`. O Passo 4 pula uma entrada só-encerrada quando não existe página correspondente.
+2. **Resumo de encaixe** - uma seção curta com campos de `job_scraper/seen_jobs.json`: nota, veredito, nível de encaixe rápido, datas de primeira vista e de pontuação. Se a vaga estiver no tracker, acrescente a linha do tempo da candidatura (data da candidatura, canal, status atual, notas com data da coluna `notes`) e cite os documentos enviados de `cv_file`/`cover_letter_file` (só os nomes de arquivo — os documentos em si nunca sincronizam). **Quando o status for `drafted`, escreva "rascunhada em AAAA-MM-DD, ainda não enviada" no lugar da data da candidatura, e chame os arquivos de rascunhos, não de documentos enviados** — candidaturas ainda não enviadas não têm documentos enviados (o corpo é escrito uma vez só — Passo 4.4).
+3. **A vaga** - colete a URL da vaga com o WebFetch (para a Gupy, o `detail` da CLI `gupy-search`) e escreva um resumo legível: o que é a vaga, os principais requisitos, os detalhes práticos (local, prazo, regime, salário se informado). Antes, tente de novo um 403 com cabeçalhos de navegador conforme `.claude/skills/job-application-assistant/09-web-research.md`. Se a coleta continuar falhando ou redirecionar para uma página de listagem, escreva "Vaga não está mais disponível (conferido em AAAA-MM-DD)" — **nunca reconstrua uma vaga de memória**.
+4. **Links** - a URL da vaga; derive `<company>_<role>` pela regra de **nomes de subpasta** de `documents/README.md` e, se esse arquivo existir localmente, cite o caminho (em texto simples — o destino não consegue apontar para o sistema de arquivos).
+
+Mantenha a página com menos de ~40 blocos; é um resumo, não um espelho da vaga.
+
+---
+
+## Passo 6: Relatório
 
 ```
-## Pipeline Sync - YYYY-MM-DD
+## Sincronização do funil - AAAA-MM-DD
 
-Database: <database_url>
-Synced <N> jobs (threshold: score ≥ <T>): <C> created, <U> updated, <S> unchanged, <F> failed.
+Banco de dados: <database_url>
+Sincronizei <N> vagas (limite: nota ≥ <T>): <C> criadas, <U> atualizadas, <S> sem mudança, <F> com falha.
 
-| | Title | Company | Status | Score |
-|---|-------|---------|--------|-------|
+| | Vaga | Empresa | Status | Nota |
+|---|------|---------|--------|------|
 | ✚ | ... | ... | ranked | 78 |
 | ↻ | ... | ... | interview | 71 |
 ```
 
-List failures with their error and the suggestion to re-run - the upsert is idempotent, so a re-run only touches what failed. Update `last_sync` in the sync-state file.
+Liste as falhas com o erro e a sugestão de rodar de novo — a inserção/atualização é idempotente, então uma nova execução só mexe no que falhou. Atualize `last_sync` no arquivo de estado da sincronização.
 
-Remind the user once (first run only): the repo files remain the source of truth - edits made in the destination never flow back, and `/outcome` is still how application results get recorded.
-
----
-
-## Important Rules
-
-1. **One-way, always.** Destination content never flows back into `job_scraper/seen_jobs.json`, the tracker, or any repo file. This command reads repo state and writes the destination - both repo files are read-only to it, and the gitignored sync-state file is its **only** local write.
-2. **Idempotent upsert on `Key`.** Re-running creates nothing twice; matching is on the stored key, never on fuzzy title comparison.
-3. **Page bodies are write-once.** Property updates keep rows current; bodies belong to the user after creation. Only `--rebuild` may rewrite them, and it says so before doing it.
-4. **Never fabricate.** A dead posting URL gets an explicit "unavailable" note, not a reconstruction. Every page claim traces to stored state or fetched content.
-5. **Job data only.** The candidate profile, behavioral notes, and evaluation framework never sync - this is a pipeline view, not a profile export.
-6. **Documents never leave the machine.** CVs and cover letters sync as **filenames only** - never upload, attach, or embed the documents themselves, nor HTML/text renditions of their content, into the destination. The local repo and `documents/applications/` archive are the only home for application documents; the row's page names them so the user knows what to open locally.
+Lembre à pessoa uma vez (só na primeira execução): os arquivos do repositório continuam sendo a fonte da verdade — edições feitas no destino nunca voltam, e o `/outcome` continua sendo como os resultados das candidaturas são registrados.
 
 ---
 
-## Adapting to Another Tool (forks)
+## Regras importantes
 
-The sync contract is tool-agnostic; only the two sections marked *(Notion binding)* are tool-specific. A fork targeting a different destination (Airtable, Google Sheets, Linear, ...) keeps Steps 0, 2, 4, 5, and 6 and every Important Rule unchanged - build the same sync set, upsert on the same `Key`, keep bodies write-once and documents local - and swaps only:
+1. **Mão única, sempre.** O conteúdo do destino nunca volta para `job_scraper/seen_jobs.json`, para o tracker nem para nenhum arquivo do repositório. Este comando lê o estado do repositório e grava no destino — os dois arquivos do repositório são só leitura para ele, e o arquivo de estado da sincronização, ignorado pelo git, é a **única** gravação local.
+2. **Inserção/atualização idempotente pela `Chave`.** Rodar de novo não cria nada duas vezes; a correspondência é pela chave gravada, nunca por comparação aproximada de título.
+3. **O corpo das páginas é escrito uma vez só.** As atualizações de propriedades mantêm as linhas atuais; o corpo pertence à pessoa depois de criado. Só o `--rebuild` pode reescrevê-lo, e avisa antes de fazer.
+4. **Nunca invente.** Uma URL de vaga morta recebe uma nota explícita de "indisponível", não uma reconstrução. Toda afirmação da página vem do estado gravado ou de conteúdo coletado.
+5. **Só dados de vagas.** O perfil da pessoa, as notas comportamentais e o método de avaliação nunca sincronizam — isto é uma visão do funil, não uma exportação do perfil.
+6. **Documentos nunca saem da máquina.** Currículos e cartas sincronizam **só como nomes de arquivo** — nunca envie, anexe nem incorpore os documentos em si, nem versões em HTML ou texto do conteúdo deles, no destino. O repositório local e o arquivo `documents/applications/` são a única casa dos documentos de candidatura; a página da linha os cita para a pessoa saber o que abrir localmente.
 
-- **Step 1** (connection preflight) for the target tool's MCP server or access check, keeping the silently-optional bar: not configured or not authenticable both end in one message and a clean exit
-- **Step 3** (locate/create the database) for the equivalent container in the target tool, using the same property table and a renamed sync-state file
+---
 
-Like the portal skills, tool bindings beyond this Notion reference live in forks, where their maintainers can test them against a live workspace.
+## Adaptando para outra ferramenta (forks)
+
+O contrato de sincronização independe de ferramenta; só as duas seções marcadas *(integração Notion)* são específicas. Um fork que mire outro destino (Airtable, Google Sheets, Linear...) mantém os Passos 0, 2, 4, 5 e 6 e todas as Regras importantes sem mudança — monta o mesmo conjunto de sincronização, insere/atualiza pela mesma `Chave`, mantém o corpo escrito uma vez só e os documentos locais — e troca só:
+
+- **Passo 1** (checar a conexão) pelo servidor MCP ou pela checagem de acesso da ferramenta de destino, mantendo o padrão de opcional em silêncio: não configurado ou sem como autenticar terminam os dois numa mensagem e numa saída limpa
+- **Passo 3** (localizar/criar o banco de dados) pelo contêiner equivalente na ferramenta de destino, usando a mesma tabela de propriedades e um arquivo de estado da sincronização com outro nome
+
+Como as skills de portal, integrações com outras ferramentas além desta referência do Notion vivem em forks, onde quem as mantém pode testá-las contra um espaço de trabalho real.

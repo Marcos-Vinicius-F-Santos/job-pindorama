@@ -1,22 +1,22 @@
 ---
-name: Bug report or improvement
-about: A defect or improvement in the framework itself — not your personal job search
+name: Defeito ou melhoria
+about: Um defeito ou uma melhoria no próprio projeto — não na sua busca de emprego pessoal
 ---
 
-<!-- Heads-up before you file: if you are working in a personalized fork,
-     note that the gh CLI points issue creation at this UPSTREAM repo by
-     default (`gh repo fork --clone` sets it as the default repository).
-     Personal application tracking, job evaluations, and incident logs
-     belong in YOUR fork or private repo - this tracker is public. Run
-     `gh repo set-default <your-username>/ai-job-search` in your clone to
-     keep your own automation pointed home (SETUP.md, section 2). -->
+<!-- Atenção antes de abrir: se você está trabalhando num fork personalizado,
+     saiba que o gh CLI aponta a criação de issues para este repositório de
+     ORIGEM por padrão (o `gh repo fork --clone` o define como repositório
+     padrão). Acompanhamento pessoal de candidaturas, avaliações de vagas e
+     registros de incidentes pertencem ao SEU fork ou repositório privado -
+     este rastreador é público. Rode `gh repo set-default <seu-usuario>/job-pindorama`
+     no seu clone para manter a sua automação apontada para casa (SETUP.md, seção 2). -->
 
-## Description
+## Descrição
 
-## Steps to Reproduce
+## Passos para reproduzir
 
-## Expected Behavior
+## Comportamento esperado
 
-## Actual Behavior
+## Comportamento atual
 
-## Impact
+## Impacto

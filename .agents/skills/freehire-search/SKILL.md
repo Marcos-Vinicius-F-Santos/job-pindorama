@@ -2,233 +2,233 @@
 name: freehire-search
 version: 1.0.0
 description: >
-  Use this skill to search live software / tech / data / engineering job listings
-  across many countries and markets (and remote) via the freehire.me aggregator's
-  public API, or to look up a specific posting. It aggregates roles from ~50 ATS
-  platforms into one schema, so a single skill covers many markets — but its faceted
-  filtering (skills, category, seniority) is tuned tech-first, so scope triggers to
-  technical roles. Trigger phrases: find a tech job, software job search, developer
-  jobs, engineering vacancies, data/ML jobs, DevOps roles, remote developer jobs,
-  "are there any <tech role> jobs in <place>", look up this freehire job posting.
+  Use esta skill para buscar vagas ativas de software, tecnologia, dados e engenharia
+  em vários países e mercados (e remotas) pela API pública do agregador freehire.me,
+  ou para ler uma vaga específica dele. Ele junta vagas de ~50 plataformas de ATS num
+  esquema só, então uma skill cobre vários mercados — mas a filtragem por facetas
+  (competências, categoria, senioridade) é pensada primeiro para tecnologia, então
+  limite a ativação a vagas técnicas. Frases de ativação: vagas de tecnologia, vagas
+  de desenvolvedor, vagas de dados, vagas de ML, DevOps, vagas remotas de programação,
+  "tem vaga de <função técnica> em <lugar>?", ler esta vaga do freehire. English:
+  find a tech job, software job search, developer jobs, remote developer jobs.
 context: fork
-enabled: true  # set to false to keep this portal installed but have /scrape skip it
+enabled: true  # false mantém o portal instalado, mas o /scrape passa a pular ele
 allowed-tools: Bash(bun run .agents/skills/freehire-search/cli/src/cli.ts *)
 ---
 
-# freehire Search Skill
+# Busca no freehire
 
-Search live job listings from the **[freehire.me](https://freehire.me)** job
-aggregator — an open-source IT job board that normalizes postings from ~50 ATS
-platforms across many countries into one schema. No authentication, no API key,
-and **zero runtime dependencies** — it runs with just `bun`. The market is chosen
-per query via facet flags (`--region`, `--country`), so the same skill works for a
-forker in any market out of the box.
+Busca vagas ativas no agregador **[freehire.me](https://freehire.me)** — um quadro de vagas
+de TI de código aberto que normaliza vagas de ~50 plataformas de ATS de muitos países num
+esquema só. Sem autenticação, sem chave de API e **sem dependências de execução** — roda só
+com o `bun`. O mercado é escolhido por consulta, pelas opções de faceta (`--region`,
+`--country`), então a mesma skill funciona em qualquer mercado. Para o Brasil, use
+`--country BR` ou `--region latam`.
 
-> This is a country-agnostic worked example of the repo's job-portal-skill pattern,
-> like `linkedin-search`. Unlike the HTML-scraping portals, it queries freehire's
-> public JSON API, so results are structured (skills, seniority, region facets)
-> rather than parsed from markup.
+> Este é um exemplo do padrão de skill de portal que funciona em qualquer país, como o
+> `linkedin-search`. Diferente dos portais raspados em HTML, ele consulta a API JSON pública
+> do freehire, então os resultados vêm estruturados (competências, senioridade, facetas de
+> região) em vez de lidos da marcação.
 
-## ⚠️ Scope: tech-focused
+## ⚠️ Escopo: focado em tecnologia
 
-freehire's corpus already includes some non-tech postings (it crawls whole company
-career pages), **but its faceted filtering — skills, categories, and seniority
-dictionaries — is tuned tech-first today**, so this skill scopes its triggers to
-software / data / engineering / tech roles, where the filtering is strong. Non-tech
-coverage exists but is still maturing; don't rely on this skill for general
-(non-technical) job coverage yet.
+O acervo do freehire já inclui algumas vagas que não são de tecnologia (ele coleta páginas
+de carreira inteiras de empresas), **mas a filtragem por facetas — dicionários de
+competências, categorias e senioridade — é pensada primeiro para tecnologia**, então esta
+skill limita a ativação a vagas de software, dados, engenharia e tecnologia, onde a filtragem
+é forte. Para vagas gerais no Brasil, use o `gupy-search`.
 
-## ℹ️ Hosted-service dependency (best-effort, no SLA)
+## ℹ️ Dependência de um serviço hospedado (melhor esforço, sem SLA)
 
-This skill depends on a third-party hosted service, freehire.me. Reads are
-**public and unauthenticated** — the same zero-signup bar as `linkedin-search`.
+Esta skill depende de um serviço hospedado por terceiros, o freehire.me. A leitura é
+**pública e sem autenticação** — o mesmo padrão sem cadastro do `linkedin-search`.
 
-**freehire.me is a personal project but actively maintained; it runs on a
-best-effort basis (no formal SLA).** If the API is unreachable, the CLI fails
-gracefully — a non-zero exit with a clear error message — so an outage degrades
-this source rather than breaking the surrounding workflow.
+**O freehire.me é um projeto pessoal, mas mantido ativamente; funciona na base do melhor
+esforço (sem SLA formal).** Se a API estiver fora do ar, a CLI falha com elegância — saída
+diferente de zero com mensagem de erro clara —, então uma queda degrada esta fonte em vez de
+quebrar o fluxo ao redor.
 
-**Self-hosting / swappable base URL.** The freehire backend is a separate
-MIT-licensed repo — [`strelov1/freehire`](https://github.com/strelov1/freehire)
-(Go + PostgreSQL + Meilisearch) — that stands up with one command via Docker
-Compose (`make up` → API on `:8080`, same `/api/v1/...` paths). The skill honors a
-base-URL env var, `FREEHIRE_API_URL` (default `https://freehire.me`), so pointing
-it at a local instance is a one-line change:
+**Auto-hospedagem / URL base trocável.** O backend do freehire é um repositório separado, com
+licença MIT — [`strelov1/freehire`](https://github.com/strelov1/freehire) (Go + PostgreSQL +
+Meilisearch) — que sobe com um comando via Docker Compose (`make up` → API em `:8080`, mesmos
+caminhos `/api/v1/...`). A skill respeita uma variável de URL base, `FREEHIRE_API_URL` (padrão
+`https://freehire.me`), então apontar para uma instância local é uma mudança de uma linha:
 
 ```bash
 FREEHIRE_API_URL=http://localhost:8080 bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "go"
 ```
 
-Caveat: standing up the *API* is light, but keeping a *full, continuously-fresh*
-mirror (millions of postings across ~50 platforms) is resource-heavy — a
-self-hoster would either crawl a scoped subset of sources or point the env var back
-at the hosted API.
+Ressalva: subir a *API* é leve, mas manter um espelho *completo e sempre atualizado*
+(milhões de vagas de ~50 plataformas) pesa muito — quem auto-hospedar vai coletar um
+subconjunto das fontes ou apontar a variável de volta para a API hospedada.
 
-## When to use this skill
+## Quando usar
 
-- Search for tech job openings by keyword, in a given region/country or remotely —
-  each result comes back with its **full description**, no per-hit follow-up needed
-- Filter by seniority, category, skills, or recency (posted within N days)
-- Look one freehire posting up by its slug (including a closed one)
+- Buscar vagas de tecnologia por palavra-chave, numa região/país ou remotas — cada resultado
+  já vem com a **descrição completa**, sem precisar de consulta extra por resultado
+- Filtrar por senioridade, categoria, competências ou data (publicadas nos últimos N dias)
+- Ler uma vaga do freehire pelo slug (inclusive uma encerrada)
 
-## Commands
+## Comandos
 
-### Search job listings
+### Buscar vagas
 
 ```bash
-bun run .agents/skills/freehire-search/cli/src/cli.ts search [-q "<keywords>"] [facet flags]
+bun run .agents/skills/freehire-search/cli/src/cli.ts search [-q "<palavras-chave>"] [opções de faceta]
 ```
 
-Key flags:
-- `--query <text>` / `-q <text>` — keyword search (title, skill, role). Full-text; optional.
-  Supports `OR` and `title:` (see "Query operators" below).
-- `--jobage <days>` — posted within N days (maps to `posted_within_days`).
-- `--page <n>` — 1-indexed page. Default 1.
-- `--limit <n>` / `-n <n>` — results per page (API limit). Default 25.
-- `--format json|table|plain` — default `json`.
-- `--description-format markdown|text|html` — how each result's full description is
-  rendered. Default `markdown`, which keeps the posting's headings and requirement
-  lists intact. `json` output only.
+Opções principais:
+- `--query <texto>` / `-q <texto>` — busca por palavra-chave (cargo, competência, função). Texto completo; opcional.
+  Aceita `OR` e `title:` (veja "Operadores de consulta" abaixo).
+- `--jobage <dias>` — publicadas nos últimos N dias (vira `posted_within_days`).
+- `--page <n>` — página, começando em 1. Padrão 1.
+- `--limit <n>` / `-n <n>` — resultados por página (limite da API). Padrão 25.
+- `--format json|table|plain` — padrão `json`.
+- `--description-format markdown|text|html` — como a descrição completa de cada resultado é
+  apresentada. Padrão `markdown`, que mantém os títulos e as listas de requisitos da vaga.
+  Só na saída `json`.
 
-**Query operators.** `-q` understands two operators; the CLI passes the text through
-unchanged and the API parses it:
+**Operadores de consulta.** O `-q` entende dois operadores; a CLI passa o texto sem mudança
+e a API o interpreta:
 
-- `OR` between alternatives returns jobs matching **any** of them, e.g.
-  `-q "golang OR rust"`. Uppercase only: a lowercase `or` is an ordinary search
-  word. Plain space-separated words are **not** a union (`-q "golang rust"` returns
-  fewer jobs than `-q golang` alone), so use `OR` for synonyms and alternative stacks
-  instead of running one search per keyword. At most 5 alternatives; a 6th is
-  rejected with an error. An `OR` inside double quotes is literal text.
-- A leading `title:` restricts that alternative to the job **title**, e.g.
-  `-q "title:staff engineer"` skips postings that merely mention the words in their
-  description. It applies per alternative, so repeat it on each one:
-  `-q "title:staff engineer OR title:principal engineer"`. It only counts at the start
-  of an alternative; `title:` in the middle is searched as text. Quotes work inside it:
-  `-q 'title:"staff engineer"'` matches the phrase.
+- `OR` entre alternativas devolve vagas que casam com **qualquer** uma, ex.:
+  `-q "golang OR rust"`. Só em maiúsculas: um `or` minúsculo é uma palavra comum de busca.
+  Palavras separadas por espaço **não** são união (`-q "golang rust"` devolve menos vagas
+  que só `-q golang`), então use `OR` para sinônimos e stacks alternativas, em vez de rodar
+  uma busca por palavra-chave. No máximo 5 alternativas; a 6ª é rejeitada com erro. Um `OR`
+  entre aspas duplas é texto literal. Útil para buscar título em português e em inglês:
+  `-q "engenheiro de dados OR data engineer"`.
+- Um `title:` no começo restringe aquela alternativa ao **título** da vaga, ex.:
+  `-q "title:staff engineer"` pula vagas que só citam as palavras na descrição. Vale por
+  alternativa, então repita em cada uma: `-q "title:staff engineer OR title:principal engineer"`.
+  Só conta no começo de uma alternativa; um `title:` no meio é buscado como texto. Aspas
+  funcionam dentro dele: `-q 'title:"staff engineer"'` casa a expressão.
 
-Facet flags, `--jobage`, `--page` and `--limit` apply to the combined result: every
-alternative is filtered the same way, and a job matching several alternatives
-appears once.
+Opções de faceta, `--jobage`, `--page` e `--limit` valem para o resultado combinado: toda
+alternativa é filtrada do mesmo jeito, e uma vaga que casa com várias aparece uma vez.
 
-**Search results already carry the full description.** This skill queries freehire's
-agent search endpoint, which replaces the index's truncated preview with each
-posting's complete text, so a search of 20 roles is 1 request rather than 1 + 20.
-Do **not** loop `detail` over search hits to read their descriptions — reach for
-`detail` only to look one posting up by slug (e.g. from the tracker, or a posting
-already closed and therefore absent from search). Full descriptions are verbose:
-keep `--limit` modest, and pre-filter on title/company before reading bodies -
-or pass `--no-description` for a cheap discovery pass that keeps every other
-field and drops the bodies entirely (fetch a shortlisted job's body with
-`detail`, or re-run the search without the flag).
+**Os resultados da busca já trazem a descrição completa.** Esta skill consulta o endpoint de
+busca para agentes do freehire, que troca o trecho truncado do índice pelo texto completo de
+cada vaga, então uma busca de 20 vagas é 1 pedido, não 1 + 20. **Não** rode `detail` em
+loop sobre os resultados para ler as descrições — use o `detail` só para ler uma vaga pelo
+slug (ex.: do tracker, ou uma vaga já encerrada e por isso fora da busca). Descrições
+completas são longas: mantenha o `--limit` moderado e pré-filtre por título e empresa antes
+de ler os corpos — ou passe `--no-description` para uma passada barata de descoberta que
+mantém todos os outros campos e tira os corpos (pegue o corpo de uma vaga escolhida com o
+`detail`, ou rode a busca de novo sem a opção).
 
-Facet filters (values come from freehire's controlled vocabularies; comma-separate for OR within a facet):
-- `--region <codes>` - macro-region: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis`. `--region eu,uk`. `eu` does not include the UK; add `uk` for Europe as a whole. For a single country use `--country` instead - `us` is a country code, not a region, and `--region us` matches nothing. `--region`, `--country` and `--city` form one OR-group, so `--country us` alone scopes to the US. Use `none` to match jobs whose region could **not** be resolved (see "Partial data" below).
-- `--country <codes>` — ISO-3166 alpha-2, e.g. `--country DE,GB`
-- `--city <names>` — city name(s), e.g. `--city Berlin`
-- `--seniority <levels>` — `junior`, `middle`, `senior`, `staff`, `principal`, `lead`, …
-- `--category <cats>` — `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, `qa`, …
-- `--skill <names>` — canonical skill(s), e.g. `--skill go,kubernetes`
-- `--company <slug>` — company slug (from a result's `company_slug`)
-- `--remote <mode>` — `remote` | `hybrid` | `onsite` (`work_mode` facet). A bare `--remote` means `remote`. Comma-separate for OR (`remote,hybrid`; `on-site` normalises to `onsite`). An unknown item exits 1 with `BAD_ARG`.
-- `--facet <key=value>` — any other facet param (repeatable), e.g. `--facet salary_min=100000`
+Filtros de faceta (os valores vêm dos vocabulários controlados do freehire; separe por vírgula para OU dentro de uma faceta):
+- `--region <códigos>` - macrorregião: `global`, `eu`, `uk`, `north_america`, `latam`, `apac`, `mena`, `africa`, `cis`. `--region latam` cobre a América Latina, inclusive o Brasil. Para um país só, use `--country` — `us` é um código de país, não uma região, e `--region us` não casa com nada. `--region`, `--country` e `--city` formam um grupo OU, então só `--country br` já limita ao Brasil. Use `none` para casar vagas cuja região **não** pôde ser determinada (veja "Dados parciais" abaixo).
+- `--country <códigos>` — ISO-3166 alfa-2, ex.: `--country BR,PT`
+- `--city <nomes>` — nome(s) de cidade, ex.: `--city "São Paulo"`
+- `--seniority <níveis>` — `junior`, `middle` (pleno), `senior`, `staff`, `principal`, `lead`, …
+- `--category <categorias>` — `backend`, `frontend`, `fullstack`, `devops`, `ml_ai`, `qa`, …
+- `--skill <nomes>` — competência(s) canônica(s), ex.: `--skill go,kubernetes`
+- `--company <slug>` — slug da empresa (do `company_slug` de um resultado)
+- `--remote <modo>` — `remote` | `hybrid` | `onsite` (faceta `work_mode`). `--remote` sozinho significa `remote`. Separe por vírgula para OU (`remote,hybrid`; `on-site` vira `onsite`). Um item desconhecido sai com 1 e `BAD_ARG`.
+- `--facet <chave=valor>` — qualquer outro parâmetro de faceta (repetível), ex.: `--facet salary_min=100000`
 
-> **Location is a facet, not free text.** Unlike `linkedin-search`'s `--location`,
-> freehire filters geography through the structured `--region`/`--country`/`--city`
-> facets. Discover the live values for a market at
-> [`/api/v1/jobs/facets`](https://freehire.me/api/v1/jobs/facets) (append `?q=<role>`
-> to scope it) — never invent facet values.
+> **Local é faceta, não texto livre.** Diferente do `--location` do `linkedin-search`, o
+> freehire filtra a geografia pelas facetas estruturadas `--region`/`--country`/`--city`.
+> Descubra os valores atuais de um mercado em
+> [`/api/v1/jobs/facets`](https://freehire.me/api/v1/jobs/facets) (acrescente `?q=<cargo>`
+> para limitar) — nunca invente valores de faceta.
 
-### Fetch full job detail
+### Detalhe completo da vaga
 
 ```bash
 bun run .agents/skills/freehire-search/cli/src/cli.ts detail <slug|url> [--format json|plain]
 ```
 
-`slug` is the `id` from a `search` result (e.g. `golang-zensar-2bxu6dxm`). You may
-also pass a full `https://freehire.me/jobs/<slug>` URL. A URL on any other host - including the employer apply link a search result's `url` field carries - is rejected with `BAD_ID` before any request. Returns the full (HTML-stripped)
-description, skills, region/country, and — when the posting is enriched — seniority,
-category, employment type, and salary. `salary` keeps its period when freehire records
-one (`INR 300000–300000/year`, `INR 12000/month`); compare pay only in one period.
+`slug` é o `id` de um resultado do `search` (ex.: `golang-zensar-2bxu6dxm`). Também dá para
+passar uma URL completa `https://freehire.me/jobs/<slug>`. Uma URL de qualquer outro host —
+inclusive o link de candidatura da empresa que o campo `url` de um resultado traz — é
+rejeitada com `BAD_ID` antes de qualquer pedido. Devolve a descrição completa (sem HTML), as
+competências, a região/país e — quando a vaga é enriquecida — senioridade, categoria, tipo de
+contratação e salário. O `salary` mantém o período quando o freehire o registra
+(`INR 300000–300000/year`, `INR 12000/month`); compare salários só no mesmo período, e
+lembre que o freehire não distingue CLT de PJ.
 
-Use it for a posting you already have a slug for — a tracked application, a shared
-link, or a closed posting search no longer lists. Re-fetching a hit that `search`
-just returned only re-reads a description you already have.
+Use para uma vaga cujo slug você já tem — uma candidatura acompanhada, um link
+compartilhado, ou uma vaga encerrada que a busca não lista mais. Coletar de novo um resultado
+que o `search` acabou de devolver só relê uma descrição que você já tem.
 
-## Usage examples
+## Exemplos de uso
 
 ```bash
-# Senior backend roles, table view
-bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "backend engineer" --seniority senior --limit 10 --format table
+# Backend sênior no Brasil, em tabela
+bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "backend" --seniority senior --country BR --limit 10 --format table
 
-# Go or Rust roles, one search (OR must be uppercase)
-bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "golang OR rust" --remote remote --format table
+# Go ou Rust, numa busca só (OR em maiúsculas), remoto na América Latina
+bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "golang OR rust" --remote remote --region latam --format table
 
-# Staff or principal titles only, not postings that mention them in passing
-bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "title:staff engineer OR title:principal engineer" --format table
+# Título em português ou em inglês
+bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "title:engenheiro de dados OR title:data engineer" --country BR --format table
 
-# Remote React roles in the EU
-bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "react" --remote remote --region eu --format table
+# React remoto, de qualquer lugar
+bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "react" --remote remote --format table
 
-# DevOps roles in Germany posted in the last 14 days
-bun run .agents/skills/freehire-search/cli/src/cli.ts search --category devops --country DE --jobage 14 --format table
+# DevOps no Brasil publicadas nos últimos 14 dias
+bun run .agents/skills/freehire-search/cli/src/cli.ts search --category devops --country BR --jobage 14 --format table
 
-# ML/AI roles anywhere, fully remote
+# ML/IA, totalmente remoto
 bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "machine learning" --category ml_ai --remote remote --format table
 
-# Descriptions as plain text instead of Markdown
+# Descrições em texto simples em vez de Markdown
 bun run .agents/skills/freehire-search/cli/src/cli.ts search -q "platform engineer" --limit 5 --description-format text
 
-# Full details for a specific job
+# Detalhe completo de uma vaga
 bun run .agents/skills/freehire-search/cli/src/cli.ts detail golang-zensar-2bxu6dxm --format plain
 ```
 
-## Output formats
+## Formatos de saída
 
-| Format | Best for |
-|--------|----------|
-| `json` | Default — programmatic use; the only format carrying each hit's description |
-| `table` | Quick human-readable scanning |
-| `plain` | Reading a single job's full detail (`detail` command) |
+| Formato | Para quê |
+|---------|----------|
+| `json` | Padrão — uso por programa; o único formato que traz a descrição de cada resultado |
+| `table` | Olhar rápido |
+| `plain` | Ler o detalhe completo de uma vaga (comando `detail`) |
 
-Search JSON is `{ "meta": { "count", "page", "total" }, "results": [...] }`; each
-result carries at least `id` (the freehire slug), `title`, `company`, `location`,
-`date`, `url`, and `description` (missing values are `null`). `table` and `plain`
-omit the description — it would swamp a scannable list. All errors are written to
-**stderr** as `{ "error": "...", "code": "..." }` and the process exits with code `1`.
+A busca em JSON é `{ "meta": { "count", "page", "total" }, "results": [...] }`; cada
+resultado traz pelo menos `id` (o slug do freehire), `title`, `company`, `location`, `date`,
+`url` e `description` (valores ausentes são `null`). `table` e `plain` omitem a descrição —
+ela afogaria uma lista feita para olhar rápido. Todos os erros vão para o **stderr** como
+`{ "error": "...", "code": "..." }`, e o processo sai com código `1`.
 
-One diagnostic is not an error: a `--region` (or `--facet regions=`) value outside the
-documented vocabulary - `us` is a country code, not a region - prints
-`{ "warning": "...", "code": "REGION_VALUE_UNKNOWN" }` on **stderr** after the results,
-and the process still exits `0` with stdout a valid JSON document.
+Um diagnóstico não é erro: um valor de `--region` (ou `--facet regions=`) fora do vocabulário
+documentado — `us` é código de país, não região — imprime
+`{ "warning": "...", "code": "REGION_VALUE_UNKNOWN" }` no **stderr** depois dos resultados,
+e o processo continua saindo com `0`, com o stdout como um documento JSON válido.
 
-## Partial data
+## Dados parciais
 
-Facets are derived per-posting and can be **incomplete** — geography especially.
-A job may resolve its `work_mode` (e.g. `remote`) but leave its **region or
-country undetermined** when the source's location text is ambiguous (freehire's
-dictionaries never guess). So:
+As facetas são derivadas por vaga e podem estar **incompletas** — principalmente a
+geografia. Uma vaga pode ter o `work_mode` determinado (ex.: `remote`) e deixar a **região
+ou o país indeterminados** quando o texto de local da origem é ambíguo (os dicionários do
+freehire nunca chutam). Então:
 
-- A missing region/country means "not resolved", **not** "not applicable" —
-  filtering on `--region eu` silently drops jobs whose region wasn't resolved,
-  even if they are in fact EU. Widen or drop the facet if you need those back.
-- There is a dedicated facet value for the unresolved bucket: `--region none`
-  matches jobs with **no** resolved region — useful to sweep up remote roles that
-  never pinned a geography. It ORs with real regions, e.g. `--region eu,none`.
-- `result.regions` / `countries` / `cities` may be empty arrays for the same
-  reason; treat empty as unknown, not as "none of the above".
+- Região/país ausente significa "não determinado", **não** "não se aplica" — filtrar com
+  `--region latam` descarta em silêncio vagas cuja região não foi determinada, mesmo que
+  sejam de fato da América Latina. Amplie ou tire a faceta se precisar delas.
+- Há um valor de faceta próprio para o grupo não determinado: `--region none` casa vagas
+  **sem** região determinada — útil para recolher vagas remotas que nunca fixaram uma
+  geografia. Vira OU com regiões reais, ex.: `--region latam,none`.
+- `result.regions` / `countries` / `cities` podem ser arrays vazios pelo mesmo motivo;
+  trate vazio como desconhecido, não como "nenhuma das anteriores".
 
-## Notes
+## Observações
 
-- Data is from freehire.me's public API — no credentials required. Only per-user
-  tracking (apply/save) needs a key, and this skill deliberately does not touch it:
-  it is **search + detail only**.
-- `id` in search results is the freehire `public_slug` — pass it as-is to `detail`.
-- `date` is the posting date as `YYYY-MM-DD` (the date part of the API's `posted_at` timestamp, the shape every portal CLI emits); it may be `null` for undated postings.
-- Facet values are controlled vocabularies. Use `/api/v1/jobs/facets` to see the
-  live values (with counts) for a query before filtering.
-- The API retries 429/5xx with exponential backoff; an unreachable API exits
-  non-zero with a clear message (best-effort service, see the dependency note above).
-- `search` calls `/api/v1/agent/jobs/search` (public, like the rest); `--no-description`
-  calls the lighter `/api/v1/jobs/search`, which serves no full bodies. A self-hosted
-  instance older than that endpoint answers 404, and the CLI reports it as an error
-  naming the endpoint — never as an empty result set.
+- Os dados vêm da API pública do freehire.me — sem credenciais. Só o acompanhamento por
+  usuário (candidatar/salvar) precisa de chave, e esta skill de propósito não mexe nisso:
+  é **só busca + detalhe**.
+- O `id` nos resultados é o `public_slug` do freehire — passe como está ao `detail`.
+- `date` é a data de publicação como `YYYY-MM-DD` (a parte de data do `posted_at` da API, o formato que toda CLI de portal emite); pode ser `null` em vagas sem data.
+- Os valores de faceta são vocabulários controlados. Use `/api/v1/jobs/facets` para ver os
+  valores atuais (com contagens) de uma consulta antes de filtrar.
+- A API tenta de novo em 429/5xx com espera progressiva; uma API inacessível sai com código
+  diferente de zero e mensagem clara (serviço de melhor esforço, veja a nota de dependência acima).
+- O `search` chama `/api/v1/agent/jobs/search` (público, como o resto); o `--no-description`
+  chama o `/api/v1/jobs/search`, mais leve, que não serve corpos completos. Uma instância
+  auto-hospedada anterior a esse endpoint responde 404, e a CLI informa como erro citando o
+  endpoint — nunca como lista vazia.
+- As mensagens de ajuda e de erro da CLI continuam em inglês (código do projeto original).

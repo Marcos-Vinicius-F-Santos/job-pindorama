@@ -38,7 +38,7 @@ def page_count_invocations(text):
 
 class ApplyRunsThePageCountCheck(unittest.TestCase):
     def setUp(self):
-        self.step_5b = section(APPLY, "### 5b. Inspect layout")
+        self.step_5b = section(APPLY, "### 5b. Inspecionar o layout")
 
     def test_step_5b_checks_both_documents_with_the_guides_page_limits(self):
         invocations = dict(page_count_invocations(self.step_5b))

@@ -1,203 +1,203 @@
-# /add-template - Register a Custom CV or Cover Letter Template
+# /add-template - Registrar um modelo próprio de currículo ou carta
 
-You are helping the user register their own CV or cover letter template with the AI Job Search framework — LaTeX, Typst, or any other toolchain that compiles to PDF from the command line. The framework ships with moderncv (banking style) for CVs and a custom `cover.cls` for cover letters. This command lets the user swap in their own template: store the template files, capture usage instructions (source extension, compile command, fonts, style rules, page limits), verify the template compiles, and wire it into the `/apply` workflow so every future application uses it.
+Você vai ajudar a pessoa a registrar o próprio modelo de currículo ou de carta de apresentação no projeto — LaTeX, Typst ou qualquer outra ferramenta que gere PDF pela linha de comando. O projeto vem com o moderncv (estilo banking) para currículos e um `cover.cls` próprio para cartas. Este comando deixa a pessoa trocar pelo modelo dela: guardar os arquivos do modelo, registrar as instruções de uso (extensão do fonte, comando de compilação, fontes tipográficas, regras de estilo, limite de páginas), verificar que o modelo compila e ligá-lo ao fluxo do `/apply`, para toda candidatura futura usá-lo.
 
-`$ARGUMENTS` may contain a subcommand, a file path, or nothing.
+`$ARGUMENTS` pode conter um subcomando, um caminho de arquivo ou nada.
 
-Follow these steps **in order**.
+Siga estes passos **na ordem**.
 
 ---
 
-## Step 0: Parse Arguments
+## Passo 0: Interpretar os argumentos
 
-- If `$ARGUMENTS` contains `--list`: run **List Mode** below and stop.
-- If `$ARGUMENTS` contains `--use <name>`: run **Switch Mode** below, then continue to **Step 5: Activate** with the resolved template metadata. `--use default` deactivates any custom template and restores the stock guidance (see Step 5).
-- If `$ARGUMENTS` contains a file path or @-mentioned file: treat it as the template source and carry it into Step 1.
-- Otherwise: start the registration flow at Step 1.
+- Se `$ARGUMENTS` contiver `--list`: rode o **Modo lista** abaixo e pare.
+- Se `$ARGUMENTS` contiver `--use <nome>`: rode o **Modo troca** abaixo e depois siga para o **Passo 5: Ativar** com os metadados do modelo resolvidos. `--use default` desativa qualquer modelo próprio e restaura as orientações padrão (veja o Passo 5).
+- Se `$ARGUMENTS` contiver um caminho de arquivo ou um arquivo mencionado com @: trate-o como o fonte do modelo e leve-o para o Passo 1.
+- Caso contrário: comece o registro no Passo 1.
 
-### List Mode
+### Modo lista
 
-Use Glob with `templates/**/TEMPLATE.md` to find registered templates. For each, read the manifest and print a table:
+Use o Glob com `templates/**/TEMPLATE.md` para achar os modelos registrados. Para cada um, leia o manifesto e imprima uma tabela:
 
 ```
-## Registered Templates
+## Modelos registrados
 
-| Name | Type | Source | Toolchain | Fonts | Active |
-|------|------|--------|-----------|-------|--------|
-| <name> | CV / Cover letter | .tex/.typ/... | lualatex/typst/... | <main font> | yes/no |
+| Nome | Tipo | Fonte | Ferramenta | Fontes tipográficas | Ativo |
+|------|------|-------|------------|---------------------|-------|
+| <nome> | Currículo / Carta | .tex/.typ/... | lualatex/typst/... | <fonte principal> | sim/não |
 ```
 
-A template is **active** if `05-cv-templates.md` (CV) or `06-cover-letter-templates.md` (cover letter) contains an `ACTIVE-TEMPLATE` managed block naming it. If no custom templates exist, say so and explain that `/add-template` registers one. Stop here.
+Um modelo está **ativo** se o `05-cv-templates.md` (currículo) ou o `06-cover-letter-templates.md` (carta) tiver um bloco gerenciado `ACTIVE-TEMPLATE` que o cite. Se não houver modelos próprios, diga isso e explique que o `/add-template` registra um. Pare aqui.
 
-### Switch Mode
+### Modo troca
 
-If `$ARGUMENTS` contains `--use <name>`:
+Se `$ARGUMENTS` contiver `--use <nome>`:
 
-1. If `<name>` is `default`, skip template resolution and continue to Step 5 with `default` as the activation target.
-2. Use Glob with `templates/**/TEMPLATE.md` and find manifests whose parent folder name exactly matches `<name>`.
-3. If no manifest matches, stop and say the template is not registered. Suggest `/add-template --list` to see available names.
-4. If more than one manifest matches, stop and list the matching manifest paths. Ask the user to rename one of the templates; activation must be unambiguous.
-5. Read the matching `TEMPLATE.md` and extract:
-   - **Type:** `CV` or `Cover letter`
-   - **Source extension:** e.g. `.tex`, `.typ`
-   - **Compile command:** the full declared command
-   - **Engine/toolchain:** e.g. `lualatex`, `typst` (display label)
-   - **Page limit:** `<N> page(s)`
-   - **Fonts:** the full font summary line
-6. Derive the template folder from the manifest path and verify `template<source-extension>` exists in the same folder. If it is missing, stop with an error; the template registration is incomplete.
-7. Derive `<type>` for Step 5 from the manifest path:
-   - `templates/cv/<name>/TEMPLATE.md` -> `cv`
-   - `templates/cover_letters/<name>/TEMPLATE.md` -> `cover_letters`
-8. Continue to Step 5 using the resolved `<name>`, `<type>`, `<source-extension>`, `<compile-command>`, engine/toolchain label, font summary, page limit, template skeleton path, and manifest path. Do not re-run Steps 1-4; `--use` switches an already-registered template.
-
----
-
-## Step 1: Template Type and Source
-
-Ask the user (skip anything already answered by `$ARGUMENTS`):
-
-1. **Type:** Is this a **CV** template or a **cover letter** template?
-2. **Source:** Where is the template? Accept any of:
-   - A path or @-mention of a source file in any toolchain (`.tex` plus optional `.cls`/`.sty`, `.typ` plus optional local packages, or another compile-to-PDF format)
-   - Pasted template content
-   - A directory containing the template and its assets (class/package files, fonts, images)
-
-Read every provided file. If the template references an include the declared toolchain doesn't ship by default — a custom `.cls`/`.sty` not part of standard TeX distributions, a Typst package imported via a local `#import`, or an equivalent for another toolchain — confirm the user has the file and ask for it if missing — the template cannot compile without it.
+1. Se `<nome>` for `default`, pule a resolução do modelo e siga para o Passo 5 com `default` como alvo da ativação.
+2. Use o Glob com `templates/**/TEMPLATE.md` e ache os manifestos cuja pasta-mãe tenha exatamente o nome `<nome>`.
+3. Se nenhum manifesto corresponder, pare e diga que o modelo não está registrado. Sugira `/add-template --list` para ver os nomes disponíveis.
+4. Se mais de um manifesto corresponder, pare e liste os caminhos dos manifestos. Peça à pessoa para renomear um dos modelos; a ativação precisa ser inequívoca.
+5. Leia o `TEMPLATE.md` correspondente e extraia:
+   - **Tipo:** `Currículo` ou `Carta`
+   - **Extensão do fonte:** ex.: `.tex`, `.typ`
+   - **Comando de compilação:** o comando completo declarado
+   - **Ferramenta:** ex.: `lualatex`, `typst` (rótulo de exibição)
+   - **Limite de páginas:** `<N> página(s)`
+   - **Fontes tipográficas:** a linha completa de resumo das fontes
+6. Derive a pasta do modelo a partir do caminho do manifesto e confira se `template<extensão>` existe na mesma pasta. Se não existir, pare com um erro; o registro do modelo está incompleto.
+7. Derive o `<tipo>` para o Passo 5 a partir do caminho do manifesto:
+   - `templates/cv/<nome>/TEMPLATE.md` -> `cv`
+   - `templates/cover_letters/<nome>/TEMPLATE.md` -> `cover_letters`
+8. Siga para o Passo 5 usando `<nome>`, `<tipo>`, `<extensão>`, `<comando de compilação>`, o rótulo da ferramenta, o resumo das fontes, o limite de páginas, o caminho do esqueleto e o caminho do manifesto resolvidos. Não rode de novo os Passos 1-4; o `--use` troca um modelo já registrado.
 
 ---
 
-## Step 2: Capture Template Instructions
+## Passo 1: Tipo e fonte do modelo
 
-Interview the user for the metadata that `/apply` needs to use the template correctly. Infer as much as possible from the source first (LaTeX: documentclass, `\fontspec` calls, geometry, colors; Typst: `#set`/`#show` rules, `#import`s; other toolchains: whatever the format exposes) and present your inferences for confirmation rather than asking blind questions.
+Pergunte à pessoa (pule o que `$ARGUMENTS` já responder):
 
-Collect:
+1. **Tipo:** é um modelo de **currículo** ou de **carta de apresentação**?
+2. **Fonte:** onde está o modelo? Aceite qualquer um destes:
+   - Um caminho ou uma menção @ a um arquivo-fonte de qualquer ferramenta (`.tex` mais `.cls`/`.sty` opcionais, `.typ` mais pacotes locais opcionais, ou outro formato que compila para PDF)
+   - O conteúdo do modelo colado
+   - Uma pasta com o modelo e os arquivos que ele usa (arquivos de classe/pacote, fontes, imagens)
 
-1. **Name** - short kebab-case identifier (e.g. `awesome-cv`, `classic-serif`). Must not collide with an existing folder in `templates/`.
-2. **Source extension** - the main file's extension (`.tex`, `.typ`, ...), inferred from the provided source file.
-3. **Compile command** - the full command `/apply` and Step 4's test compile will run, using `<file>` (no extension) as the placeholder for the output basename:
-   - **`.tex` source**: infer the engine the same way as before - if the source uses `fontspec` or loads font files by path, it requires `xelatex` or `lualatex`; tell the user this rather than letting them pick `pdflatex`. Render as `rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./` (or the appropriate engine).
-   - **`.typ` source**: default to `typst compile <file>.typ <file>.pdf` - Typst has a single binary, no engine choice.
-   - **Anything else**: no built-in guidance; ask the user for the exact compile command.
-
-   **Build directory rule:** if the toolchain can redirect its intermediate files, the declared command sends them to a `build/` folder beside the source, and still leaves the PDF next to the source, where `/apply` reads it. For LaTeX, use `-output-directory=build`. It also moves the PDF, hence the `mv`. TeX Live does not create the directory, hence the `mkdir -p`. A failed compile skips the `mv`, hence the leading `rm -f`, so a failed LaTeX compile never leaves a stale PDF where `/apply` inspects it. After a failed compile, read the log in `build/`. If Step 4 fails only because of the redirect (e.g. `\include` from a subfolder), drop the redirect but keep the leading `rm -f`, and record why under "Known pitfalls". If the toolchain writes nothing but the PDF (`typst compile`) or has no redirect option, keep the command as it is - never block registration on this rule.
-4. **Fonts** - which font(s) the template uses and where they come from:
-   - **Bundled font files** (`.ttf`/`.otf` shipped with the template): copy them into the template folder in Step 3 and record the relative path used to load them (LaTeX `\fontspec` `Path`, Typst `#import`/font path, or equivalent).
-   - **System / distribution fonts**: record the font name and note that the user's machine must have it installed.
-5. **Style rules** - anything the drafter must preserve when filling the template: color scheme, section order, heading style, spacing conventions, bullet formatting, date format.
-6. **Page limit** - hard page count for the compiled PDF. Default: **2 pages** for a CV, **1 page** for a cover letter. `/apply`'s compile-and-inspect loop enforces this.
-7. **Known pitfalls** (optional) - macros/rules that break with certain content (like the stock template's `\lettercontent{}`/`itemize` interaction), characters that need escaping, sections that must not be reordered.
+Leia todos os arquivos fornecidos. Se o modelo incluir algo que a ferramenta declarada não traz por padrão — um `.cls`/`.sty` próprio que não faz parte das distribuições TeX comuns, um pacote Typst importado por um `#import` local, ou o equivalente em outra ferramenta —, confirme que a pessoa tem o arquivo e peça se faltar — o modelo não compila sem ele.
 
 ---
 
-## Step 3: Store the Template
+## Passo 2: Registrar as instruções do modelo
 
-Create the template folder:
+Entreviste a pessoa sobre os metadados de que o `/apply` precisa para usar o modelo corretamente. Deduza o máximo possível do fonte primeiro (LaTeX: documentclass, chamadas `\fontspec`, geometry, cores; Typst: regras `#set`/`#show`, `#import`s; outras ferramentas: o que o formato expuser) e apresente as suas deduções para confirmação, em vez de fazer perguntas às cegas.
 
-- CV: `templates/cv/<name>/`
-- Cover letter: `templates/cover_letters/<name>/`
+Colete:
 
-Write into it:
+1. **Nome** - identificador curto em kebab-case (ex.: `awesome-cv`, `classico-serifado`). Não pode colidir com uma pasta existente em `templates/`.
+2. **Extensão do fonte** - a extensão do arquivo principal (`.tex`, `.typ`, ...), deduzida do arquivo-fonte fornecido.
+3. **Comando de compilação** - o comando completo que o `/apply` e a compilação de teste do Passo 4 vão rodar, usando `<file>` (sem extensão) como marcador do nome base de saída:
+   - **Fonte `.tex`**: deduza o motor como antes — se o fonte usa `fontspec` ou carrega arquivos de fonte por caminho, ele exige `xelatex` ou `lualatex`; diga isso à pessoa em vez de deixá-la escolher o `pdflatex`. Escreva como `rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./` (ou o motor adequado).
+   - **Fonte `.typ`**: o padrão é `typst compile <file>.typ <file>.pdf` — o Typst tem um único binário, sem escolha de motor.
+   - **Qualquer outro**: sem orientação embutida; peça à pessoa o comando exato de compilação.
 
-1. **`template<source-extension>`** (e.g. `template.tex`, `template.typ`) - the template skeleton. Replace all personal data in the source with `[PLACEHOLDER]` tokens (`[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]`, `[YOUR_LINKEDIN_URL]`, ...) so the template is shareable and profile-agnostic. Keep the structure, preamble, and styling exactly as provided.
-2. **Class/style/package files** - copy any companion files (`.cls`/`.sty` for LaTeX, local Typst packages, or equivalents) alongside the skeleton.
-3. **`fonts/`** - copy bundled font files here, preserving any directory layout the toolchain's font-loading mechanism expects (LaTeX `\fontspec` `Path`, Typst font path, ...). Adjust those path values in the skeleton to be relative to the template folder.
-4. **`TEMPLATE.md`** - the manifest. Use exactly this format:
+   **Regra da pasta de compilação:** se a ferramenta consegue redirecionar os arquivos intermediários, o comando declarado os manda para uma pasta `build/` ao lado do fonte, e mesmo assim deixa o PDF ao lado do fonte, onde o `/apply` o lê. No LaTeX, use `-output-directory=build`. Ele também move o PDF, daí o `mv`. O TeX Live não cria a pasta, daí o `mkdir -p`. Uma compilação que falha pula o `mv`, daí o `rm -f` no começo, para uma compilação LaTeX com falha nunca deixar um PDF velho onde o `/apply` inspeciona. Depois de uma compilação com falha, leia o log em `build/`. Se o Passo 4 falhar só por causa do redirecionamento (ex.: `\include` de uma subpasta), tire o redirecionamento mas mantenha o `rm -f` do começo, e registre o motivo em "Armadilhas conhecidas". Se a ferramenta não grava nada além do PDF (`typst compile`) ou não tem opção de redirecionar, mantenha o comando como está — nunca trave o registro por causa desta regra.
+4. **Fontes tipográficas** - que fonte(s) o modelo usa e de onde vêm:
+   - **Arquivos de fonte incluídos** (`.ttf`/`.otf` que vêm com o modelo): copie-os para a pasta do modelo no Passo 3 e registre o caminho relativo usado para carregá-los (`Path` do `\fontspec` no LaTeX, caminho de fonte no Typst, ou equivalente).
+   - **Fontes do sistema / da distribuição**: registre o nome da fonte e anote que a máquina da pessoa precisa tê-la instalada.
+5. **Regras de estilo** - o que a redação precisa preservar ao preencher o modelo: esquema de cores, ordem das seções, estilo dos títulos, espaçamento, formato dos tópicos, formato das datas (no Brasil, `MM/AAAA - MM/AAAA` — veja `05-cv-templates.md`).
+6. **Limite de páginas** - número rígido de páginas do PDF compilado. Padrão: **2 páginas** para currículo, **1 página** para carta. O ciclo de compilar e inspecionar do `/apply` faz valer este limite.
+7. **Armadilhas conhecidas** (opcional) - macros ou regras que quebram com certo conteúdo (como a interação `\lettercontent{}`/`itemize` do modelo padrão), caracteres que precisam de escape (o `R\$` dos valores em reais!), seções que não podem ser reordenadas.
+
+---
+
+## Passo 3: Guardar o modelo
+
+Crie a pasta do modelo:
+
+- Currículo: `templates/cv/<nome>/`
+- Carta: `templates/cover_letters/<nome>/`
+
+Grave nela:
+
+1. **`template<extensão>`** (ex.: `template.tex`, `template.typ`) - o esqueleto do modelo. Troque todos os dados pessoais do fonte por marcadores `[PLACEHOLDER]` (`[YOUR_NAME]`, `[YOUR_EMAIL]`, `[YOUR_PHONE]`, `[YOUR_LINKEDIN_URL]`, ...), para o modelo poder ser compartilhado e não depender do perfil. Mantenha a estrutura, o preâmbulo e o estilo exatamente como fornecidos.
+2. **Arquivos de classe/estilo/pacote** - copie os arquivos que acompanham o modelo (`.cls`/`.sty` no LaTeX, pacotes Typst locais, ou equivalentes) ao lado do esqueleto.
+3. **`fonts/`** - copie aqui os arquivos de fonte incluídos, preservando a organização de pastas que o mecanismo de carregamento de fontes da ferramenta espera (`Path` do `\fontspec` no LaTeX, caminho de fonte no Typst, ...). Ajuste esses caminhos no esqueleto para serem relativos à pasta do modelo.
+4. **`TEMPLATE.md`** - o manifesto. Use exatamente este formato:
 
 ```markdown
-# Template: <name>
+# Modelo: <nome>
 
-- **Type:** CV | Cover letter
-- **Source extension:** .tex | .typ | ...
-- **Engine/toolchain:** lualatex | xelatex | pdflatex | typst | <other> (display label only)
-- **Page limit:** <N> page(s)
-- **Fonts:** <main font> (<bundled in fonts/ | system font - must be installed>)
-- **Class/packages:** <documentclass/imports and any non-standard packages, or "standard">
+- **Tipo:** Currículo | Carta
+- **Extensão do fonte:** .tex | .typ | ...
+- **Ferramenta:** lualatex | xelatex | pdflatex | typst | <outra> (só rótulo de exibição)
+- **Limite de páginas:** <N> página(s)
+- **Fontes tipográficas:** <fonte principal> (<incluída em fonts/ | fonte do sistema - precisa estar instalada>)
+- **Classe/pacotes:** <documentclass/imports e pacotes fora do padrão, ou "padrão">
 
-## Compile command
+## Comando de compilação
 
-    cd <output dir> && <the full declared command, e.g. rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./ or typst compile <file>.typ <file>.pdf>
+    cd <pasta de saída> && <o comando completo declarado, ex.: rm -f <file>.pdf && mkdir -p build && lualatex -interaction=nonstopmode -output-directory=build <file>.tex && mv build/<file>.pdf ./ ou typst compile <file>.typ <file>.pdf>
 
-## Style rules
+## Regras de estilo
 
-- <rule 1: colors, section order, heading style, ...>
-- <rule 2>
+- <regra 1: cores, ordem das seções, estilo dos títulos, ...>
+- <regra 2>
 
-## Known pitfalls
+## Armadilhas conhecidas
 
-- <pitfall and its fix, or "none recorded">
+- <armadilha e a correção, ou "nenhuma registrada">
 ```
 
 ---
 
-## Step 4: Verify the Template Compiles (MANDATORY)
+## Passo 4: Verificar se o modelo compila (OBRIGATÓRIO)
 
-Never register a template without a successful test compile. Templates that "look fine" routinely fail on missing fonts, missing classes/packages, or a wrong compile command.
+Nunca registre um modelo sem uma compilação de teste bem-sucedida. Modelos que "parecem certos" falham com frequência por fonte faltando, classe ou pacote faltando, ou comando de compilação errado.
 
-1. Copy `template<source-extension>` to a scratch file in the same folder (e.g. `_compile_test.tex` or `_compile_test.typ`) and fill every `[PLACEHOLDER]` with realistic dummy data (name, contact line, one education entry, one job entry with 3 bullets — enough content to exercise the layout).
-2. Compile with the declared compile command, substituting `_compile_test` for `<file>`:
+1. Copie `template<extensão>` para um arquivo de rascunho na mesma pasta (ex.: `_compile_test.tex` ou `_compile_test.typ`) e preencha todo `[PLACEHOLDER]` com dados fictícios realistas (nome, linha de contato, uma formação, um cargo com 3 tópicos — conteúdo suficiente para exercitar o layout), incluindo letras acentuadas (ç, ã, é) para conferir que a fonte as tem.
+2. Compile com o comando declarado, trocando `<file>` por `_compile_test`:
    ```bash
-   cd templates/<type>/<name> && <declared compile command with <file> -> _compile_test>
+   cd templates/<tipo>/<nome> && <comando declarado com <file> -> _compile_test>
    ```
-3. If the compile fails: show the user the relevant error lines, diagnose (missing font file, wrong engine/command, missing class or package), fix what you can (e.g. font path values), and re-compile. If the fix needs input only the user has (a missing font file, a license-restricted class), ask for it and wait.
-4. On success, confirm a PDF was produced and Read it to check the layout renders sensibly (no overlapping text, fonts loaded, page count matches the declared page limit for the dummy content). Record any surprises in the manifest's "Known pitfalls".
-5. Delete the scratch source file, the scratch PDF, any `build/` folder a test compile created, and any other `_compile_test.*` byproduct left in the template folder.
+3. Se a compilação falhar: mostre à pessoa as linhas de erro relevantes, diagnostique (arquivo de fonte faltando, motor/comando errado, classe ou pacote faltando), corrija o que puder (ex.: caminhos de fonte) e compile de novo. Se a correção precisar de algo que só a pessoa tem (um arquivo de fonte faltando, uma classe com licença restrita), peça e espere.
+4. Com sucesso, confirme que um PDF foi gerado e leia-o para conferir se o layout sai razoável (sem texto sobreposto, fontes carregadas, acentos certos, número de páginas compatível com o limite declarado para o conteúdo fictício). Registre qualquer surpresa em "Armadilhas conhecidas" no manifesto.
+5. Apague o fonte de rascunho, o PDF de rascunho, qualquer pasta `build/` criada pela compilação de teste e qualquer outro subproduto `_compile_test.*` deixado na pasta do modelo.
 
-Do not proceed to Step 5 until the test compile passes.
+Não siga para o Passo 5 enquanto a compilação de teste não passar.
 
 ---
 
-## Step 5: Activate the Template
+## Passo 5: Ativar o modelo
 
-Activation wires the template into `/apply` by adding a **managed block** to the top of the relevant guidance file — `05-cv-templates.md` for CVs, `06-cover-letter-templates.md` for cover letters. `/apply` reads these files in both its drafting step and its compile step, so the block is all it takes.
+A ativação liga o modelo ao `/apply` acrescentando um **bloco gerenciado** no topo do arquivo de orientações relevante — `05-cv-templates.md` para currículos, `06-cover-letter-templates.md` para cartas. O `/apply` lê esses arquivos tanto no passo de redação quanto no de compilação, então o bloco é tudo de que precisa.
 
-If Step 5 was reached from Switch Mode, use the template metadata resolved from `TEMPLATE.md`. If Step 5 was reached after registering a new template, use the metadata collected and verified in Steps 2-4.
+Se o Passo 5 veio do Modo troca, use os metadados resolvidos do `TEMPLATE.md`. Se veio depois do registro de um modelo novo, use os metadados coletados e verificados nos Passos 2-4.
 
-Insert (or replace, if one exists) this block immediately after the file's H1 title:
+Insira (ou substitua, se já existir) este bloco logo depois do título H1 do arquivo:
 
 ```markdown
 <!-- BEGIN ACTIVE-TEMPLATE (managed by /add-template - do not edit by hand) -->
-> **Active template override: `<name>`**
+> **Modelo próprio ativo: `<nome>`**
 >
-> A custom template is active. Where this block conflicts with the stock guidance below, this block wins. Structural advice below (tailoring, page-budget, cutting rules) still applies.
+> Há um modelo próprio ativo. Onde este bloco conflitar com as orientações padrão abaixo, este bloco vence. As orientações estruturais abaixo (personalização, orçamento de páginas, regras de corte) continuam valendo.
 >
-> - **Template skeleton:** `templates/<type>/<name>/template<source-extension>` — use this as the structural reference instead of the stock template
-> - **Manifest:** `templates/<type>/<name>/TEMPLATE.md` — read this for style rules and known pitfalls before drafting
-> - **Source extension:** `<source-extension>` (not `.tex` unless the template's own toolchain is LaTeX)
-> - **Compile command:** `<the full declared command>` (not the command named in the stock guidance below — `/apply`'s compile step must use this instead). Run it from the output directory. If it redirects to `build/`, the log is in `build/`, and `/apply`'s Step 5e cleanup must delete that `build/` folder too
-> - **Fonts:** <font summary, including any path note for bundled fonts>
-> - **Page limit:** exactly <N> page(s)
-> - **Output file:** `cv/main_<company>_<role><source-extension>` / `cover_letters/cover_<company>_<role><source-extension>`; copy any class/package/font files the template needs into the output directory, or reference them by relative path
+> - **Esqueleto do modelo:** `templates/<tipo>/<nome>/template<extensão>` — use como referência de estrutura no lugar do modelo padrão
+> - **Manifesto:** `templates/<tipo>/<nome>/TEMPLATE.md` — leia as regras de estilo e as armadilhas conhecidas antes de redigir
+> - **Extensão do fonte:** `<extensão>` (não `.tex`, a menos que a ferramenta do próprio modelo seja LaTeX)
+> - **Comando de compilação:** `<o comando completo declarado>` (não o comando citado nas orientações padrão abaixo — o passo de compilação do `/apply` precisa usar este). Rode a partir da pasta de saída. Se ele redirecionar para `build/`, o log fica em `build/`, e a limpeza do Passo 5e do `/apply` precisa apagar essa pasta `build/` também
+> - **Fontes tipográficas:** <resumo das fontes, com qualquer nota de caminho para fontes incluídas>
+> - **Limite de páginas:** exatamente <N> página(s)
+> - **Arquivo de saída:** `cv/main_<company>_<role><extensão>` / `cover_letters/cover_<company>_<role><extensão>`; copie para a pasta de saída os arquivos de classe/pacote/fonte de que o modelo precisa, ou referencie-os por caminho relativo
 <!-- END ACTIVE-TEMPLATE -->
 ```
 
-Rules:
+Regras:
 
-- Exactly **one** managed block per guidance file. Replace the whole block between the `BEGIN`/`END` markers when switching templates; never stack blocks.
-- **`--use default`**: remove the managed block entirely. The stock moderncv / cover.cls guidance below it is untouched and takes over again.
-- Do not modify anything outside the markers.
-
----
-
-## Step 6: Confirm
-
-Present a summary:
-
-> **Template `<name>` registered and activated.**
->
-> - Files: `templates/<type>/<name>/` (skeleton, manifest<, class/package files><, fonts>)
-> - Test compile: passed with `<compile command>` (<N> page(s))
-> - `/apply` will now draft <CVs | cover letters> from this template.
->
-> Useful follow-ups:
-> - `/add-template --list` — see all registered templates
-> - `/add-template --use <other-name>` — switch templates
-> - `/add-template --use default` — go back to the stock <moderncv | cover.cls> template
+- Exatamente **um** bloco gerenciado por arquivo de orientações. Substitua o bloco inteiro entre os marcadores `BEGIN`/`END` ao trocar de modelo; nunca empilhe blocos.
+- **`--use default`**: remova o bloco gerenciado inteiro. As orientações padrão do moderncv / cover.cls abaixo dele ficam intocadas e voltam a valer.
+- Não modifique nada fora dos marcadores.
 
 ---
 
-## Design Principles
+## Passo 6: Confirmar
 
-- Registration is idempotent: re-running with the same name offers to update the existing template rather than duplicating it.
-- Templates are stored profile-agnostic (`[PLACEHOLDER]` tokens) so they can be shared or committed without leaking personal data.
-- The compile check in Step 4 is non-negotiable — a template that has never compiled will fail mid-`/apply`, which is the worst place to discover it.
-- Activation is a small managed block, not a rewrite of the guidance files: `/setup` and manual edits to `05`/`06` survive template switches, and `--use default` is a clean revert.
+Apresente um resumo:
+
+> **Modelo `<nome>` registrado e ativado.**
+>
+> - Arquivos: `templates/<tipo>/<nome>/` (esqueleto, manifesto<, arquivos de classe/pacote><, fontes>)
+> - Compilação de teste: passou com `<comando de compilação>` (<N> página(s))
+> - O `/apply` agora vai redigir <currículos | cartas> a partir deste modelo.
+>
+> Próximos passos úteis:
+> - `/add-template --list` — ver todos os modelos registrados
+> - `/add-template --use <outro-nome>` — trocar de modelo
+> - `/add-template --use default` — voltar ao modelo padrão <moderncv | cover.cls>
+
+---
+
+## Princípios de projeto
+
+- O registro é idempotente: rodar de novo com o mesmo nome oferece atualizar o modelo existente em vez de duplicá-lo.
+- Os modelos são guardados sem depender do perfil (marcadores `[PLACEHOLDER]`), para poderem ser compartilhados ou versionados sem vazar dados pessoais.
+- A checagem de compilação do Passo 4 não é negociável — um modelo que nunca compilou vai falhar no meio do `/apply`, o pior lugar para descobrir isso.
+- A ativação é um pequeno bloco gerenciado, não uma reescrita dos arquivos de orientação: o `/setup` e as edições manuais no `05`/`06` sobrevivem às trocas de modelo, e o `--use default` é uma reversão limpa.
