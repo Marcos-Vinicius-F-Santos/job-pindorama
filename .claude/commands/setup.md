@@ -238,6 +238,7 @@ Os documentos cobrem competências, experiência, formação, referências e sin
 - O que empolga a pessoa no próximo trabalho
 - Deal-breakers e requisitos indispensáveis
 - **Regimes aceitos:** CLT, PJ, estágio, temporário? Algum é eliminatório?
+- **Senioridade-alvo:** que níveis fazem sentido buscar (sugira a partir dos documentos e confirme)
 - Idiomas em que trabalha profissionalmente, com o nível (só se ainda não extraídos de `cv/` ou `linkedin/` acima) — isto alimenta o filtro de idioma em `04-job-evaluation.md`, então pergunte diretamente em vez de pular
 - **Gênero gramatical para os textos** (feminino, masculino ou neutro) — pergunte sempre; nunca deduza pelo nome
 - Pretensão salarial / referência (opcional): valor **bruto mensal em regime CLT** e o mínimo aceitável em PJ, se aceitar PJ
@@ -256,7 +257,7 @@ Se a pessoa fornecer um único currículo:
 1. Leia o documento com atenção.
 2. Extraia todas as informações estruturadas: nome, contato, formação, experiência, competências, idiomas, publicações, prêmios. Deixe de fora CPF, RG, data de nascimento, estado civil e foto.
 3. Apresente um resumo do que foi extraído.
-4. Pergunte o que faltar (perfil comportamental, objetivos de carreira, deal-breakers, regimes aceitos, gênero gramatical para os textos, idiomas e níveis se ainda não extraídos, pretensão salarial, referências).
+4. Pergunte o que faltar (perfil comportamental, objetivos de carreira, deal-breakers, regimes aceitos, senioridade-alvo, gênero gramatical para os textos, idiomas e níveis se ainda não extraídos, pretensão salarial, referências).
 5. Siga para o Passo 3 (geração dos arquivos).
 
 ---
@@ -324,6 +325,7 @@ Se não, faça perguntas comportamentais:
 - Pretensão salarial / referência (opcional): bruto mensal CLT, e o mínimo em PJ se aceitar
 - Benefícios que pesam na decisão (opcional)
 - Modelo de trabalho preferido (remoto, híbrido — quantos dias —, presencial)
+- **Senioridade-alvo:** que níveis fazem sentido buscar (estágio, júnior, pleno, sênior, especialista, staff/principal, lead, gestão). Sugira a partir da experiência e confirme; grave na linha `Senioridade-alvo` do CLAUDE.md, com os códigos indicados no comentário dela
 - Ambientes a evitar
 - Restrições de deslocamento ou local
 

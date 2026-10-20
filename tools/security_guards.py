@@ -84,6 +84,10 @@ ALLOWED_PERMISSIONS = {
     # Reads a file or stdin, writes only to an explicit --out, never fetches.
     "Bash(python tools/posting_guard.py:*)",
     "Bash(python3 tools/posting_guard.py:*)",
+    # Fit signals from a posting's text (/scrape Steps 2-3, /rank Step 2).
+    # Reads a file or stdin, prints findings, writes nothing, never fetches.
+    "Bash(python tools/posting_signals.py:*)",
+    "Bash(python3 tools/posting_signals.py:*)",
 }
 
 # Rules that must stay in .claude/settings.json permissions.ask. An ask rule
@@ -239,6 +243,8 @@ ALLOWED_SKILL_TOOLS = {
     "Bash(bun --version)",
     "Bash(python tools/job_key.py:*)",
     "Bash(python3 tools/job_key.py:*)",
+    "Bash(python tools/posting_signals.py:*)",
+    "Bash(python3 tools/posting_signals.py:*)",
 }
 
 # The tools a shipped .claude/agents/*.md may list. These agents read untrusted

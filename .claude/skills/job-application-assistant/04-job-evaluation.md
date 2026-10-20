@@ -1,5 +1,5 @@
 ---
-framework_version: 1.3.0
+framework_version: 1.3.1
 ---
 
 # Método de avaliação de vagas
@@ -138,6 +138,15 @@ avaliações, notícias, conexões no LinkedIn e contatos que conheçam a empres
 - Remoto, ou híbrido com ida ocasional ao escritório: PASS
 - Exige mudança de cidade: FAIL (eliminatório)
 - Viagens frequentes: FLAG (conversar com a pessoa)
+
+**Vale o texto da vaga, não o rótulo do portal.** O "Remoto" da Gupy e o filtro de remoto do
+LinkedIn já deixaram passar vagas cujo próprio texto dizia "híbrida (4x presenciais)" ou
+"Híbrido" no título. Rode `python3 tools/posting_signals.py` no texto da vaga: ele aponta o
+modelo de trabalho que o texto declara (híbrido, presencial, remoto com exigência de residência,
+remoto com idas ao escritório), citando o trecho, e também seleção interna, vaga exclusiva,
+intermediário e senioridade fora da `Senioridade-alvo` do perfil. Seleção interna ("só para
+colaboradores", "funcionário com movimentação") falha no filtro de elegibilidade: quem não é da
+empresa não pode se candidatar.
 
 **Particularidades brasileiras:**
 - "Remoto" às vezes vem com restrição geográfica ("remoto, residir em SP", "remoto para
