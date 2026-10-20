@@ -47,7 +47,7 @@ bun run .agents/skills/linkedin-search/cli/src/cli.ts search --location "<lugar>
 ```
 
 Opções principais:
-- `--location <texto>` / `-l <texto>` — **obrigatória.** Um nome de lugar do LinkedIn, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Brasil"` ou `"Remote"`.
+- `--location <texto>` / `-l <texto>` — **obrigatória.** Um nome de lugar do LinkedIn, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Brazil"` ou `"Remote"`. **Para o país inteiro, escreva `"Brazil"`, em inglês:** `"Brasil"` sozinho não é reconhecido, o LinkedIn ignora o filtro em silêncio e devolve vagas de outros países (sobretudo dos EUA). Com cidade, `"Brasil"` funciona, porque o lugar é resolvido pela cidade.
 - `--query <texto>` / `-q <texto>` — busca por palavra-chave (cargo, competência, função). Recomendada.
 - `--jobage <dias>` — publicadas nos últimos N dias: `1`, `7`, `14`, `30`. Omita para todas.
 - `--jobage-minutes <n>` — publicadas nos últimos N minutos (precisão menor que um dia, ex.: `30`). Conflita com `--jobage` — passe só uma.
@@ -73,13 +73,13 @@ descrição completa, a senioridade, o tipo de contratação, a função e os se
 bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engenheiro de dados" -l "São Paulo, Brasil" --jobage 30 --format table
 
 # Product manager no Brasil, remoto
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "product manager" -l "Brasil" --remote remote --format table
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "product manager" -l "Brazil" --remote remote --format table
 
 # Qualquer função, totalmente remota
 bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "analista jurídico" -l "Remote" --format table
 
 # Engenharia, remoto, publicadas nos últimos 30 minutos
-bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engenheiro" -l "Brasil" --jobage-minutes 30 --format table
+bun run .agents/skills/linkedin-search/cli/src/cli.ts search -q "engenheiro" -l "Brazil" --jobage-minutes 30 --format table
 
 # Detalhe completo de uma vaga
 bun run .agents/skills/linkedin-search/cli/src/cli.ts detail 4426311357 --format plain

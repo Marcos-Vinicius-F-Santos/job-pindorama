@@ -111,7 +111,7 @@ Cada resultado traz os campos do contrato de portais (`id`, `title`, `company`,
 | `contract_code` | Código bruto da Gupy (`vacancy_type_effective`, `vacancy_legal_entity`...) |
 | `workplace_type` | `remote`, `hybrid` ou `on-site` |
 | `city`, `state` | Cidade e estado por extenso |
-| `pcd` | `true` quando a vaga é afirmativa para pessoas com deficiência |
+| `pcd` | `true` quando a vaga tem o selo "também para PcD" da Gupy: aberta a todas as pessoas, não exclusiva. Vaga exclusiva costuma vir marcada no título (ex.: "EXCLUSIVA PARA PCD") |
 | `description` | Resumo da descrição (a busca traz um trecho; o `detail` traz tudo) |
 
 Erros vão para o **stderr** como `{ "error": "...", "code": "..." }`, com código de saída `1`.

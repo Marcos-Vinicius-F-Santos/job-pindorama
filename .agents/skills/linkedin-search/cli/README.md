@@ -41,7 +41,7 @@ bun run src/cli.ts search -q "desenvolvedor backend" -l "Belo Horizonte, Minas G
 bun run src/cli.ts search -q "product designer" -l "São Paulo, Brasil" --format table
 
 # Totalmente remoto
-bun run src/cli.ts search -q "redator técnico" -l "Brasil" --remote remote --format table
+bun run src/cli.ts search -q "redator técnico" -l "Brazil" --remote remote --format table
 
 # Detalhe completo de uma vaga
 bun run src/cli.ts detail 4426311357 --format plain
@@ -53,7 +53,7 @@ Veja o `../SKILL.md` para a referência completa das opções e o aviso sobre os
 
 | Opção | Apelido | Descrição |
 |-------|---------|-----------|
-| `--location` | `-l` | **Obrigatória.** Nome do lugar, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Remote"`. |
+| `--location` | `-l` | **Obrigatória.** Nome do lugar, ex.: `"São Paulo, Brasil"`, `"Recife, Pernambuco, Brasil"`, `"Brazil"`, `"Remote"`. Para o país inteiro use `"Brazil"`: `"Brasil"` sozinho é ignorado e traz vagas de outros países. |
 | `--query` | `-q` | Palavras-chave (cargo / competência / função). Recomendada. |
 | `--jobage` | | Publicadas nos últimos N dias: `1`, `7`, `14`, `30`. |
 | `--remote` | | `remote` \| `hybrid` \| `onsite`. |

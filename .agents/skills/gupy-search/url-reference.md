@@ -34,7 +34,7 @@ GET https://portal.gupy.io/api/job-search/jobs?jobName=<termo>&limit=<n>&offset=
 | `city` | `Recife` | Nome da cidade |
 | `workplaceType` | `remote`, `hybrid`, `on-site` | **Um valor só** |
 | `type` | `vacancy_legal_entity` | **Um valor só** (ver tabela abaixo) |
-| `isPWD` | `true` | Vagas afirmativas PcD (não usado pela CLI) |
+| `isPWD` | `true` | Vagas com o selo "também para PcD" (não usado pela CLI) |
 
 **Armadilha:** repetir `type` ou `workplaceType` (`type=a&type=b`) não dá erro: a API
 ignora o filtro e devolve tudo (o total pulou de 160 para 7.325 no teste). Por isso a
