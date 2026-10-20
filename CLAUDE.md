@@ -33,6 +33,8 @@ Converse em **português do Brasil**, a menos que a pessoa escreva em outro idio
 - **CV language:** [YOUR_CV_LANGUAGE] <!-- idioma do currículo: português por padrão para vagas no Brasil; o /setup pergunta -->
 
 - **Situação:** [YOUR_EMPLOYMENT_STATUS]
+- **Senioridade-alvo:** [YOUR_TARGET_SENIORITY] <!-- níveis que fazem sentido buscar, em códigos: estagio, junior, pleno, senior, especialista, staff, lead, gestao (ex.: "pleno, senior, especialista"). O /scrape e o /rank passam isto ao tools/posting_signals.py --accept; um título com nível fora da lista é sinalizado, nunca excluído. -->
+
 - **Título do LinkedIn:** "[YOUR_LINKEDIN_HEADLINE]"
 
 ### Formação

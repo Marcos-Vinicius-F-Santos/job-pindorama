@@ -6,7 +6,7 @@ description: >
   Deduplica entre execuções. Ativa com: buscar vagas, procurar vagas, vagas novas,
   tem vaga nova?, rodar a busca, varrer portais, /scrape. English: job scrape,
   find jobs, search jobs, new jobs.
-allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun --version), Bash(python tools/job_key.py:*), Bash(python3 tools/job_key.py:*), WebFetch, WebSearch, Agent, AskUserQuestion
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(bun --version), Bash(python tools/job_key.py:*), Bash(python3 tools/job_key.py:*), Bash(python tools/posting_signals.py:*), Bash(python3 tools/posting_signals.py:*), WebFetch, WebSearch, Agent, AskUserQuestion
 ---
 
 # Busca de vagas
@@ -126,6 +126,31 @@ Para cada candidata:
 - Senão, pule se a combinação empresa+título já existir em `job_scraper/seen_jobs.json`
 - Pule se a empresa+cargo já aparecer em `job_search_tracker.csv`
 
+#### Sinais do texto da vaga (obrigatório antes do Passo 3)
+
+**O rótulo do portal não é prova.** Na Gupy, uma vaga marcada "Remoto" pode dizer no próprio
+texto "atuação híbrida (4x presenciais)" em outra cidade; no LinkedIn, o filtro `--remote` deixa
+passar vagas com "Híbrido" no título; uma vaga pode ser seleção interna, só para quem já é da
+empresa. O `tools/posting_signals.py` lê o texto e aponta esses casos, citando o trecho:
+
+1. **Em lote, sobre os resultados da busca** (título e trecho de descrição de cada um), com a
+   faixa de senioridade da pessoa (linha `Senioridade-alvo` do CLAUDE.md, em códigos
+   `estagio,junior,pleno,senior,especialista,staff,lead,gestao`; omita `--accept` se a linha
+   não existir):
+   ```bash
+   python3 tools/posting_signals.py --batch "$SCRATCHPAD/resultados.json" --accept pleno,senior --json
+   ```
+   O arquivo é o array `results` juntado no Passo 1b, gravado no scratchpad da sessão.
+2. **Sobre o texto completo** de toda vaga que chegaria ao Passo 5 com encaixe alto ou médio:
+   o trecho da busca é curto e o modelo de trabalho costuma estar no fim da vaga
+   ("Informações adicionais"). Passe a saída do `detail` por pipe:
+   ```bash
+   bun run .agents/skills/<portal>/cli/src/cli.ts detail '<URL>' --format plain | python3 tools/posting_signals.py --title "<título>"
+   ```
+   Para resultados do WebSearch, passe o texto obtido pelo `WebFetch` por um heredoc entre aspas.
+
+O que cada sinal faz no Passo 3 está lá. A ferramenta aconselha; quem decide é o perfil.
+
 ### Passo 2.5: Detecção de vaga em massa (dentro desta execução)
 
 Um padrão de distribuição que vale sinalizar à pessoa como cautela, não como acusação contra a empresa — descreve como o anúncio está sendo distribuído, não um veredito sobre a legitimidade da empresa. Sozinho, não prova que há algo errado (empresas contratam de fato o mesmo cargo em várias cidades); sinalize para a pessoa pesar ao decidir se investe tempo, sem rebaixar o encaixe nem excluir o resultado em silêncio por causa disso.
@@ -139,6 +164,22 @@ Para cada vaga nova, faça uma checagem rápida (NÃO a avaliação completa de 
 - **Alto**: a vaga envolve diretamente as suas competências centrais
 - **Médio**: a vaga é vizinha da sua experiência
 - **Baixo**: a vaga exige competências importantes que você não tem
+
+**Sinais do texto da vaga** (do `posting_signals.py`, Passo 2), comparados com o perfil:
+- **Modelo de trabalho** (`workplace`): `hybrid`, `onsite` ou `remote_restricted` numa região
+  onde a pessoa não mora, para quem só aceita remoto ou está fora do raio de deslocamento, é
+  deal-breaker de local: marque **Baixo** e cite o trecho. `remote_with_visits` não rebaixa:
+  cite o trecho nos destaques para a pessoa pesar a frequência. Vale o texto, não o rótulo do portal.
+- **Seleção interna** (`internal`): marque **Baixo** e cite o trecho — quem não é da empresa não
+  pode se candidatar.
+- **Vaga exclusiva** (`affirmative_exclusive`): aplique o filtro de elegibilidade do
+  `04-job-evaluation.md`; sem informação no perfil, mantenha o encaixe e sinalize nos destaques
+  para a pessoa decidir.
+- **Intermediário** (`intermediary`): não rebaixa por si; diga quem anuncia (agregador ou
+  consultoria) e, num agregador, procure a vaga no site da própria empresa (passo 4 da escalada
+  de `09-web-research.md`) antes de apresentar.
+- **Senioridade** (`seniority_verdict: mismatch`): no máximo **Médio**, citando o nível do título.
+  `unstated` não rebaixa.
 
 **Regime:** se o perfil (deal-breakers no CLAUDE.md) diz que a pessoa não aceita PJ (ou outro regime) e a vaga traz esse regime, marque **Baixo** e cite o regime nos destaques.
 
