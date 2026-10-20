@@ -123,6 +123,11 @@ INTERMEDIARY = [
     # An agency's "Nosso cliente, empresa do segmento...", not a company's
     # "encantar o nosso cliente".
     r"\bnoss[oa]\s*client[ea]\s*[,:]?\s*(?:é\s*)?(?:uma?\s*)?(?:empresa|multinacional|companhia|ind[úu]stria|grupo|startup|banco|rede|consultoria)\b[^\n.;]{0,40}",
+    # A recruiting firm hiring for the companies it serves: "As oportunidades
+    # são em empresas que atendemos", "vaga para um de nossos clientes".
+    r"\b(?:empresas|clientes)\s*que\s*atendemos\b[^\n.;]{0,40}",
+    r"\bpara\s*(?:um|uma)\s*(?:de|das|dos)\s*nossos\s*clientes\b[^\n.;]{0,40}",
+    r"\bfor\s*(?:one\s*of\s*)?our\s*clients?\b[^\n.;]{0,40}",
 ]
 INTERMEDIARY_COMPANIES = {"jobgether"}
 
