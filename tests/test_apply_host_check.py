@@ -250,6 +250,8 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
             "https://trampos.co/oportunidades/774888-gestor-a-de-live-shop",
             "https://www.roberthalf.com/br/pt/vaga/guarulhos/analista/63610-0013529450-brpt",
             "https://www.pcd.com.br/emprego-pcd/cientista-de-dados/69830",
+            "https://www.agrobase.com.br/oportunidades/2026/10/zootecnista-trainee-pr-e-sp/",
+            "https://agroforce.agrosearch.com.br/portal.html#/vaga/1036",
         ]
         for url in urls:
             tier, host = classify_posting_host(url)

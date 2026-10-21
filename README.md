@@ -101,7 +101,7 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 /scrape
 ```
 
-Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
+Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
 
 ### 5. Candidatar-se a uma vaga
 
@@ -185,6 +185,8 @@ job-pindorama/
 │   ├── roberthalf-search/             # Robert Half (especialistas; uso pessoal)
 │   ├── trampos-search/                # Trampos (comunicação, marketing, design; uso pessoal)
 │   ├── pcd-search/                    # PCD Online (vagas exclusivas PcD; uso pessoal)
+│   ├── agrobase-search/               # Agrobase (agronegócio, por profissão)
+│   ├── agrosearch-search/             # AGROSearch (consultoria do agronegócio)
 │   ├── linkedin-search/               # Vagas públicas do LinkedIn (qualquer país)
 │   └── freehire-search/               # Agregador freehire.me (tecnologia, vários mercados)
 ├── cv/
@@ -269,7 +271,7 @@ O comando entrevista você sobre as instruções do modelo — extensão do font
 
 ### Ferramentas de busca
 
-O projeto vem com catorze skills de portal em `.agents/skills/`:
+O projeto vem com dezesseis skills de portal em `.agents/skills/`:
 
 - **`gupy-search`** — busca no [Portal Gupy](https://portal.gupy.io) pela mesma rota pública que a página de busca do portal usa, e lê o detalhe na página pública de cada vaga. Filtra por cidade, UF, modelo de trabalho (remoto, híbrido, presencial) e regime (CLT, PJ, estágio, trainee e outros). **Sem dependências de execução.** Veja `.agents/skills/gupy-search/SKILL.md` e, para os detalhes técnicos, o `url-reference.md` ao lado.
 - **`solides-search`** — busca na [Sólides Vagas](https://vagas.solides.com.br) pela rota JSON pública do portal: vagas de empresas pequenas e médias, com modelo de trabalho, regime, senioridade e "exclusiva PcD" já informados. Filtra por modelo, regime e senioridade. **Sem dependências de execução.**
@@ -280,6 +282,7 @@ O projeto vem com catorze skills de portal em `.agents/skills/`:
 - **`programathor-search`** e **`geekhunter-search`** — portais de vagas de tecnologia; o Programathor busca por tecnologia (`python`, `react`) e não tem página de detalhe pública; o GeekHunter traz nível, modelo, regime e salário.
 - **`michaelpage-search`** — vagas de média e alta gestão e especialistas da Michael Page; a empresa contratante é um cliente, em geral confidencial.
 - **`roberthalf-search`**, **`trampos-search`** e **`pcd-search`** — Robert Half (especialistas), Trampos (comunicação, marketing, design, tecnologia) e PCD Online (vagas exclusivas para pessoas com deficiência). **Só para uso pessoal**: os termos dos três proíbem acesso automatizado.
+- **`agrobase-search`** e **`agrosearch-search`** — agronegócio: o Agrobase (maior agregador do setor, busca por profissão: agrônomo, veterinário, zootecnista, técnico agrícola…) e as vagas da consultoria AGROSearch.
 - **`linkedin-search`** — usa as rotas públicas e sem login do LinkedIn (`jobs-guest`). Funciona para qualquer mercado (`-l "São Paulo, Brasil"`, `-l "Remoto"`), sem dependências de execução. **Só para uso pessoal** — acesso automatizado vai contra os Termos de Serviço do LinkedIn, então mantenha o volume baixo.
 - **`freehire-search`** — consulta a API pública do agregador [freehire.me](https://freehire.me) (JSON, sem chave). Focado em tecnologia, vários mercados (`--country BR`, `--region latam`, `--remote`), sem dependências de execução.
 
