@@ -3,7 +3,8 @@ name: scrape
 description: >
   Encontra vagas novas compatíveis com o seu perfil pelas CLIs de busca de portais
   instaladas (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor,
-  GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, LinkedIn, freehire e
+  GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch,
+  LinkedIn, freehire e
   qualquer portal acrescentado com /add-portal).
   Deduplica entre execuções. Ativa com: buscar vagas, procurar vagas, vagas novas,
   tem vaga nova?, rodar a busca, varrer portais, /scrape. English: job scrape,

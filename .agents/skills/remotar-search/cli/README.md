@@ -16,7 +16,7 @@ bun run src/cli.ts --help
 ## Código
 
 - `src/helpers.ts` - base comum às CLIs de portal brasileiras (coleta, erros, texto,
-  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`.
+  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`.
 - `src/parse.ts` - o que é específico da Remotar: URL da API, categorias, leitura da vaga.
 - `src/commands/` - `search` e `detail`, que juntam os dois.
 
