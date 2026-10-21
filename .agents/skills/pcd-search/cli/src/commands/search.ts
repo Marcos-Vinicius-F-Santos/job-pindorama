@@ -1,6 +1,5 @@
-import { httpGet, renderSearch, withinJobAge, writeError, type JobResult } from "../helpers.js"
+import { httpGet, renderSearch, titleMatches, withinJobAge, writeError, type JobResult } from "../helpers.js"
 import { SEARCH_ACCEPT, pageUrl, parseSearch } from "../parse.js"
-import { foldAccents } from "../helpers.js"
 
 export interface SearchOpts {
   query: string | null // palavras que precisam estar todas no título; null = todas as vagas
@@ -11,11 +10,6 @@ export interface SearchOpts {
   format: "json" | "table" | "plain"
   includeDescription: boolean
   keep?: (row: JobResult) => boolean
-}
-
-function titleMatches(title: string, query: string): boolean {
-  const t = foldAccents(title)
-  return foldAccents(query).split(/\s+/).filter(Boolean).every((w) => t.includes(w))
 }
 
 /**

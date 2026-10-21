@@ -10,7 +10,7 @@
 // - Detalhe: jobs.digai.ai/<id>, com o bloco JobPosting (descrição) e o objeto
 //   "initialJob" (modelo de trabalho, senioridade, PcD, seleção interna).
 
-import { cleanHtml, contractDate, foldAccents, formatSalary, readJobPosting, type JobResult } from "./helpers.js"
+import { cleanHtml, contractDate, formatSalary, readJobPosting, type JobResult } from "./helpers.js"
 
 export const JOBS_HOST = "https://jobs.digai.ai"
 export const SEARCH_ACCEPT = "text/html"
@@ -155,11 +155,7 @@ export function parseCompanyPage(html: string): CompanyPage | null {
   return { jobs, total: typeof data.total === "number" ? data.total : jobs.length }
 }
 
-/** Todas as palavras da busca aparecem no título (sem acento, sem caixa). */
-export function titleMatches(title: string, query: string): boolean {
-  const t = foldAccents(title)
-  return foldAccents(query).split(/\s+/).filter(Boolean).every((w) => t.includes(w))
-}
+export { titleMatches } from "./helpers.js"
 
 /** Aceita jobs.digai.ai/<id> (com ou sem /pt-BR/jobs/), uma URL de <empresa>.digai.ai com o id, ou o id. */
 export function parseRef(input: string): string | null {

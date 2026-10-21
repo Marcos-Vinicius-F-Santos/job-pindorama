@@ -140,6 +140,19 @@ export function foldAccents(text: string): string {
     .trim()
 }
 
+/**
+ * Todas as palavras da busca aparecem no título, sem acento nem caixa, cada uma
+ * no começo de uma palavra: "ia" casa com "IA" e "Analista de IA", mas não com
+ * "Assistência"; "produto" casa com "Produtos".
+ */
+export function titleMatches(title: string, query: string): boolean {
+  const t = foldAccents(title)
+  return foldAccents(query)
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((w) => new RegExp(`(^|[^a-z0-9])${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(t))
+}
+
 /** "R$ 15.000,00" para um número; faixa "R$ X a R$ Y"; null sem valores. */
 export function formatSalary(min: number | null | undefined, max: number | null | undefined): string | null {
   const fmt = (n: number) => `R$ ${n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`

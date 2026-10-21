@@ -7,6 +7,7 @@ import {
   readJobPosting,
   relativeDate,
   retryAfterMs,
+  titleMatches,
   withinJobAge,
   type JobResult,
 } from "../src/helpers";
@@ -95,5 +96,19 @@ describe("rede", () => {
     }) as unknown as typeof fetch;
     await httpGet("https://exemplo.invalid/x", "text/html");
     expect(ua).toMatch(/^Mozilla\/5\.0 \(compatible; [a-z]+-cli\/1\.0\)$/);
+  });
+});
+
+describe("titleMatches", () => {
+  test("todas as palavras, sem acento nem caixa, no começo de palavra", () => {
+    expect(titleMatches("Senior Product Manager | Pagamentos", "product manager")).toBe(true);
+    expect(titleMatches("Analista Contábil Pl", "analista contabil")).toBe(true);
+    expect(titleMatches("Gerente de Produtos", "gerente produto")).toBe(true);
+    expect(titleMatches("Analista de IA", "ia")).toBe(true);
+    expect(titleMatches("IA Generativa", "ia")).toBe(true);
+    expect(titleMatches("Atendente Assistência ao Cliente", "ia")).toBe(false);
+    expect(titleMatches("Aux. de Operações | Brasília", "ia")).toBe(false);
+    expect(titleMatches("Dev C++ / Node.js", "c++ node.js")).toBe(true);
+    expect(titleMatches("Qualquer título", "")).toBe(true);
   });
 });

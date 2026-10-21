@@ -4,7 +4,7 @@
 
 import { runSearch } from "./commands/search.js"
 import { runDetail } from "./commands/detail.js"
-import { badArg, foldAccents, parseFlags, parseIntFlag, rejectEmpty, rejectUnknown, writeError, type JobResult } from "./helpers.js"
+import { badArg, parseFlags, parseIntFlag, rejectEmpty, rejectUnknown, titleMatches, writeError, type JobResult } from "./helpers.js"
 import { API_URL, type AgroSearchResult } from "./parse.js"
 
 const HELP = `agrosearch-cli - busca vagas da AGROSearch, consultoria de recrutamento do agronegócio
@@ -66,9 +66,9 @@ async function main(): Promise<number> {
       jobage = v // aceito pelo contrato; o portal não informa data, então nada é descartado
     }
     if (flags.page !== undefined && parseIntFlag("page", flags.page) === null) return 1
-    const words = typeof flags.query === "string" ? foldAccents(flags.query).split(/\s+/).filter(Boolean) : []
+    const query = typeof flags.query === "string" ? flags.query : ""
     const keep = (r: JobResult) =>
-      words.every((w) => foldAccents(r.title).includes(w)) &&
+      titleMatches(r.title, query) &&
       (!flags.remote || r.workplace_type === "remote") &&
       (!flags["no-internal"] || !(r as AgroSearchResult).internal)
     return runSearch({ url: API_URL, page: 1, limit, jobage, format: fmt as "json", includeDescription: flags["no-description"] === undefined, keep })
