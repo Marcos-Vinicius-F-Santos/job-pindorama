@@ -80,11 +80,7 @@ export function parseBoard(body: string, board: string): GreenhouseResult[] | nu
   return data.jobs.map((j) => toResult(j, board))
 }
 
-/** Todas as palavras da busca aparecem no título (sem acento, sem caixa). */
-export function titleMatches(title: string, query: string): boolean {
-  const t = foldAccents(title)
-  return foldAccents(query).split(/\s+/).filter(Boolean).every((w) => t.includes(w))
-}
+export { titleMatches } from "./helpers.js"
 
 /** Aceita job-boards.greenhouse.io/<empresa>/jobs/<id>, boards.greenhouse.io/<empresa>/jobs/<id> ou <empresa>/<id>. */
 export function parseRef(input: string): string | null {
