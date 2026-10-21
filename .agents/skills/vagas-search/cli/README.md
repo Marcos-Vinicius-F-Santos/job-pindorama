@@ -13,7 +13,7 @@ bun run src/cli.ts --help
 ## Código
 
 - `src/helpers.ts` - base comum às CLIs de portal brasileiras (coleta, erros, texto,
-  JobPosting, saídas); igual em `solides-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`.
+  JobPosting, saídas); igual em `solides-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`.
 - `src/parse.ts` - o que é específico da VAGAS.com: URL de busca, leitura dos cartões e
   da página da vaga.
 - `src/commands/` - `search` e `detail`, que juntam os dois.

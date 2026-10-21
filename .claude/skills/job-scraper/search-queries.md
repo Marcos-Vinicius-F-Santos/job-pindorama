@@ -26,6 +26,7 @@ Principais (CLIs instaladas):
 - **Robert Half** (`roberthalf-search`), **Trampos** (`trampos-search`), **PCD Online** (`pcd-search`, só vagas exclusivas PcD) — uso pessoal, volume baixo
 - **Agrobase** (`agrobase-search`) — agronegócio; busque por profissão (`--profession agronomo`, `veterinario`, `zootecnista`...)
 - **AGROSearch** (`agrosearch-search`) — vagas da consultoria do agronegócio (poucas dezenas; sem `-q` lista todas)
+- **DigAÍ** (`digai-search`) — empresas que recrutam com entrevista por IA (Raízen, Localiza, Afya, Hapvida, Stefanini...); a lista de empresas fica em `.agents/skills/digai-search/companies.txt`, e cada empresa devolve até 12 vagas por busca
 
 Plano B pelo WebSearch (portais brasileiros sem CLI; crie uma com `/add-portal` se usar muito):
 - **catho.com.br** — Catho, generalista
