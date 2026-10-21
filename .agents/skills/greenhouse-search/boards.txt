@@ -1,0 +1,14 @@
+# Boards do Greenhouse consultados pela busca (um por linha; # comenta).
+# O identificador é o trecho depois de job-boards.greenhouse.io/ na página de
+# vagas da empresa. Acrescente as empresas que te interessam; tire as que não.
+# Lista inicial: empresas com operação no Brasil que publicavam vagas no
+# Greenhouse em outubro de 2026.
+stone
+c6bank
+xpinc
+quintoandar
+gympass        # Wellhub
+ebanx
+vtex
+jusbrasil
+rdstation

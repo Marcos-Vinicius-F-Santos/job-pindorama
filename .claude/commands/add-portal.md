@@ -2,7 +2,7 @@
 
 Você vai ajudar a pessoa a construir uma skill de busca para um portal de vagas do mercado dela. O projeto já traz exemplos prontos do padrão (o `gupy-search`, para o Portal Gupy; `solides-search`, `vagas-search`, `infojobs-search` e `remotar-search`, que compartilham uma base comum em `cli/src/helpers.ts` com um `parse.ts` por portal; e os que funcionam em qualquer país, `linkedin-search` e `freehire-search`) — este comando transforma esse convite num fluxo guiado: investigar o portal, montar a skill a partir da estrutura canônica e testar uma busca ao vivo antes de registrar qualquer coisa.
 
-O gerador **não depende de país**: funciona para qualquer portal, em qualquer mercado e idioma. No Brasil, candidatos naturais são Catho, Indeed Brasil, Trampos, Programathor, InHire e portais de nicho da sua área — sempre sujeitos à checagem de `robots.txt` e de termos de uso do Passo 2. As skills geradas são específicas do mercado e vivem no fork da pessoa.
+O gerador **não depende de país**: funciona para qualquer portal, em qualquer mercado e idioma. No Brasil, candidatos naturais são InHire, Compleo, Empregos.com.br, BNE, Trabalha Brasil e portais de nicho da sua área (no agro, por exemplo, Agrobase, EmpregaAgro e Perfil Agro); Catho, Indeed, Glassdoor, Hays e Coodesh já foram investigados e bloqueiam robôs ou proíbem a busca no `robots.txt` — sempre sujeitos à checagem de `robots.txt` e de termos de uso do Passo 2. As skills geradas são específicas do mercado e vivem no fork da pessoa.
 
 `$ARGUMENTS` pode conter um subcomando, a URL de um portal ou nada.
 

@@ -221,9 +221,16 @@ export function readJobPosting(html: string): JobPostingLD | null {
     try {
       data = JSON.parse(m[1])
     } catch {
-      continue
+      // Páginas reais deixam quebras de linha cruas dentro das strings (JSON
+      // inválido): troca os caracteres de controle por espaço e tenta de novo.
+      try {
+        data = JSON.parse(m[1].replace(/[\u0000-\u001f]/g, " "))
+      } catch {
+        continue
+      }
     }
-    const items = Array.isArray(data) ? data : [data]
+    const graph = (data as { "@graph"?: unknown[] } | null)?.["@graph"]
+    const items = Array.isArray(data) ? data : Array.isArray(graph) ? graph : [data]
     for (const item of items) {
       if (item && typeof item === "object" && (item as { "@type"?: string })["@type"] === "JobPosting") {
         return item as JobPostingLD

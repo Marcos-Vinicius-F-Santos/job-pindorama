@@ -1,0 +1,20 @@
+{
+  "name": "greenhouse-cli",
+  "version": "1.0.0",
+  "description": "CLI para buscar vagas nos boards públicos do Greenhouse (boards-api.greenhouse.io), a Job Board API documentada do ATS. Sem autenticação e sem dependências de execução.",
+  "type": "module",
+  "main": "src/cli.ts",
+  "bin": {
+    "greenhouse-search": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "test": "bun test --timeout 30000",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/bun": "1.3.14"
+  }
+}

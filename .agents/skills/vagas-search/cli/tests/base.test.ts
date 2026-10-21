@@ -62,6 +62,13 @@ describe("JobPosting (schema.org)", () => {
     expect(readJobPosting(html)?.title).toBe("Product Manager");
   });
 
+  test("tolera quebra de linha crua dentro das strings e o formato @graph", () => {
+    const raw = `<script type="application/ld+json">{"@type":"JobPosting","title":"PM","description":"linha 1\nlinha 2"}</script>`;
+    expect(readJobPosting(raw)?.description).toBe("linha 1 linha 2");
+    const graph = `<script type="application/ld+json">{"@graph":[{"@type":"Organization"},{"@type":"JobPosting","title":"PO"}]}</script>`;
+    expect(readJobPosting(graph)?.title).toBe("PO");
+  });
+
   test("JSON quebrado ou ausente devolve null", () => {
     expect(readJobPosting(`<script type="application/ld+json">{quebrado</script>`)).toBeNull();
     expect(readJobPosting("<html></html>")).toBeNull();
