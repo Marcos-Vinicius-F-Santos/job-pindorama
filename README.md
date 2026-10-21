@@ -103,6 +103,8 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 
 Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
 
+A parte mecânica do `/scrape` fica em `tools/scrape_run.py`. O subcomando `search` lê as buscas do `search-queries.md` por prioridade e roda os portais. Ele também descarta as vagas já vistas e junta numa só a mesma vaga encontrada em portais diferentes. O resultado é gravado fora do repositório. Depois da apresentação, o `record` grava o histórico. Em cada vaga, o `tools/posting_signals.py` lê o texto e aponta o que o rótulo do portal esconde: modelo de trabalho declarado (uma vaga "Remoto" que no texto é híbrida), seleção interna, vaga exclusiva para um grupo, intermediário e senioridade fora da linha `Senioridade-alvo` do `CLAUDE.md`. Vale o texto, não o rótulo.
+
 ### 5. Candidatar-se a uma vaga
 
 ```bash
