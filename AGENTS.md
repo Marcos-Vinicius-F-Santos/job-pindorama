@@ -1,5 +1,5 @@
 ---
-framework_version: 1.1.1
+framework_version: 1.1.2
 ---
 
 # Orientações para agentes: job-pindorama
@@ -16,4 +16,4 @@ Para evitar duplicação e divergência de configuração entre diferentes ambie
    - As instruções passo a passo e os gatilhos das tarefas (setup, scrape, rank, apply, upskill, interview) estão na pasta [.claude/](.claude/) (especificamente em `.claude/skills/` e `.claude/commands/`).
    - Não duplique essas regras ou especificações. Trate os arquivos de `.claude/` como a fonte única da verdade.
 3. **Skills de busca em portais:**
-   - As CLIs de busca em portais de vagas ficam em [.agents/skills/](.agents/skills/), no formato portátil de Agent Skills (um `SKILL.md` por portal: `gupy-search`, `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `linkedin-search`, `freehire-search`). O Codex e o Antigravity as descobrem sozinhos; o fluxo do `/scrape` em [.claude/skills/job-scraper/](.claude/skills/job-scraper/) as orquestra.
+   - As CLIs de busca em portais de vagas ficam em [.agents/skills/](.agents/skills/), no formato portátil de Agent Skills (um `SKILL.md` por portal: `gupy-search`, `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `linkedin-search`, `freehire-search`). O Codex e o Antigravity as descobrem sozinhos; o fluxo do `/scrape` em [.claude/skills/job-scraper/](.claude/skills/job-scraper/) as orquestra.

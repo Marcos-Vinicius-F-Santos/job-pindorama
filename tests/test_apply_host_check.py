@@ -212,7 +212,6 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
     def test_classifier_identifies_official_ats_subdomains(self):
         urls = [
             "https://boards.greenhouse.io/acme/jobs/12345",
-            "https://job-boards.greenhouse.io/acme/jobs/12345",
             "https://jobs.lever.co/corp/67890",
             "https://acme.myworkdayjobs.com/en-US/Careers/job/1",
             "https://jobs.ashbyhq.com/startup/abc-123",
@@ -240,6 +239,17 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
             "https://www.vagas.com.br/vagas/v2837357/gerente-de-produto",
             "https://www.infojobs.com.br/vaga-de-product-manager-em-minas-gerais__12133581.aspx",
             "https://remotar.com.br/job/166921/stone/product-manager",
+            # Greenhouse: a portal skill now (greenhouse-search), so the hosts its
+            # sources name classify as installed_portal, checked before official_ats.
+            # The legacy boards.greenhouse.io host is not one of them and stays
+            # official_ats (asserted in the test above).
+            "https://job-boards.greenhouse.io/acme/jobs/12345",
+            "https://programathor.com.br/jobs/33685-desenvolvedor",
+            "https://www.michaelpage.com.br/job-detail/pm/ref/jn-082026-7088330",
+            "https://www.geekhunter.com/pt/mv-saude-digital/jobs/desenvolvedor-pleno-93",
+            "https://trampos.co/oportunidades/774888-gestor-a-de-live-shop",
+            "https://www.roberthalf.com/br/pt/vaga/guarulhos/analista/63610-0013529450-brpt",
+            "https://www.pcd.com.br/emprego-pcd/cientista-de-dados/69830",
         ]
         for url in urls:
             tier, host = classify_posting_host(url)

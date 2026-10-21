@@ -4,7 +4,7 @@
 
 ## CLIs de portal instaladas (principais para o `/scrape`)
 
-O `/scrape` descobre cada skill de portal em `.agents/skills/*/SKILL.md` e roda a CLI dela primeiro. O projeto já vem com o `gupy-search` (Portal Gupy, o maior ATS do Brasil), com `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search` (outros portais brasileiros; os dois últimos só para uso pessoal, veja o SKILL.md de cada um) e com as CLIs que funcionam em qualquer país, `linkedin-search` e `freehire-search`; qualquer skill que você acrescentar com o `/add-portal` entra do mesmo jeito. Você **não** precisa de uma linha `site:` abaixo para essas CLIs rodarem.
+O `/scrape` descobre cada skill de portal em `.agents/skills/*/SKILL.md` e roda a CLI dela primeiro. O projeto já vem com o `gupy-search` (Portal Gupy, o maior ATS do Brasil), com `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search` (outros portais brasileiros e de tecnologia; InfoJobs, Remotar, Trampos, Robert Half e PCD Online só para uso pessoal, veja o SKILL.md de cada um) e com as CLIs que funcionam em qualquer país, `linkedin-search` e `freehire-search`; qualquer skill que você acrescentar com o `/add-portal` entra do mesmo jeito. Você **não** precisa de uma linha `site:` abaixo para essas CLIs rodarem.
 
 As buscas com `site:` deste arquivo são o **plano B pelo WebSearch** — para portais sem CLI, páginas de carreira de empresas, ou quando uma CLI falha.
 
@@ -20,12 +20,14 @@ Principais (CLIs instaladas):
 - **VAGAS.com** (`vagas-search`) — generalista; `--remote` = 100% home office
 - **InfoJobs** (`infojobs-search`) — generalista, com salário no cartão; uso pessoal, volume baixo
 - **Remotar** (`remotar-search`) — só vagas remotas; use `--category` (ex.: `produto`) e `--no-international`; uso pessoal, volume baixo
+- **Greenhouse** (`greenhouse-search`) — empresas de tecnologia; a lista de empresas fica em `.agents/skills/greenhouse-search/boards.txt`
+- **Programathor** (`programathor-search`) e **GeekHunter** (`geekhunter-search`) — tecnologia; o Programathor busca por tecnologia (`-q python`)
+- **Michael Page** (`michaelpage-search`) — gestão e especialistas
+- **Robert Half** (`roberthalf-search`), **Trampos** (`trampos-search`), **PCD Online** (`pcd-search`, só vagas exclusivas PcD) — uso pessoal, volume baixo
 
 Plano B pelo WebSearch (portais brasileiros sem CLI; crie uma com `/add-portal` se usar muito):
 - **catho.com.br** — Catho, generalista
 - **br.indeed.com** — Indeed Brasil, agregador
-- **trampos.co** — vagas de comunicação, marketing, design e tecnologia
-- **programathor.com.br** — vagas de tecnologia
 - **[YOUR_INDUSTRY_JOB_BOARD]** — um portal de nicho da sua área (opcional)
 
 Secundário (páginas de carreira de empresas pelo Google):
