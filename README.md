@@ -101,7 +101,7 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 /scrape
 ```
 
-Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
+Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch, DigAÍ, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
 
 A parte mecânica do `/scrape` fica em `tools/scrape_run.py`. O subcomando `search` lê as buscas do `search-queries.md` por prioridade e roda os portais. Ele também descarta as vagas já vistas e junta numa só a mesma vaga encontrada em portais diferentes. O resultado é gravado fora do repositório. Depois da apresentação, o `record` grava o histórico. Em cada vaga, o `tools/posting_signals.py` lê o texto e aponta o que o rótulo do portal esconde: modelo de trabalho declarado (uma vaga "Remoto" que no texto é híbrida), seleção interna, vaga exclusiva para um grupo, intermediário e senioridade fora da linha `Senioridade-alvo` do `CLAUDE.md`. Vale o texto, não o rótulo.
 
@@ -189,6 +189,7 @@ job-pindorama/
 │   ├── pcd-search/                    # PCD Online (vagas exclusivas PcD; uso pessoal)
 │   ├── agrobase-search/               # Agrobase (agronegócio, por profissão)
 │   ├── agrosearch-search/             # AGROSearch (consultoria do agronegócio)
+│   ├── digai-search/                  # DigAÍ (empresas com entrevista por IA)
 │   ├── linkedin-search/               # Vagas públicas do LinkedIn (qualquer país)
 │   └── freehire-search/               # Agregador freehire.me (tecnologia, vários mercados)
 ├── cv/
@@ -273,7 +274,7 @@ O comando entrevista você sobre as instruções do modelo — extensão do font
 
 ### Ferramentas de busca
 
-O projeto vem com dezesseis skills de portal em `.agents/skills/`:
+O projeto vem com dezessete skills de portal em `.agents/skills/`:
 
 - **`gupy-search`** — busca no [Portal Gupy](https://portal.gupy.io) pela mesma rota pública que a página de busca do portal usa, e lê o detalhe na página pública de cada vaga. Filtra por cidade, UF, modelo de trabalho (remoto, híbrido, presencial) e regime (CLT, PJ, estágio, trainee e outros). **Sem dependências de execução.** Veja `.agents/skills/gupy-search/SKILL.md` e, para os detalhes técnicos, o `url-reference.md` ao lado.
 - **`solides-search`** — busca na [Sólides Vagas](https://vagas.solides.com.br) pela rota JSON pública do portal: vagas de empresas pequenas e médias, com modelo de trabalho, regime, senioridade e "exclusiva PcD" já informados. Filtra por modelo, regime e senioridade. **Sem dependências de execução.**
@@ -285,6 +286,7 @@ O projeto vem com dezesseis skills de portal em `.agents/skills/`:
 - **`michaelpage-search`** — vagas de média e alta gestão e especialistas da Michael Page; a empresa contratante é um cliente, em geral confidencial.
 - **`roberthalf-search`**, **`trampos-search`** e **`pcd-search`** — Robert Half (especialistas), Trampos (comunicação, marketing, design, tecnologia) e PCD Online (vagas exclusivas para pessoas com deficiência). **Só para uso pessoal**: os termos dos três proíbem acesso automatizado.
 - **`agrobase-search`** e **`agrosearch-search`** — agronegócio: o Agrobase (maior agregador do setor, busca por profissão: agrônomo, veterinário, zootecnista, técnico agrícola…) e as vagas da consultoria AGROSearch.
+- **`digai-search`** — vagas do [DigAÍ](https://jobs.digai.ai), plataforma de recrutamento com entrevista por IA (Raízen, Localiza, Afya, Hapvida, Stefanini, iFood…), pelas páginas de carreira de cada empresa, que já trazem modelo de trabalho e senioridade. A lista de empresas fica em `companies.txt`, que você edita. **Sem dependências de execução.**
 - **`linkedin-search`** — usa as rotas públicas e sem login do LinkedIn (`jobs-guest`). Funciona para qualquer mercado (`-l "São Paulo, Brasil"`, `-l "Remoto"`), sem dependências de execução. **Só para uso pessoal** — acesso automatizado vai contra os Termos de Serviço do LinkedIn, então mantenha o volume baixo.
 - **`freehire-search`** — consulta a API pública do agregador [freehire.me](https://freehire.me) (JSON, sem chave). Focado em tecnologia, vários mercados (`--country BR`, `--region latam`, `--remote`), sem dependências de execução.
 

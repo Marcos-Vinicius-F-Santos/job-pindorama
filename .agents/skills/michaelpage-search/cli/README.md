@@ -12,7 +12,7 @@ bun run src/cli.ts --help
 ## Código
 
 - `src/helpers.ts` - base comum às CLIs de portal brasileiras (coleta, erros, texto,
-  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`.
+  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`.
 - `src/parse.ts` - o que é específico da Michael Page: URL de busca, leitura dos cartões e do JobPosting da vaga.
 - `src/commands/` - `search` e `detail`.
 

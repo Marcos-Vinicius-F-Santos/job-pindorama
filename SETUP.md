@@ -28,7 +28,7 @@ No Windows, `py --version` costuma ser a checagem mais confiável. Se o seu sist
 
 ### Bun (para as ferramentas de busca)
 
-As CLIs dos portais de vagas (`gupy-search`, `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `linkedin-search` e `freehire-search`) são escritas em TypeScript e rodam com o Bun.
+As CLIs dos portais de vagas (`gupy-search`, `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`, `linkedin-search` e `freehire-search`) são escritas em TypeScript e rodam com o Bun.
 
 - Windows (o jeito mais simples):
 

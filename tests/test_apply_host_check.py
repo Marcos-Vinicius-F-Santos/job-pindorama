@@ -252,6 +252,7 @@ class ApplyHostVerificationSpecTests(unittest.TestCase):
             "https://www.pcd.com.br/emprego-pcd/cientista-de-dados/69830",
             "https://www.agrobase.com.br/oportunidades/2026/10/zootecnista-trainee-pr-e-sp/",
             "https://agroforce.agrosearch.com.br/portal.html#/vaga/1036",
+            "https://jobs.digai.ai/87124eb1-2e60-4d43-b045-3f4a3d51195e",
         ]
         for url in urls:
             tier, host = classify_posting_host(url)

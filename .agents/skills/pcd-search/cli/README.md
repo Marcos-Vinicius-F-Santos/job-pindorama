@@ -14,7 +14,7 @@ bun run src/cli.ts --help
 ## Código
 
 - `src/helpers.ts` - base comum às CLIs de portal brasileiras (coleta, erros, texto,
-  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `agrobase-search`, `agrosearch-search`.
+  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `agrobase-search`, `agrosearch-search`, `digai-search`.
 - `src/parse.ts` - o que é específico do PCD Online: leitura dos cartões e do JobPosting da vaga; `src/commands/search.ts` percorre as páginas e filtra pelo título.
 - `src/commands/` - `search` e `detail`.
 
