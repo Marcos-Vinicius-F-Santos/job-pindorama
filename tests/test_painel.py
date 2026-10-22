@@ -82,7 +82,10 @@ class Data(unittest.TestCase):
         with self.assertRaises(ValueError):
             painel.claude_prompt(url, "apagar", self.dir)
         painel.claude_file(url, "avaliar", self.dir).write_text("## Avaliação\nNota 63", encoding="utf-8")
-        self.assertIn("<AVALIACAO>\n## Avaliação\nNota 63\n</AVALIACAO>", painel.claude_prompt(url, "redigir", self.dir))
+        drafting = painel.claude_prompt(url, "redigir", self.dir)
+        self.assertIn("<AVALIACAO>\n## Avaliação\nNota 63\n</AVALIACAO>", drafting)
+        self.assertIn(f"`{painel.PYTHON} tools/compile_doc.py", drafting)
+        self.assertNotIn("{python}", drafting)
         self.assertEqual(painel.claude_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "redigir": None})
 
     def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
@@ -95,8 +98,9 @@ class Data(unittest.TestCase):
         self.assertEqual(cmd[:2], ["claude", "-p"])
         self.assertTrue(all("http" not in part for part in cmd))
         settings = json.loads(painel.CLAUDE_SETTINGS.read_text(encoding="utf-8"))
-        self.assertNotIn("Bash", settings["permissions"]["allow"])
-        self.assertFalse(any(r.startswith("Bash(git") or r.startswith("Bash(curl") for r in settings["permissions"]["allow"]))
+        bash = [r for r in settings["permissions"]["allow"] if r.startswith("Bash")]
+        self.assertTrue(bash)
+        self.assertTrue(all("tools/compile_doc.py:*)" in r for r in bash), bash)
 
 
 class Server(unittest.TestCase):

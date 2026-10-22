@@ -19,14 +19,8 @@
       "Edit(documents/applications/**)",
       "Write(job_search_tracker.csv)",
       "Edit(job_search_tracker.csv)",
-      "Bash(cd cv:*)",
-      "Bash(cd cover_letters:*)",
-      "Bash(cd ..:*)",
-      "Bash(lualatex -interaction=nonstopmode main_:*)",
-      "Bash(xelatex -interaction=nonstopmode cover_:*)",
-      "Bash(rm -f cv/main_:*)",
-      "Bash(rm -f cover_letters/cover_:*)",
-      "Bash(mkdir -p documents/applications/:*)"
+      "Bash(python tools/compile_doc.py:*)",
+      "Bash(python3 tools/compile_doc.py:*)"
     ]
   }
 }

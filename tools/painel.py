@@ -17,8 +17,9 @@ próprio computador (127.0.0.1), abre uma página no navegador com
 
 O Claude chamado daqui roda com as permissões do projeto mais as de
 tools/painel/claude-settings.json (gravar só em cv/, cover_letters/,
-company_research/, documents/applications/ e no tracker); o que não estiver
-liberado é negado, porque não há ninguém para aprovar. As respostas ficam em
+company_research/, documents/applications/ e no tracker, e compilar só pelo
+tools/compile_doc.py); o que não estiver liberado é negado, porque não há
+ninguém para aprovar. O tools/security_guards.py confere esse arquivo. As respostas ficam em
 documents/applications/_painel/ (fora do git), uma vaga por vez.
 
 Segurança: só escuta em 127.0.0.1; cada execução gera um token, embutido na
@@ -104,6 +105,11 @@ Passo 1, tome a resposta à pergunta do fim do Passo 1 como "sim" e siga do Pass
 Regras deste modo:
 - Se o filtro de integridade do Passo 0 não sair `clean`, ou o host de origem não for \
 verificado, pare sem redigir e explique no relatório: essa decisão é da pessoa, na conversa.
+- Compile com `{python} tools/compile_doc.py <arquivo .tex>` no lugar de lualatex e xelatex (ele \
+escolhe o motor e desliga a execução de comandos pelo LaTeX), e limpe os intermediários do Passo 5e \
+com `{python} tools/compile_doc.py <arquivo .tex> --clean`. Se houver um modelo próprio ativo \
+(bloco ACTIVE-TEMPLATE), grave os fontes, não compile e diga no relatório que a compilação fica \
+para a conversa.
 - Não redija os campos de formulário; só diga no relatório que dá para fazê-los na conversa.
 - Onde o fluxo pediria uma decisão da pessoa, fique com a opção conservadora e registre no relatório.
 
@@ -204,7 +210,7 @@ def claude_prompt(url: str, step: str, base: Path = CLAUDE_DIR) -> str:
         avaliacao = claude_answers(url, base)["avaliar"]
         if not avaliacao:
             raise ValueError("avalie a vaga antes de pedir currículo e carta")
-        return PROMPT_REDIGIR.format(url=url, avaliacao=avaliacao.strip())
+        return PROMPT_REDIGIR.format(url=url, avaliacao=avaliacao.strip(), python=PYTHON)
     raise ValueError(f"passo desconhecido: {step}")
 
 
