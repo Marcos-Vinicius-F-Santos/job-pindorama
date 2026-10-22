@@ -73,7 +73,10 @@ class Data(unittest.TestCase):
 
     def test_claude_drafting_needs_a_saved_evaluation(self):
         url = "https://zeta.gupy.io/jobs/1?a=1&b=2"
-        self.assertIn(url, painel.claude_prompt(url, "avaliar", self.dir))
+        prompt = painel.claude_prompt(url, "avaliar", self.dir)
+        self.assertIn(url, prompt)
+        self.assertIn(f"`{painel.PYTHON} tools/posting_guard.py", prompt)
+        self.assertNotIn("{python}", prompt)
         with self.assertRaises(ValueError):
             painel.claude_prompt(url, "redigir", self.dir)
         with self.assertRaises(ValueError):

@@ -63,6 +63,8 @@ CLAUDE_DIR = ROOT / "documents" / "applications" / "_painel"
 CLAUDE_SETTINGS = Path(__file__).resolve().parent / "painel" / "claude-settings.json"
 # passo -> (sufixo do arquivo da resposta, tempo máximo em segundos)
 CLAUDE_STEPS = {"avaliar": ("avaliacao", 1200), "redigir": ("rascunho", 3600)}
+# No Windows, `python3` costuma ser só o atalho da Microsoft Store; nos outros, `python` pode faltar.
+PYTHON = "python" if os.name == "nt" else "python3"
 
 HEADLESS = """Você está rodando sem conversa, chamado pelo painel local (tools/painel.py): não há \
 ninguém para responder perguntas, e sua resposta final aparece no painel exatamente como você a escrever.
@@ -71,9 +73,9 @@ Sem ninguém para aprovar, todo comando fora das permissões do projeto é negad
 modo e em todo agente que você acionar:
 - rode os comandos com caminhos relativos à raiz do projeto, como as skills os escrevem \
 (`bun run .agents/skills/gupy-search/cli/src/cli.ts detail "<url>" --format plain`, \
-`python tools/posting_guard.py --text --json`), nunca com o caminho absoluto;
-- use `python`, não `python3` (aqui `python3` é só o atalho da Microsoft Store).
-
+`{python} tools/posting_guard.py --text --json`), nunca com o caminho absoluto;
+- chame o Python como `{python}`, que é o que funciona neste computador.
+""".replace("{python}", PYTHON) + """
 Se o `tools/posting_guard.py` não rodar, não dê veredito de integridade por conta própria: abra o \
 relatório com "⚠ O filtro de integridade não rodou" e o motivo.
 
@@ -95,15 +97,15 @@ resposta" de `04-job-evaluation.md` (a tabela de dimensões com as notas, a "Not
 
 PROMPT_REDIGIR = HEADLESS + """
 
-A Rosana leu a avaliação abaixo, da vaga {url}, e pediu pelo painel o currículo e a carta. Rode \
+A pessoa candidata leu a avaliação abaixo, da vaga {url}, e pediu pelo painel o currículo e a carta. Rode \
 o /apply para essa vaga: refaça o Passo 0 (coleta e filtro), use a avaliação abaixo no lugar do \
 Passo 1, tome a resposta à pergunta do fim do Passo 1 como "sim" e siga do Passo 2 ao Passo 6b.
 
 Regras deste modo:
 - Se o filtro de integridade do Passo 0 não sair `clean`, ou o host de origem não for \
-verificado, pare sem redigir e explique no relatório: essa decisão é dela, na conversa.
+verificado, pare sem redigir e explique no relatório: essa decisão é da pessoa, na conversa.
 - Não redija os campos de formulário; só diga no relatório que dá para fazê-los na conversa.
-- Onde o fluxo pediria uma decisão dela, fique com a opção conservadora e registre no relatório.
+- Onde o fluxo pediria uma decisão da pessoa, fique com a opção conservadora e registre no relatório.
 
 A resposta final é só o relatório do Passo 6, em markdown.
 
