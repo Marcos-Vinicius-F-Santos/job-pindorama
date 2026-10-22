@@ -106,7 +106,7 @@ class Portals(unittest.TestCase):
         for name in ("gupy-search", "solides-search", "vagas-search", "infojobs-search", "remotar-search",
                      "greenhouse-search", "programathor-search", "michaelpage-search", "geekhunter-search",
                      "trampos-search", "roberthalf-search", "pcd-search", "agrobase-search", "agrosearch-search",
-                     "digai-search"):
+                     "digai-search", "empregos-search"):
             self.assertIn(name, found)
 
 
