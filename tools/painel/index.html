@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="painel-token" content="__PAINEL_TOKEN__">
+<title>Minha Busca</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --surface: #ffffff; --text: #1f2328; --muted: #5d636b; --line: #dedbd2;
+    --accent: #1d6b52; --accent-text: #ffffff; --warn-bg: #fff4d6; --warn-text: #6b4a00;
+    --chip: #eceae3; --danger: #9b2c2c; --focus: #2f6fd6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181b; --surface: #1f2226; --text: #e8e6e1; --muted: #a3a8ae; --line: #33373c;
+      --accent: #4fb38f; --accent-text: #0e1a15; --warn-bg: #3a3016; --warn-text: #f1d88c;
+      --chip: #2a2e33; --danger: #e08b8b; --focus: #7aa7f0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 20px 16px 0; max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; }
+  nav { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px;
+               font: inherit; color: var(--muted); cursor: pointer; }
+  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  section[hidden] { display: none; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .btn { background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px; padding: 10px 18px;
+         font: inherit; font-weight: 600; cursor: pointer; }
+  .btn.secondary { background: var(--chip); color: var(--text); }
+  .btn.small { padding: 6px 12px; font-size: .9rem; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  label { display: inline-flex; gap: 6px; align-items: center; }
+  input[type=text], select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+                             background: var(--surface); color: var(--text); }
+  input[type=text] { flex: 1 1 220px; min-width: 0; }
+  .muted { color: var(--muted); }
+  pre.summary { white-space: pre-wrap; background: var(--chip); padding: 12px; border-radius: 8px; font-size: .85rem; overflow-x: auto; }
+  .error { color: var(--danger); white-space: pre-wrap; }
+  .cards { display: grid; gap: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .card h3 { margin: 0 0 2px; font-size: 1.1rem; overflow-wrap: anywhere; }
+  .card .company { color: var(--muted); margin: 0 0 8px; overflow-wrap: anywhere; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: .85rem; }
+  .warn { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 8px 10px; font-size: .9rem; margin-bottom: 8px; overflow-wrap: anywhere; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .actions a { color: var(--accent); font-weight: 600; }
+  .empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tablewrap { overflow-x: auto; }
+  .spinner { display: inline-block; width: 1em; height: 1em; border: 3px solid var(--chip); border-top-color: var(--accent);
+             border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -0.15em; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Minha Busca</h1>
+  <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador.</p>
+  <nav role="tablist" aria-label="Seções">
+    <button role="tab" data-tab="buscar" aria-selected="true">Buscar</button>
+    <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
+    <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
+    <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
+  </nav>
+</header>
+
+<main>
+  <section id="tab-buscar" role="tabpanel">
+    <div class="panel">
+      <h2>Buscar vagas</h2>
+      <p class="muted">As buscas vêm do seu perfil (as linhas que o <code>/setup</code> preparou). A busca leva de 1 a 3 minutos.</p>
+      <div id="prio-box" class="row"></div>
+      <p class="row">
+        <label>Publicadas nos últimos
+          <select id="jobage"><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="30">30 dias</option></select>
+        </label>
+      </p>
+      <button class="btn" id="btn-search">Buscar vagas</button>
+      <p id="search-status" aria-live="polite"></p>
+      <pre id="search-summary" class="summary" hidden></pre>
+    </div>
+  </section>
+
+  <section id="tab-vagas" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="row">
+        <input type="text" id="f-text" placeholder="Filtrar por cargo ou empresa" aria-label="Filtrar por cargo ou empresa">
+        <select id="f-model" aria-label="Modelo de trabalho">
+          <option value="">Qualquer modelo</option><option value="remote">Remoto</option>
+          <option value="hybrid">Híbrido</option><option value="on-site">Presencial</option><option value="none">Não informado</option>
+        </select>
+        <select id="f-portal" aria-label="Portal"><option value="">Todos os portais</option></select>
+        <label><input type="checkbox" id="f-nowarn"> Só sem avisos</label>
+      </div>
+    </div>
+    <p id="vagas-info" class="muted"></p>
+    <div id="vagas" class="cards"></div>
+  </section>
+
+  <section id="tab-interesse" role="tabpanel" hidden>
+    <div class="panel">
+      <p>Para o Claude avaliar uma vaga e escrever currículo e carta sob medida, copie o pedido e cole no painel do Claude, no VS Code.</p>
+    </div>
+    <div id="interesse" class="cards"></div>
+  </section>
+
+  <section id="tab-candidaturas" role="tabpanel" hidden>
+    <div id="candidaturas"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const TOKEN = document.querySelector('meta[name="painel-token"]').content;
+const PORTAIS = {
+  "gupy-search": "Gupy", "solides-search": "Sólides", "vagas-search": "VAGAS.com", "infojobs-search": "InfoJobs",
+  "remotar-search": "Remotar", "greenhouse-search": "Greenhouse", "programathor-search": "Programathor",
+  "geekhunter-search": "GeekHunter", "michaelpage-search": "Michael Page", "roberthalf-search": "Robert Half",
+  "trampos-search": "Trampos", "pcd-search": "PCD Online", "agrobase-search": "Agrobase", "agrosearch-search": "AGROSearch",
+  "digai-search": "DigAÍ", "empregos-search": "Empregos.com.br", "linkedin-search": "LinkedIn", "freehire-search": "freehire",
+};
+const MODELOS = { remote: "Remoto", hybrid: "Híbrido", "on-site": "Presencial" };
+const portalName = (p) => PORTAIS[p] || String(p || "").replace(/-search$/, "");
+let results = [];
+
+// ---- utilidades: tudo que vem das vagas entra como texto, nunca como HTML ----
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of children) if (c != null) node.append(c);
+  return node;
+}
+function safeUrl(u) {
+  try { const x = new URL(u); return x.protocol === "https:" || x.protocol === "http:" ? x.href : null; } catch { return null; }
+}
+async function api(path, body) {
+  const opts = body === undefined ? {} : {
+    method: "POST", headers: { "Content-Type": "application/json", "X-Painel-Token": TOKEN }, body: JSON.stringify(body),
+  };
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `erro ${res.status}`);
+  return data;
+}
+function warningOf(row) {
+  const v = row.signals && row.signals.verdict;
+  return v && v !== "posting_signals: none" ? v.replace(/^posting_signals:\s*⚠?\s*/, "") : null;
+}
+
+// ---- abas ----
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function show(name) {
+  for (const t of tabs) {
+    const on = t.dataset.tab === name;
+    t.setAttribute("aria-selected", String(on));
+    document.getElementById("tab-" + t.dataset.tab).hidden = !on;
+  }
+  if (name === "vagas") loadResults();
+  if (name === "interesse") loadSaved();
+  if (name === "candidaturas") loadApplications();
+}
+tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
+
+// ---- buscar ----
+const statusEl = document.getElementById("search-status");
+const summaryEl = document.getElementById("search-summary");
+const btnSearch = document.getElementById("btn-search");
+let polling = null;
+
+function renderStatus(s) {
+  const box = document.getElementById("prio-box");
+  if (!box.dataset.done) {
+    box.dataset.done = "1";
+    if (!s.priorities.length) {
+      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Peça ao Claude: /setup --section search" }));
+      btnSearch.disabled = true;
+    }
+    for (const p of s.priorities) {
+      box.append(el("label", {}, el("input", { type: "checkbox", value: p.priority, ...(p.priority <= 2 ? { checked: "" } : {}) }),
+        `Prioridade ${p.priority} (${p.queries} buscas)`));
+    }
+  }
+  const job = s.search;
+  btnSearch.disabled = job.running || !s.priorities.length;
+  statusEl.replaceChildren();
+  if (job.running) statusEl.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` Buscando desde ${job.started.slice(11, 16)}… pode continuar usando o computador.`);
+  else if (job.error) statusEl.append(el("span", { class: "error", text: "A busca não terminou: " + job.error }));
+  else if (job.summary) statusEl.append("Busca concluída. ", el("a", { href: "#", onclick: (e) => { e.preventDefault(); show("vagas"); }, text: "Ver as vagas novas" }));
+  summaryEl.hidden = !job.summary;
+  summaryEl.textContent = job.summary || "";
+  if (!job.running && polling) { clearInterval(polling); polling = null; loadResults(); }
+}
+async function refreshStatus() { try { renderStatus(await api("/api/status")); } catch (e) { statusEl.textContent = e.message; } }
+btnSearch.addEventListener("click", async () => {
+  const prios = [...document.querySelectorAll("#prio-box input:checked")].map((i) => Number(i.value));
+  if (!prios.length) { statusEl.textContent = "Escolha ao menos uma prioridade."; return; }
+  try {
+    await api("/api/search", { priorities: prios, jobage: Number(document.getElementById("jobage").value) });
+    polling = setInterval(refreshStatus, 2000);
+    refreshStatus();
+  } catch (e) { statusEl.textContent = e.message; }
+});
+
+// ---- vagas novas ----
+const filters = ["f-text", "f-model", "f-portal", "f-nowarn"].map((id) => document.getElementById(id));
+filters.forEach((f) => f.addEventListener("input", renderResults));
+
+async function loadResults() {
+  const data = await api("/api/results");
+  results = data.new || [];
+  const sel = document.getElementById("f-portal");
+  const current = sel.value;
+  sel.replaceChildren(el("option", { value: "", text: "Todos os portais" }),
+    ...[...new Set(results.map((r) => r.portal))].sort().map((p) => el("option", { value: p, text: portalName(p) })));
+  sel.value = current;
+  document.getElementById("count-new").textContent = results.length ? `(${results.length})` : "";
+  renderResults();
+}
+
+function card(row, decide) {
+  const chips = el("div", { class: "chips" });
+  const add = (t) => t && chips.append(el("span", { class: "chip", text: t }));
+  add(row.location);
+  add(MODELOS[row.workplace_type] || "Modelo não informado");
+  add(row.seniority);
+  add(row.contract);
+  add(row.salary);
+  add(row.date ? "Publicada em " + row.date.split("-").reverse().join("/") : null);
+  add([row.portal, ...(row.also_on || [])].map(portalName).join(" + "));
+  const warn = warningOf(row);
+  const url = safeUrl(row.url);
+  const full = row.full_posting && safeUrl(row.full_posting.url);
+  return el("article", { class: "card" },
+    el("h3", { text: row.title || "(sem título)" }),
+    el("p", { class: "company", text: row.company || "Empresa não informada" }),
+    chips,
+    warn ? el("div", { class: "warn", text: "⚠ " + warn }) : null,
+    el("div", { class: "actions" },
+      url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
+      full ? el("a", { href: full, target: "_blank", rel: "noopener noreferrer", text: "Vaga completa na empresa" }) : null,
+      decide ? el("button", { class: "btn small", onclick: () => decide(row, "interesse"), text: "Me interessa" }) : null,
+      decide ? el("button", { class: "btn small secondary", onclick: () => decide(row, "descartar"), text: "Descartar" }) : null));
+}
+
+function renderResults() {
+  const [text, model, portal, nowarn] = [filters[0].value.toLowerCase(), filters[1].value, filters[2].value, filters[3].checked];
+  const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const rows = results.filter((r) =>
+    (!text || fold(`${r.title} ${r.company}`).includes(fold(text))) &&
+    (!model || (model === "none" ? !r.workplace_type : r.workplace_type === model)) &&
+    (!portal || r.portal === portal) &&
+    (!nowarn || !warningOf(r)));
+  const box = document.getElementById("vagas");
+  document.getElementById("vagas-info").textContent = results.length
+    ? `${rows.length} de ${results.length} vagas novas. "Me interessa" e "Descartar" tiram a vaga desta lista e das próximas buscas.` : "";
+  box.replaceChildren(...(rows.length ? rows.map((r) => card(r, decide))
+    : [el("p", { class: "empty", text: results.length ? "Nenhuma vaga com esses filtros." : "Nenhuma vaga nova ainda. Rode uma busca na aba Buscar." })]));
+}
+
+async function decide(row, decision) {
+  try {
+    await api("/api/mark", { urls: [row.url], decision });
+    results = results.filter((r) => r.url !== row.url);
+    document.getElementById("count-new").textContent = results.length ? `(${results.length})` : "";
+    renderResults();
+  } catch (e) { alert("Não consegui gravar: " + e.message); }
+}
+
+// ---- me interessam ----
+async function loadSaved() {
+  const { saved } = await api("/api/saved");
+  const box = document.getElementById("interesse");
+  box.replaceChildren(...(saved.length ? saved.map((s) => {
+    const url = safeUrl(s.url);
+    const cmd = url ? `/apply ${url}` : null;
+    return el("article", { class: "card" },
+      el("h3", { text: s.title || "(sem título)" }),
+      el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
+      el("div", { class: "actions" },
+        url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
+        cmd ? el("button", { class: "btn small", text: "Copiar pedido para o Claude", onclick: async (e) => {
+          try { await navigator.clipboard.writeText(cmd); e.target.textContent = "Copiado: cole no Claude"; }
+          catch { prompt("Copie este pedido:", cmd); }
+        } }) : null));
+  }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
+}
+
+// ---- candidaturas ----
+const STATUS = { drafted: "Rascunho", applied: "Enviada", interview: "Entrevista", offer: "Proposta", hired: "Contratação",
+  rejected: "Não seguiu", no_response: "Sem resposta", "no response": "Sem resposta", offer_declined: "Proposta recusada",
+  "offer declined": "Proposta recusada", withdrawn: "Desisti" };
+async function loadApplications() {
+  const { applications } = await api("/api/applications");
+  const box = document.getElementById("candidaturas");
+  if (!applications.length) {
+    box.replaceChildren(el("p", { class: "empty", text: "Nenhuma candidatura registrada ainda. Elas aparecem aqui depois do /apply." }));
+    return;
+  }
+  const head = el("tr", {}, ...["Data", "Empresa", "Cargo", "Situação", "Encaixe"].map((h) => el("th", { text: h })));
+  const rows = applications.slice().reverse().map((a) => el("tr", {},
+    el("td", { text: (a.date || "").split("-").reverse().join("/") }), el("td", { text: a.company || "" }),
+    el("td", { text: a.role || "" }), el("td", { text: STATUS[(a.status || "").toLowerCase()] || a.status || "" }),
+    el("td", { text: a.fit_rating || "" })));
+  box.replaceChildren(el("div", { class: "panel tablewrap" }, el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows))));
+}
+
+refreshStatus().then(() => api("/api/status")).then((s) => { if (s.search.running) polling = setInterval(refreshStatus, 2000); });
+</script>
+</body>
+</html>

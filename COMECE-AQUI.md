@@ -105,6 +105,22 @@ buscar e o gênero gramatical para os textos. Responda com calma; dá para mudar
 O Claude sempre pergunta antes de seguir para a próxima etapa. **Nada é enviado a empresa
 nenhuma:** quem se candidata é você, com os arquivos que ele preparou.
 
+### O painel: buscar sem conversar com o Claude
+
+Para buscar vagas com botões, sem escrever nada: abra a pasta do projeto no Explorador de
+Arquivos e dê **dois cliques em `abrir-painel.bat`**. Abre uma janela preta (deixe aberta) e o
+navegador com o painel:
+
+- **Buscar:** escolha as prioridades e clique em "Buscar vagas" (leva de 1 a 3 minutos).
+- **Vagas novas:** filtre por modelo de trabalho e portal, veja os avisos e abra cada vaga.
+  "Me interessa" guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
+- **Me interessam:** as vagas guardadas, com um botão que copia o pedido `/apply` para você
+  colar no Claude quando quiser avaliar a vaga e gerar currículo e carta.
+- **Candidaturas:** as candidaturas registradas pelo `/apply`.
+
+Para fechar o painel, feche a janela preta. O painel só funciona no seu computador e não
+envia nada para fora, além das buscas nos portais.
+
 ## Seus dados
 
 - O seu perfil, o seu currículo e as vagas ficam **só no seu computador**, na pasta do projeto.
