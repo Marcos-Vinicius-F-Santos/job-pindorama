@@ -145,11 +145,12 @@ class Collect(unittest.TestCase):
                 job("2", "Product Owner", "Omie", "https://omie.gupy.io/jobs/2"),
             ],
             ("remotar-search", "product manager"): [
-                job("10", "Technical Product Manager", "FindMe", "https://remotar.com.br/job/10"),
+                dict(job("10", "Technical Product Manager", "FindMe", "https://remotar.com.br/job/10"), workplace_type="remote"),
                 job("1", "Product Manager Pleno", "Zeta", "https://zeta.gupy.io/jobs/1"),  # same URL again
             ],
             ("solides-search", "ia"): [
-                job("939473", "Technical Product Manager", "FINDME TECNOLOGIA LTDA", "https://vagas.solides.com.br/vaga/939473"),
+                dict(job("939473", "Technical Product Manager", "FINDME TECNOLOGIA LTDA", "https://vagas.solides.com.br/vaga/939473"),
+                     workplace_type="hybrid"),
                 job("5", "Product Manager Junior", "Kappa", "https://vagas.solides.com.br/vaga/5"),
                 dict(job("6", "Gerente de Produto", "Lambda", "https://vagas.solides.com.br/vaga/6"), seniority="Gerência"),
             ],
@@ -185,6 +186,12 @@ class Collect(unittest.TestCase):
         self.assertEqual(by_title["Product Manager Pleno"]["signals"]["workplace"], "hybrid")
         self.assertEqual(by_title["Product Manager Junior"]["signals"]["seniority_verdict"], "mismatch")
         self.assertTrue(by_title["Product Manager Junior"]["signals"]["verdict"].startswith("posting_signals: ⚠"))
+        # Same posting on two portals with different work-model labels.
+        self.assertEqual(by_title["Technical Product Manager"]["signals"]["workplace_conflict"],
+                         {"remotar-search": "remote", "solides-search": "hybrid"})
+        self.assertIn("portais discordam do modelo de trabalho (remotar-search: remote; solides-search: hybrid)",
+                      by_title["Technical Product Manager"]["signals"]["verdict"])
+        self.assertNotIn("workplace_conflict", by_title["Product Manager Pleno"]["signals"])
         # No level in the title: the portal's own seniority field is used.
         self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_source"], "portal")
         self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_verdict"], "mismatch")

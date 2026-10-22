@@ -258,6 +258,9 @@ def verdict(f: dict) -> str:
         parts.append(f'vaga exclusiva ("{f["affirmative_exclusive"][0]}") - ver filtro de elegibilidade')
     if f["intermediary"]:
         parts.append(f'intermediário ("{f["intermediary"][0]}")')
+    if f.get("workplace_conflict"):
+        each = "; ".join(f"{p}: {w}" for p, w in f["workplace_conflict"].items())
+        parts.append(f"portais discordam do modelo de trabalho ({each}) - confira no texto")
     if f["seniority_verdict"] == "mismatch":
         where = " pelo portal" if f.get("seniority_source") == "portal" else ""
         parts.append(f'senioridade fora da faixa{where} ({", ".join(f["seniority"])})')
