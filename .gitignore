@@ -81,6 +81,9 @@ documents/projects/**
 # candidate's weak points.
 documents/applications/**
 documents/postings/**
+# The panel's "Meu perfil" form (tools/painel_perfil.py): city, salary
+# expectation, deal-breakers.
+documents/perfil/**
 # Belt-and-braces, not the primary guard: nothing writes here. Prep packs land
 # in documents/applications/<company>_<role>/, covered above. Kept because
 # tools/security_guards.py pins it in REQUIRED_IGNORE_RULES.

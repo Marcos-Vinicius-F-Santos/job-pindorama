@@ -249,7 +249,8 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 | Permissões | `tools/painel/claude-settings.json` soma às do projeto só a gravação dos arquivos do `/apply` e o `compile_doc.py` |
 | `tools/compile_doc.py` | Compila só `cv/main_*.tex` e `cover_letters/cover_*.tex`, sempre com a execução de comandos do LaTeX desligada, e limpa os intermediários |
 | `security_guards.py` | Checagem 6: o arquivo de permissões do painel só pode ter entradas da lista revisada |
-| Documentação | README (seção "O `/apply` pelo painel"), `COMECE-AQUI.md`, `SECURITY.md`, CHANGELOG e este diário |
+| Aba "Meu perfil" | O começo do processo em botões: enviar o currículo e o PDF do LinkedIn, um formulário com o que o currículo não diz e um botão que roda o Caminho A do `/setup` sem conversa. Num perfil existente, grava o que é novo, mantém o que já está e lista os conflitos para revisão. Confere se o repositório é público antes de gravar. Esse Claude não tem web nem shell |
+| Documentação | README (seções "O `/apply` pelo painel" e "Prefere botões?" do `/setup`), `COMECE-AQUI.md`, `SECURITY.md`, `documents/README.md`, CHANGELOG e este diário |
 
 ### Problemas e como foram resolvidos
 
@@ -266,7 +267,7 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 - `security_guards` passando.
 - Três avaliações reais pelo painel, numa vaga da Gupy, até sair sem os problemas 2 e 4.
 - `compile_doc.py` testado com cópias do currículo e da carta de exemplo: 2 páginas e 1 página.
-- **Não testado ainda:** o botão "Fazer currículo e carta" de ponta a ponta.
+- **Não testado ainda:** os botões "Fazer currículo e carta" e "Montar meu perfil" de ponta a ponta.
 
 ### PRs
 
@@ -279,5 +280,6 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 ### Próxima sessão
 
 - Rodar "Fazer currículo e carta" de ponta a ponta numa vaga real e conferir o checklist completo.
+- Rodar "Montar meu perfil" num fork novo, só com um currículo, e conferir o que ele marca como inferido.
 - Avaliar se o painel deve mostrar o currículo e a carta em PDF no próprio cartão.
 - Testar o `COMECE-AQUI.md` com alguém sem experiência, num computador limpo.

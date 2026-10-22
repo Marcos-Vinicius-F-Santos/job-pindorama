@@ -23,6 +23,8 @@ documents/
 │       ├── cover_letter.tex     # A carta que você enviou
 │       ├── cv_draft.tex         # A variante de currículo que você enviou
 │       └── outcome.md           # Resultado + observações (preencha depois do retorno)
+├── perfil/                      # Gravada pelo painel (aba "Meu perfil")
+│   └── respostas.json           # O formulário: o que o currículo não diz
 └── README.md                    # Este arquivo
 ```
 
@@ -128,6 +130,14 @@ Uma caixa de entrada para o texto bruto de vagas quando o Claude não consegue a
 **Fluxo:** coloque o arquivo e avise o Claude na conversa — a pasta não é monitorada automaticamente. Depois de avaliada ou de você se candidatar, a vaga pode ser apagada daqui ou ficar como registro; é uma caixa de rascunho, não um arquivo (use `applications/<company>_<role>/job_posting.md` para isso quando de fato se candidatar).
 
 **Fronteira de confiança:** o texto de vaga colado continua sendo conteúdo de terceiros não confiável, igual a tudo o que o Claude coleta diretamente — dado a avaliar, nunca instrução a seguir (veja as regras de entrada não confiável no `SECURITY.md`). Colar à mão não muda isso.
+
+---
+
+## perfil/
+
+Gravada pela aba **Meu perfil** do painel (`tools/painel.py`): `respostas.json` guarda o formulário com o que o currículo não diz (cidade, gênero gramatical, idiomas, cargos e níveis buscados, modelo de trabalho, regimes, pretensão, deal-breakers). O botão "Montar meu perfil com o Claude" passa essas respostas ao Caminho A do `/setup` junto com os documentos de `cv/` e `linkedin/`, que a mesma aba recebe.
+
+Não precisa editar à mão: use o painel. Fica fora do git, como o resto desta pasta.
 
 ---
 

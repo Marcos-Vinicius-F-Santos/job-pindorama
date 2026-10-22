@@ -37,10 +37,11 @@ Checks:
    shipped agents read untrusted postings. `tools:` is tool-name granularity
    (a `Bash(pattern)` entry resolves to plain Bash), so a patterned entry is
    rejected as misleading; settings.json's allow list is what scopes Bash.
-6. tools/painel/claude-settings.json — the extra permissions the local panel
+6. tools/painel/claude-settings*.json — the extra permissions the local panel
    (tools/painel.py) hands to `claude -p`, which runs with nobody to approve
    anything. Only `permissions.allow` may be set, and every entry must be in
-   ALLOWED_PAINEL_PERMISSIONS. Catches a widening (a raw `lualatex:*` would
+   the allowlist for that file (ALLOWED_PAINEL_PERMISSIONS for /apply,
+   ALLOWED_PAINEL_PERFIL_PERMISSIONS for /setup); an unknown file fails. Catches a widening (a raw `lualatex:*` would
    also approve -shell-escape; an `rm` prefix deletes outside the repo) that
    would run unattended on every fork.
 
@@ -133,6 +134,23 @@ ALLOWED_PAINEL_PERMISSIONS = {
     "Bash(python3 tools/compile_doc.py:*)",
 }
 
+# The panel's "Meu perfil" run (/setup Path A from documents/ and the form).
+# It writes the profile files /setup writes, and has no web access and no shell:
+# a CV is read, never fetched, and nothing leaves the machine.
+ALLOWED_PAINEL_PERFIL_PERMISSIONS = {
+    "Read", "Glob", "Grep",
+    "Skill(setup)", "Skill(job-application-assistant)",
+    "Write(CLAUDE.md)", "Edit(CLAUDE.md)",
+    "Write(.claude/skills/job-application-assistant/0*.md)", "Edit(.claude/skills/job-application-assistant/0*.md)",
+    "Write(.claude/skills/job-scraper/search-queries.md)", "Edit(.claude/skills/job-scraper/search-queries.md)",
+    "Write(cv/main_example.tex)", "Edit(cv/main_example.tex)",
+}
+
+PAINEL_SETTINGS = {
+    "claude-settings.json": ALLOWED_PAINEL_PERMISSIONS,
+    "claude-settings-perfil.json": ALLOWED_PAINEL_PERFIL_PERMISSIONS,
+}
+
 # Rules that must stay in .claude/settings.json permissions.ask. An ask rule
 # forces a prompt even when an allow rule or a skill's allowed-tools grant
 # would otherwise pre-approve the call. These are the files whose content IS
@@ -210,6 +228,8 @@ REQUIRED_IGNORE_RULES = [
     "documents/projects/**",
     "documents/applications/**",
     "documents/postings/**",
+    # The panel's profile form: city, salary expectation, deal-breakers.
+    "documents/perfil/**",
     # Belt-and-braces, not the primary guard: nothing writes here.
     # /interview's prep packs land under documents/applications/**, above.
     "documents/interview/**",
@@ -644,10 +664,19 @@ def check_agent_tool_grants() -> None:
 
 
 def check_painel_permissions() -> None:
-    path = ROOT / "tools" / "painel" / "claude-settings.json"
+    for path in sorted((ROOT / "tools" / "painel").glob("claude-settings*.json")):
+        allowed = PAINEL_SETTINGS.get(path.name)
+        if allowed is None:
+            errors.append(
+                f"{path.relative_to(ROOT).as_posix()}: unknown panel settings file - every file the panel "
+                "can hand to `claude -p` needs its own allowlist in PAINEL_SETTINGS."
+            )
+            continue
+        _check_painel_file(path, allowed)
+
+
+def _check_painel_file(path: Path, allowed: set) -> None:
     rel = path.relative_to(ROOT).as_posix()
-    if not path.exists():
-        return
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -665,11 +694,11 @@ def check_painel_permissions() -> None:
         errors.append(f"{rel}: permissions.allow must be a list of strings")
         return
     for entry in allow:
-        if entry not in ALLOWED_PAINEL_PERMISSIONS:
+        if entry not in allowed:
             errors.append(
                 f"{rel}: permission not in the reviewed allowlist: {entry!r}. The panel's "
                 "`claude -p` runs it unattended on every fork. If the grant is intentional, add "
-                "it to ALLOWED_PAINEL_PERMISSIONS in tools/security_guards.py in the same PR."
+                "it to that file's allowlist in PAINEL_SETTINGS (tools/security_guards.py) in the same PR."
             )
 
 

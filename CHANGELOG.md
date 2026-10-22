@@ -29,8 +29,18 @@ per-file diff commands.
   `--clean` removes only that document's intermediates. The panel grants this script instead of a
   `lualatex:*` prefix, which would also approve `-shell-escape`, or an `rm` prefix.
 - **`security_guards.py` check 6: the panel's permissions** (`tests/test_security_guards.py`) -
-  `tools/painel/claude-settings.json` may set only `permissions.allow`, every entry drawn from
-  `ALLOWED_PAINEL_PERMISSIONS`, because nobody is there to approve what it grants.
+  each `tools/painel/claude-settings*.json` may set only `permissions.allow`, every entry drawn from
+  that file's list in `PAINEL_SETTINGS`, because nobody is there to approve what it grants; a
+  settings file without its own list fails.
+- **The panel's "Meu perfil" tab starts `/setup` from buttons** (`tools/painel_perfil.py`,
+  `tools/painel/claude-settings-perfil.json`, `tests/test_painel_perfil.py`, `documents/README.md`) -
+  upload the CV and the LinkedIn PDF (`%PDF-` only, 10 MB, basename only, into `documents/cv/` and
+  `documents/linkedin/`), fill a short form with what a CV does not say (saved to
+  `documents/perfil/respostas.json`, now in `.gitignore` and `REQUIRED_IGNORE_RULES`), and run
+  `/setup` Path A unattended with the form standing in for the questions. On an existing profile it
+  adds what is new, keeps what is recorded and lists conflicts, inferences and gaps. The panel checks
+  whether `origin` is public first and requires a confirmation when it is, or when it cannot tell.
+  That run gets no web access, no Agent and no shell, and writes only the files `/setup` writes.
 
 - **CI runs the Python suite on Windows** (`.github/workflows/ci.yml` `python-tests-windows`) - every
   job ran on Ubuntu, so a Windows-only failure reached master with all checks green: #480's test

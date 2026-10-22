@@ -69,6 +69,18 @@
   .md code { background: var(--chip); border-radius: 4px; padding: 0 4px; font-size: .9em; }
   .md table { margin: 8px 0; }
   .claude-status { margin: 8px 0 0; font-size: .95rem; }
+  .ok { color: var(--accent); }
+  form.perfil fieldset { border: 0; padding: 0; margin: 0 0 16px; }
+  form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; padding: 0; }
+  form.perfil .field { margin-bottom: 12px; display: block; }
+  form.perfil .field > span { display: block; font-weight: 600; margin-bottom: 4px; }
+  form.perfil input[type=text], form.perfil textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--surface); color: var(--text); }
+  form.perfil textarea { min-height: 4.5em; resize: vertical; }
+  form.perfil .opts { display: flex; gap: 6px 14px; flex-wrap: wrap; }
+  form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 2px; }
+  ul.files { margin: 8px 0 0; padding-left: 18px; }
+  ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 </style>
 </head>
@@ -77,6 +89,7 @@
   <h1>Minha Busca</h1>
   <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador.</p>
   <nav role="tablist" aria-label="Seções">
+    <button role="tab" data-tab="perfil" aria-selected="false">Meu perfil</button>
     <button role="tab" data-tab="buscar" aria-selected="true">Buscar</button>
     <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
     <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
@@ -85,6 +98,37 @@
 </header>
 
 <main>
+  <section id="tab-perfil" role="tabpanel" hidden>
+    <div id="privacy"></div>
+    <div class="panel">
+      <h2>1. Seus documentos</h2>
+      <p class="muted">O currículo e, se tiver, o perfil do LinkedIn salvo em PDF (no LinkedIn: seu perfil &gt; Mais &gt; Salvar como PDF).
+        Ficam só no seu computador, na pasta <code>documents</code>. Currículo em Word? Abra no Word e use Arquivo &gt; Salvar como &gt; PDF.</p>
+      <div class="row">
+        <button class="btn secondary" data-upload="cv">Enviar currículo (PDF)</button>
+        <button class="btn secondary" data-upload="linkedin">Enviar LinkedIn (PDF)</button>
+        <input type="file" id="upload-input" accept=".pdf,application/pdf" hidden>
+      </div>
+      <p id="upload-status" aria-live="polite"></p>
+      <div id="files"></div>
+    </div>
+    <div class="panel">
+      <h2>2. O que o currículo não diz</h2>
+      <p class="muted">Tudo é opcional, mas cada resposta deixa a busca e a avaliação das vagas mais certeiras.</p>
+      <form id="perfil-form" class="perfil"></form>
+      <div class="row"><button class="btn" id="btn-save-perfil">Salvar respostas</button> <span id="save-status" aria-live="polite"></span></div>
+    </div>
+    <div class="panel">
+      <h2>3. Montar o perfil</h2>
+      <p>O Claude lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
+        Leva alguns minutos. Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças para você revisar.</p>
+      <label id="confirm-box" hidden><input type="checkbox" id="confirm-public"> Entendi o aviso de privacidade e quero continuar</label>
+      <p><button class="btn" id="btn-perfil">Montar meu perfil com o Claude</button></p>
+      <p id="perfil-status" class="claude-status" aria-live="polite"></p>
+    </div>
+    <div id="perfil-out"></div>
+  </section>
+
   <section id="tab-buscar" role="tabpanel">
     <div class="panel">
       <h2>Buscar vagas</h2>
@@ -186,6 +230,7 @@ function show(name) {
   }
   if (name === "vagas") loadResults();
   if (name === "interesse") refreshClaude().then(loadSaved);
+  if (name === "perfil") refreshClaude().then(() => loadProfile());
   if (name === "candidaturas") loadApplications();
 }
 tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
@@ -341,7 +386,7 @@ function markdown(text) {
 }
 
 // ---- me interessam ----
-const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta" };
+const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil" };
 let claude = { available: true, running: false };
 let claudePolling = null;
 
@@ -361,7 +406,8 @@ async function refreshClaude() {
   else if (claude.running) g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está ${PASSOS[claude.step]} desde ${claude.started.slice(11, 16)}…`);
   else if (claude.error) g.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
   if (!claude.running && claudePolling) { clearInterval(claudePolling); claudePolling = null; }
-  if (was !== claude.running) loadSaved();
+  if (was !== claude.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
+  renderPerfilStatus();
 }
 
 async function loadSaved() {
@@ -395,6 +441,153 @@ async function loadSaved() {
   }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
 }
 
+// ---- meu perfil ----
+let perfil = null;
+let uploadKind = null;
+const NOMES = { estagio: "estágio", junior: "júnior", pleno: "pleno", senior: "sênior", especialista: "especialista",
+  staff: "staff", lead: "lead", gestao: "gestão", remoto: "remoto", hibrido: "híbrido", presencial: "presencial",
+  temporario: "temporário" };
+
+async function loadProfile(refresh) {
+  try { perfil = await api("/api/profile" + (refresh ? "?refresh=1" : "")); } catch (e) { return; }
+  renderPrivacy();
+  renderFiles();
+  if (!document.getElementById("perfil-form").childElementCount) renderForm();
+  renderPerfilStatus();
+  const out = document.getElementById("perfil-out");
+  out.replaceChildren(
+    perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", open: "" },
+      el("summary", { text: "O que o Claude fez na última montagem" }), markdown(perfil.report))) : null,
+    perfil.ready && perfil.profile ? el("div", { class: "panel" }, el("details", { class: "answer" },
+      el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null);
+}
+
+function renderPrivacy() {
+  const p = perfil.privacy || {};
+  const box = document.getElementById("privacy");
+  const repo = p.repo ? ` (${p.repo})` : "";
+  const MSG = {
+    privado: ["ok", `Seu repositório no GitHub${repo} é privado: o perfil fica visível só para você.`],
+    local: ["ok", "Este projeto não está ligado a nenhum repositório on-line: o perfil fica só no seu computador."],
+    outro: ["warn", "Este projeto está ligado a um repositório fora do GitHub. Confira se ele é privado antes de enviar (push) o seu perfil."],
+    publico: ["warn", `Atenção: seu repositório${repo} é PÚBLICO. O perfil (nome, contatos, histórico, pretensão) vai para arquivos que o git publica. ` +
+      "Não faça push dele, ou passe a usar um repositório privado (seção 8 do SETUP.md)."],
+    desconhecido: ["warn", `Não consegui conferir se o seu repositório${repo} é privado. Se ele for público, o perfil (nome, contatos, histórico) ` +
+      "fica visível para qualquer pessoa depois de um push."],
+  }[p.status] || ["warn", "Não consegui conferir para onde este projeto publica."];
+  box.replaceChildren(MSG[0] === "ok" ? el("p", { class: "muted", text: "🔒 " + MSG[1] }) : el("div", { class: "warn", text: "⚠ " + MSG[1] }));
+  document.getElementById("confirm-box").hidden = !["publico", "desconhecido"].includes(p.status);
+}
+
+function renderFiles() {
+  const box = document.getElementById("files");
+  const items = [];
+  for (const [kind, label] of [["cv", "Currículo"], ["linkedin", "LinkedIn"]]) {
+    for (const f of perfil.files[kind] || []) {
+      items.push(el("li", {}, `${label}: ${f.name} (${Math.max(1, Math.round(f.size / 1024))} KB) `,
+        el("button", { class: "btn small secondary", text: "Remover", onclick: async () => {
+          if (!confirm(`Remover ${f.name}?`)) return;
+          try { perfil.files = (await api("/api/upload-remove", { kind, name: f.name })).files; renderFiles(); renderPerfilStatus(); }
+          catch (e) { alert(e.message); }
+        } })));
+    }
+  }
+  box.replaceChildren(items.length ? el("ul", { class: "files" }, ...items)
+    : el("p", { class: "muted", text: "Nenhum documento ainda. Comece pelo currículo." }));
+}
+
+function renderForm() {
+  const form = document.getElementById("perfil-form");
+  const a = perfil.answers || {};
+  form.replaceChildren(...perfil.schema.map((sec) => el("fieldset", {}, el("legend", { text: sec.title }),
+    ...sec.fields.map((f) => {
+      const id = "pf-" + f.key;
+      let input;
+      if (f.type === "text") input = el("input", { type: "text", id, name: f.key, value: a[f.key] || "", placeholder: f.placeholder || "" });
+      else if (f.type === "textarea" || f.type === "lines") {
+        input = el("textarea", { id, name: f.key, placeholder: f.placeholder || "" });
+        input.value = f.type === "lines" ? (a[f.key] || []).join("\n") : (a[f.key] || "");
+      } else {
+        const multi = f.type === "multi";
+        input = el("div", { class: "opts", role: multi ? "group" : "radiogroup", "aria-label": f.label },
+          ...f.options.map((o) => el("label", {}, el("input", { type: multi ? "checkbox" : "radio", name: f.key, value: o,
+            ...((multi ? (a[f.key] || []).includes(o) : a[f.key] === o) ? { checked: "" } : {}) }), NOMES[o] || o)));
+      }
+      const wrap = el(f.type === "multi" || f.type === "choice" ? "div" : "label", { class: "field" },
+        el("span", { text: f.label }), input, f.help ? el("div", { class: "help", text: f.help }) : null);
+      if (wrap.tagName === "LABEL") wrap.setAttribute("for", id);
+      return wrap;
+    }))));
+  form.addEventListener("submit", (e) => e.preventDefault());
+}
+
+function collectForm() {
+  const out = {};
+  for (const sec of perfil.schema) for (const f of sec.fields) {
+    if (f.type === "multi") out[f.key] = [...document.querySelectorAll(`#perfil-form input[name="${f.key}"]:checked`)].map((i) => i.value);
+    else if (f.type === "choice") out[f.key] = (document.querySelector(`#perfil-form input[name="${f.key}"]:checked`) || {}).value || "";
+    else out[f.key] = document.getElementById("pf-" + f.key).value;
+  }
+  return out;
+}
+
+async function saveForm() {
+  const st = document.getElementById("save-status");
+  try { perfil.answers = (await api("/api/profile", collectForm())).answers; st.textContent = "Respostas salvas."; return true; }
+  catch (e) { st.textContent = "Não consegui salvar: " + e.message; return false; }
+}
+
+function renderPerfilStatus() {
+  const st = document.getElementById("perfil-status");
+  const btn = document.getElementById("btn-perfil");
+  if (!st || !perfil) return;
+  const hasDocs = Object.values(perfil.files || {}).some((l) => l.length);
+  const needConfirm = !document.getElementById("confirm-box").hidden && !document.getElementById("confirm-public").checked;
+  btn.disabled = !claude.available || claude.running || !hasDocs || needConfirm;
+  btn.textContent = perfil.ready ? "Atualizar meu perfil com o Claude" : "Montar meu perfil com o Claude";
+  st.replaceChildren();
+  if (claude.running && claude.step === "perfil") st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está montando o seu perfil desde ${claude.started.slice(11, 16)}…`);
+  else if (claude.running) st.textContent = `O Claude está ocupado (${PASSOS[claude.step]}). Espere terminar.`;
+  else if (!claude.available) st.append(el("span", { class: "error", text: "Não achei o Claude Code neste computador." }));
+  else if (claude.error && claude.step === "perfil") st.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
+  else if (!hasDocs) st.textContent = "Envie o currículo para liberar este botão.";
+  else if (needConfirm) st.textContent = "Marque a confirmação de privacidade acima para liberar este botão.";
+}
+
+document.querySelectorAll("[data-upload]").forEach((b) => b.addEventListener("click", () => {
+  uploadKind = b.dataset.upload;
+  document.getElementById("upload-input").click();
+}));
+document.getElementById("upload-input").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  const st = document.getElementById("upload-status");
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { st.textContent = "Arquivo grande demais (máximo 10 MB)."; return; }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const data = String(reader.result).split(",", 2)[1] || "";
+      const res = await api("/api/upload", { kind: uploadKind, name: file.name, data });
+      perfil.files = res.files;
+      st.textContent = `Recebido: ${res.saved}.`;
+      renderFiles(); renderPerfilStatus();
+    } catch (err) { st.textContent = "Não consegui guardar: " + err.message; }
+  };
+  st.textContent = "Enviando…";
+  reader.readAsDataURL(file);
+});
+document.getElementById("btn-save-perfil").addEventListener("click", saveForm);
+document.getElementById("confirm-public").addEventListener("change", renderPerfilStatus);
+document.getElementById("btn-perfil").addEventListener("click", async () => {
+  if (!(await saveForm())) return;
+  try {
+    await api("/api/claude", { step: "perfil", confirm: document.getElementById("confirm-public").checked });
+    await refreshClaude();
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+  } catch (e) { alert("Não consegui chamar o Claude: " + e.message); }
+});
+
 // ---- candidaturas ----
 const STATUS = { drafted: "Rascunho", applied: "Enviada", interview: "Entrevista", offer: "Proposta", hired: "Contratação",
   rejected: "Não seguiu", no_response: "Sem resposta", "no response": "Sem resposta", offer_declined: "Proposta recusada",
@@ -418,7 +611,8 @@ refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);
   claude = s.claude;
   if (claude.running) claudePolling = setInterval(refreshClaude, 5000);
-});
+  return api("/api/profile");
+}).then((p) => { if (p && !p.ready) show("perfil"); });
 </script>
 </body>
 </html>

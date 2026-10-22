@@ -134,6 +134,26 @@ class PainelPermissionGuardTests(GuardRepoFixture):
             self.assertIn("tools/painel/claude-settings.json", result.stdout)
             self.assertIn(entry, result.stdout)
 
+    def test_profile_settings_have_their_own_narrower_list(self):
+        path = self.root / "tools" / "painel" / "claude-settings-perfil.json"
+        path.parent.mkdir(exist_ok=True)
+        shipped = (REPO_ROOT / "tools" / "painel" / "claude-settings-perfil.json").read_text(encoding="utf-8")
+        path.write_text(shipped)
+        self.assertEqual(run_guards(self.root).returncode, 0)
+        # Web access is fine for /apply, not for reading a CV.
+        path.write_text(json.dumps({"permissions": {"allow": ["Read", "WebFetch"]}}))
+        result = run_guards(self.root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("'WebFetch'", result.stdout)
+
+    def test_unknown_panel_settings_file_fails(self):
+        path = self.root / "tools" / "painel" / "claude-settings-extra.json"
+        path.parent.mkdir(exist_ok=True)
+        path.write_text(json.dumps({"permissions": {"allow": ["Read"]}}))
+        result = run_guards(self.root)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("unknown panel settings file", result.stdout)
+
     def test_panel_settings_may_only_set_allow(self):
         for data in ({"permissions": {"allow": [], "defaultMode": "bypassPermissions"}},
                      {"permissions": {"allow": []}, "hooks": {}}, ["não", "objeto"]):
