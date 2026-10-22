@@ -163,3 +163,67 @@ Viáveis para uma próxima leva: InHire, Empregos.com.br, BNE, Trabalha Brasil.
 - Guia de instalação para quem não usa terminal (VS Code, Bun, MiKTeX, `/setup`).
 - Texto completo das vagas da Remotar (hoje só um resumo; a vaga inteira está no site da empresa).
 - Sinal de conflito de modelo de trabalho entre portais (a mesma vaga "remota" num portal e "híbrida" em outro).
+
+## 2026-10-21 e 22: Sessão 4, DigAÍ, Empregos.com.br e qualidade dos sinais
+
+**Objetivo:** fechar os pendentes da sessão 3 e acrescentar o DigAÍ, plataforma em que a mantenedora fez uma entrevista.
+
+**Decisões tomadas:**
+- Portal cuja busca só sai por uma API não documentada não entra por essa API; usa-se o que as páginas públicas trazem prontas do servidor, nos caminhos que o `robots.txt` libera (DigAÍ pelas páginas de empresa, Empregos.com.br pelas páginas por cargo).
+- A senioridade e o modelo de trabalho informados pelo portal servem de apoio, mas o texto da vaga continua valendo mais.
+
+### O que foi feito
+
+| Frente | Resultado |
+|---|---|
+| Documentação | Sessão 3 no diário e parágrafo sobre `scrape_run.py` e `posting_signals.py` no README |
+| DigAÍ (`digai-search`) | A busca geral do site usa uma API não documentada; a CLI lê as páginas de carreira de cada empresa (`<empresa>.digai.ai`), com o filtro de cargo do próprio site. Lista de 70 empresas em `companies.txt`, tirada do sitemap. Até 12 vagas por empresa e por busca |
+| Filtro de título | Copiado em seis CLIs, passou para a base comum e casa começo de palavra: "ia" não pega mais "Assistência" nem "Brasília" |
+| Senioridade do portal | Quando o título não diz o nível, o `posting_signals.py` usa o campo do portal ("Gerência", "Sênior / Especialista"), com `seniority_source` dizendo de onde veio |
+| Guia para leigos | `COMECE-AQUI.md`: VS Code e Git por cliques, a extensão do Claude Code e pedidos prontos em português para instalar o resto, baixar e atualizar o projeto |
+| Portais que discordam | A mesma vaga "remota" num portal e "híbrida" em outro ganha `workplace_conflict` e um aviso; o `/scrape` decide pelo texto |
+| Empregos.com.br (`empregos-search`) | A busca livre é proibida no `robots.txt`; a CLI lê as páginas por cargo (`/vagas/<cargo>`), filtra pelo título e, com `--remote`, pelo modelo do cartão |
+| Pontuação | A limpeza de HTML deixava "backlog ," e "remota ."; corrigido na base comum das 15 CLIs |
+
+Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ e Empregos.com.br.
+
+### Portais investigados e deixados de fora
+
+| Portal | Motivo |
+|---|---|
+| BNE | Viável, adiado: só reconhece os cargos do catálogo dele e troca o resto por um "parecido" (Product Owner virou Gerente de Projetos) |
+| InHire | As páginas de carreira são montadas no navegador e as vagas só saem por uma API não documentada |
+| Trabalha Brasil | Os termos proíbem "qualquer tipo de uso ou reprodução" do conteúdo, e a busca traz outros cargos |
+
+### Problemas e como foram resolvidos
+
+1. **Chamada à API do DigAÍ bloqueada.** O controle de permissões do Claude Code barrou o teste da API não documentada. *Solução:* usar só as páginas de empresa, que o `robots.txt` libera e que já trazem as vagas.
+2. **Vaga de gerência passou para uma faixa pleno–especialista.** O título "Gerente de Produto" é o cargo de PM, e o nível estava só no campo do portal. *Solução:* `portal_seniority()` e `seniority_source`.
+3. **O site devolve vagas para qualquer texto.** Na Empregos.com.br, um cargo inventado trouxe 49 mil vagas. *Solução:* filtro de título na CLI.
+4. **Barra invertida virando caractere de controle.** Um script Python gravou `\b` como backspace dentro de uma expressão regular. *Solução:* scripts com strings cruas (`r"..."`) e conferência de caracteres de controle depois de cada edição.
+5. **Teste que esperava o defeito.** O teste da VAGAS.com tinha "Descrição : Resumo" como resultado esperado. *Solução:* corrigido junto com a pontuação.
+
+### Verificação
+
+- Testes de unidade das 15 CLIs da base comum e suíte Python passando; testes ao vivo do DigAÍ, da Empregos.com.br e dos portais afetados por cada mudança, passando.
+- `lint_skills`, `security_guards` e `check_framework_version` passando em todos os PRs.
+- Buscas reais no `minha-busca` depois de cada mudança, sem gravar histórico e sem candidatura.
+
+### PRs (todos mesclados no `master`)
+
+| PR | Assunto |
+|---|---|
+| #10 | Sessão 3 no diário e ferramentas do `/scrape` no README |
+| #11 | `digai-search` |
+| #12 | Filtro de título casa começo de palavra |
+| #13 | `posting_signals` usa a senioridade informada pelo portal |
+| #14 | `COMECE-AQUI.md`, instalação sem terminal |
+| #15 | Aviso quando portais discordam do modelo de trabalho |
+| #16 | `empregos-search` e investigação de 4 portais |
+| #17 | Sem espaço antes de pontuação na limpeza de HTML |
+
+### Próxima sessão
+
+- Texto completo das vagas da Remotar (hoje só um resumo).
+- BNE, se valer a pena para cargos operacionais.
+- Testar o `COMECE-AQUI.md` com alguém sem experiência, num computador limpo.
