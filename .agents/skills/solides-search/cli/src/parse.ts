@@ -141,7 +141,7 @@ export function parseSearch(body: string): { rows: SolidesResult[]; total: numbe
   return { rows: data.data.map(toResult), total: typeof data.count === "number" ? data.count : null }
 }
 
-/** Aceita o id numérico ou a URL https://vagas.solides.com.br/vaga/<id>. */
+/** Aceita o id numérico ou a URL https://[empresa.]vagas.solides.com.br/vaga/<id>. */
 export function parseRef(input: string): string | null {
   const raw = input.trim()
   if (/^\d+$/.test(raw)) return raw
@@ -151,7 +151,9 @@ export function parseRef(input: string): string | null {
   } catch {
     return null
   }
-  if (url.hostname.toLowerCase() !== HOST) return null
+  // A empresa também publica no próprio subdomínio (empresa.vagas.solides.com.br), com o mesmo id.
+  const host = url.hostname.toLowerCase()
+  if (host !== HOST && !host.endsWith(`.${HOST}`)) return null
   const m = /^\/vaga\/(\d+)\/?$/.exec(url.pathname)
   return m ? m[1] : null
 }

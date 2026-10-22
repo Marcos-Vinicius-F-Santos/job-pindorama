@@ -124,6 +124,14 @@ Para vagas que merecem um olhar mais atento, obtenha o detalhe completo com o co
 **principais requisitos**, o **prazo de inscrição**, o **regime** (CLT, PJ, estágio) e um
 trecho curto da descrição. Na Gupy, a própria busca já traz `contract` (o regime) e `deadline`.
 
+**Agregadores (Remotar, Agrobase) só trazem um resumo.** A vaga inteira está no link de
+candidatura da empresa, que o `scrape_run.py` deixa em `full_posting`:
+- `portal` preenchido (Gupy, Sólides, Greenhouse...): leia com o `detail` desse portal, passando
+  o `url`;
+- `portal: null` (InHire, Workable, site próprio): tente `python3 tools/fetch_page.py` no `url`;
+  se a página não trouxer o texto (a InHire monta a vaga no navegador), avalie pelo resumo do
+  agregador e diga nos destaques que o texto completo não foi lido.
+
 **Detecção de vaga encerrada na origem:** o `linkedin-search detail` também devolve `isActive`.
 `false` significa que a própria página da vaga mostra o aviso do LinkedIn "Não aceita mais
 candidaturas" — a vaga morreu entre ser indexada e ser coletada (URLs vencidas do LinkedIn

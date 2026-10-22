@@ -145,7 +145,12 @@ class Collect(unittest.TestCase):
                 job("2", "Product Owner", "Omie", "https://omie.gupy.io/jobs/2"),
             ],
             ("remotar-search", "product manager"): [
-                dict(job("10", "Technical Product Manager", "FindMe", "https://remotar.com.br/job/10"), workplace_type="remote"),
+                dict(job("10", "Technical Product Manager", "FindMe", "https://remotar.com.br/job/10"), workplace_type="remote",
+                     apply_url="https://findme.vagas.solides.com.br/vaga/939473?origem=remotar"),
+                dict(job("11", "Product Manager IA", "Nova", "https://remotar.com.br/job/11"),
+                     apply_url="https://nova.inhire.app/vagas/abc"),
+                dict(job("12", "Product Ops", "Mesma", "https://remotar.com.br/job/12"),
+                     apply_url="https://remotar.com.br/job/12/candidatar"),
                 job("1", "Product Manager Pleno", "Zeta", "https://zeta.gupy.io/jobs/1"),  # same URL again
             ],
             ("solides-search", "ia"): [
@@ -167,7 +172,9 @@ class Collect(unittest.TestCase):
     def run_collect(self, seen=None, calls=None):
         portals = {"gupy-search": True, "remotar-search": True, "solides-search": True, "vagas-search": False}
         calls = calls if calls is not None else [c for c in parse_queries(QUERIES) if c[0] in (1, 2)]
-        return collect(calls, portals, seen or SeenIndex(), ["pleno", "senior"], 14, runner=self.runner, workers=2)
+        hosts = {"gupy-search": {"gupy.io"}, "remotar-search": {"remotar.com.br"}, "solides-search": {"vagas.solides.com.br"}}
+        return collect(calls, portals, seen or SeenIndex(), ["pleno", "senior"], 14, runner=self.runner, workers=2,
+                       hosts=hosts)
 
     def test_dedup_cross_portal_and_counts(self):
         seen = SeenIndex()
@@ -178,7 +185,7 @@ class Collect(unittest.TestCase):
         self.assertIn(("FindMe", "Technical Product Manager", "remotar-search", ["solides-search"]), titles)
         self.assertNotIn("Omie", [t[0] for t in titles])  # seen by company+title
         c = out["meta"]["counts"]
-        self.assertEqual((c["seen_before"], c["cross_portal"], c["new"]), (1, 1, 4))
+        self.assertEqual((c["seen_before"], c["cross_portal"], c["new"]), (1, 1, 6))
 
     def test_signals_attached_to_each_new_posting(self):
         out = self.run_collect()
@@ -192,6 +199,12 @@ class Collect(unittest.TestCase):
         self.assertIn("portais discordam do modelo de trabalho (remotar-search: remote; solides-search: hybrid)",
                       by_title["Technical Product Manager"]["signals"]["verdict"])
         self.assertNotIn("workplace_conflict", by_title["Product Manager Pleno"]["signals"])
+        # An aggregator's posting points to where the full text is read.
+        self.assertEqual(by_title["Technical Product Manager"]["full_posting"],
+                         {"portal": "solides-search", "url": "https://findme.vagas.solides.com.br/vaga/939473?origem=remotar"})
+        self.assertEqual(by_title["Product Manager IA"]["full_posting"], {"portal": None, "url": "https://nova.inhire.app/vagas/abc"})
+        self.assertNotIn("full_posting", by_title["Product Ops"])  # the same portal: nothing more to read
+        self.assertNotIn("full_posting", by_title["Product Manager Pleno"])
         # No level in the title: the portal's own seniority field is used.
         self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_source"], "portal")
         self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_verdict"], "mismatch")

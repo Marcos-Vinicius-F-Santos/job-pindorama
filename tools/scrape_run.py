@@ -18,6 +18,11 @@ The fit call stays with the model.
                it twice, e.g. for two cities) is kept once, with `also_on`
                listing the other portals (company names are compared without
                legal suffixes, and "FindMe" matches "FINDME TECNOLOGIA LTDA");
+             * a posting relayed by an aggregator (Remotar, Agrobase: an
+               `apply_url` to the company's own posting) gets `full_posting`:
+               {"portal": <installed portal that reads that URL, or null>,
+               "url": <apply_url>}, so the full text is read there, not from
+               the aggregator's summary;
              * when those portals label the work model differently ("remote"
                on one, "hybrid" on another), `signals.workplace_conflict` maps
                each portal to its label and the verdict says so;
@@ -104,6 +109,43 @@ def portal_enabled(skill_dir: Path) -> bool:
     text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
     front = re.match(r"^---\n(.*?)\n---", text, re.S)
     return not (front and re.search(r"^enabled:\s*false\b", front.group(1), re.M))
+
+
+# A host literal in a portal CLI's sources: the hosts that CLI reads. Same rule
+# as tests/test_apply_host_check.py, so both agree on what "installed" covers.
+HOST_LITERAL = re.compile(r"https?://([A-Za-z0-9.-]+\.[A-Za-z]{2,})")
+NON_PORTAL_HOSTS = {"schema.org", "www.w3.org", "w3.org", "example.com", "localhost", "github.com"}
+
+
+def portal_hosts(skills: Path = SKILLS) -> dict:
+    """{portal: hosts its CLI reads}, `www.` dropped (subdomains match later)."""
+    out = {}
+    for d in sorted(skills.glob("*-search")):
+        src = d / "cli" / "src"
+        if not src.is_dir():
+            continue
+        hosts = set()
+        for f in src.rglob("*.ts"):
+            for h in HOST_LITERAL.findall(f.read_text(encoding="utf-8")):
+                h = h.lower()
+                if h not in NON_PORTAL_HOSTS:
+                    hosts.add(h[4:] if h.startswith("www.") else h)
+        out[d.name] = hosts
+    return out
+
+
+def portal_for_url(url, hosts_by_portal: dict):
+    """The installed portal whose CLI reads this URL (host or subdomain match), or None."""
+    m = re.match(r"https?://([^/?#:]+)", str(url or ""), re.I)
+    if not m:
+        return None
+    host = m.group(1).lower()
+    best, best_len = None, 0
+    for portal, hosts in hosts_by_portal.items():
+        for h in hosts:
+            if (host == h or host.endswith("." + h)) and len(h) > best_len:
+                best, best_len = portal, len(h)
+    return best
 
 
 def installed_portals(skills: Path = SKILLS) -> dict:
@@ -213,7 +255,9 @@ def run_cli(portal: str, args: list):
         return None, "saída não é o JSON do contrato"
 
 
-def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=run_cli, workers: int = 4) -> dict:
+def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=run_cli, workers: int = 4,
+            hosts: dict | None = None) -> dict:
+    hosts = portal_hosts() if hosts is None else hosts
     stats = {name: {"calls": 0, "ok": 0, "results": 0, "errors": []} for name, on in portals.items() if on}
     skipped = sorted(name for name, on in portals.items() if not on)
     unknown = sorted({p for _, p, _ in calls if p not in portals})
@@ -265,6 +309,11 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
                                      r.get("seniority"))
             if r.get("workplace_type"):
                 labels[id(row)] = {portal: r["workplace_type"]}
+            apply_url = r.get("apply_url")
+            if isinstance(apply_url, str) and re.match(r"https?://", apply_url, re.I):
+                reader = portal_for_url(apply_url, hosts)
+                if reader != portal:
+                    row["full_posting"] = {"portal": reader, "url": apply_url}
             new.append(row)
 
     for row in new:
