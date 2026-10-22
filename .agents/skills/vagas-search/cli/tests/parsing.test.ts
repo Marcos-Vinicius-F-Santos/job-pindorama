@@ -123,7 +123,7 @@ describe("detalhe", () => {
       workplace_type: "remote",
       salary: null, // "a combinar"
       url: "https://www.vagas.com.br/vagas/v2837357",
-      description: "Descrição : Resumo da vaga\n\nGestão estratégica de produtos digitais.\n• Inglês avançado.",
+      description: "Descrição: Resumo da vaga\n\nGestão estratégica de produtos digitais.\n• Inglês avançado.",
     });
   });
 

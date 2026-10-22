@@ -4,9 +4,11 @@ import {
   cleanHtml,
   formatSalary,
   httpGet,
+  inlineText,
   readJobPosting,
   relativeDate,
   retryAfterMs,
+  tidyPunctuation,
   titleMatches,
   withinJobAge,
   type JobResult,
@@ -110,5 +112,19 @@ describe("titleMatches", () => {
     expect(titleMatches("Aux. de Operações | Brasília", "ia")).toBe(false);
     expect(titleMatches("Dev C++ / Node.js", "c++ node.js")).toBe(true);
     expect(titleMatches("Qualquer título", "")).toBe(true);
+  });
+});
+
+describe("pontuação depois de tags em linha", () => {
+  test("sem espaço antes de pontuação nem depois de parêntese aberto", () => {
+    expect(tidyPunctuation("o backlog , colaborando ( com dados ) .")).toBe("o backlog, colaborando (com dados).");
+    expect(tidyPunctuation("- Item\n- Outro")).toBe("- Item\n- Outro");
+    expect(tidyPunctuation("Salário: R$ 8.000,00")).toBe("Salário: R$ 8.000,00");
+  });
+
+  test("cleanHtml e inlineText", () => {
+    expect(cleanHtml("<p>Gerenciar o <strong>backlog</strong>, com <em>dados</em>.</p><ul><li>Roadmap (<b>Q1</b>)</li></ul>"))
+      .toBe("Gerenciar o backlog, com dados.\n- Roadmap (Q1)");
+    expect(inlineText("Atuação <strong>100% remota</strong>.")).toBe("Atuação 100% remota.");
   });
 });
