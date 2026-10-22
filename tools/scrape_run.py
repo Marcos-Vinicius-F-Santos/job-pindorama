@@ -255,7 +255,8 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
                 continue
             row = dict(r)
             row.update(portal=portal, priority=prio, query=query, also_on=[])
-            findings = analyse(str(r.get("description") or ""), str(title or ""), str(company or ""), accept)
+            findings = analyse(str(r.get("description") or ""), str(title or ""), str(company or ""), accept,
+                               r.get("seniority"))
             findings["verdict"] = verdict(findings)
             row["signals"] = findings
             new.append(row)
