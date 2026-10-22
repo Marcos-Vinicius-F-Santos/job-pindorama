@@ -1,6 +1,7 @@
 # Guia de instalação
 
-Passo a passo para colocar o job-pindorama para funcionar.
+Passo a passo para colocar o job-pindorama para funcionar. Se você nunca usou terminal, comece
+pelo [COMECE-AQUI.md](COMECE-AQUI.md), que faz o mesmo com cliques e pedidos ao Claude.
 
 ## 1. Pré-requisitos
 

@@ -59,6 +59,9 @@ O projeto incorpora boas práticas de orientação de carreira: critérios de av
 
 ## Início rápido
 
+> **Nunca usou terminal nem GitHub?** Siga o [COMECE-AQUI.md](COMECE-AQUI.md): você instala
+> dois programas com cliques e pede o resto ao Claude, em português.
+
 ### 1. Fork e clone
 
 ```bash
@@ -207,6 +210,7 @@ job-pindorama/
 ├── gmail_sync/                        # Estado do /gmail-sync
 ├── upskill/                           # Relatórios do /upskill
 ├── job_search_tracker.csv             # Planilha de acompanhamento das candidaturas
+├── COMECE-AQUI.md                     # Instalação sem terminal (cliques + pedidos ao Claude)
 └── SETUP.md                           # Guia de instalação detalhado
 ```
 
