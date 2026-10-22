@@ -4,7 +4,7 @@
 
 ## CLIs de portal instaladas (principais para o `/scrape`)
 
-O `/scrape` descobre cada skill de portal em `.agents/skills/*/SKILL.md` e roda a CLI dela primeiro. O projeto já vem com o `gupy-search` (Portal Gupy, o maior ATS do Brasil), com `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search` (outros portais brasileiros e de tecnologia; InfoJobs, Remotar, Trampos, Robert Half e PCD Online só para uso pessoal, veja o SKILL.md de cada um) e com as CLIs que funcionam em qualquer país, `linkedin-search` e `freehire-search`; qualquer skill que você acrescentar com o `/add-portal` entra do mesmo jeito. Você **não** precisa de uma linha `site:` abaixo para essas CLIs rodarem.
+O `/scrape` descobre cada skill de portal em `.agents/skills/*/SKILL.md` e roda a CLI dela primeiro. O projeto já vem com o `gupy-search` (Portal Gupy, o maior ATS do Brasil), com `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `programathor-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`, `empregos-search` (outros portais brasileiros e de tecnologia; InfoJobs, Remotar, Trampos, Robert Half e PCD Online só para uso pessoal, veja o SKILL.md de cada um) e com as CLIs que funcionam em qualquer país, `linkedin-search` e `freehire-search`; qualquer skill que você acrescentar com o `/add-portal` entra do mesmo jeito. Você **não** precisa de uma linha `site:` abaixo para essas CLIs rodarem.
 
 As buscas com `site:` deste arquivo são o **plano B pelo WebSearch** — para portais sem CLI, páginas de carreira de empresas, ou quando uma CLI falha.
 
@@ -27,6 +27,7 @@ Principais (CLIs instaladas):
 - **Agrobase** (`agrobase-search`) — agronegócio; busque por profissão (`--profession agronomo`, `veterinario`, `zootecnista`...)
 - **AGROSearch** (`agrosearch-search`) — vagas da consultoria do agronegócio (poucas dezenas; sem `-q` lista todas)
 - **DigAÍ** (`digai-search`) — empresas que recrutam com entrevista por IA (Raízen, Localiza, Afya, Hapvida, Stefanini...); a lista de empresas fica em `.agents/skills/digai-search/companies.txt`, e cada empresa devolve até 12 vagas por busca
+- **Empregos.com.br** (`empregos-search`) — generalista; a busca é por cargo (`-q "analista de dados"`), com `--remote` filtrado pela CLI (use `--pages 5` ou mais com ele)
 
 Plano B pelo WebSearch (portais brasileiros sem CLI; crie uma com `/add-portal` se usar muito):
 - **catho.com.br** — Catho, generalista

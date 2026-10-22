@@ -12,7 +12,7 @@ bun run src/cli.ts --help
 ## Código
 
 - `src/helpers.ts` - base comum às CLIs de portal brasileiras (coleta, erros, texto,
-  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`.
+  JobPosting, saídas); igual em `solides-search`, `vagas-search`, `infojobs-search`, `remotar-search`, `greenhouse-search`, `michaelpage-search`, `geekhunter-search`, `trampos-search`, `roberthalf-search`, `pcd-search`, `agrobase-search`, `agrosearch-search`, `digai-search`, `empregos-search`.
 - `src/parse.ts` - o que é específico do Programathor: URL por tecnologia e leitura dos cartões (sem detalhe: a página da vaga exige login).
 - `src/commands/` - `search` e `detail`.
 
