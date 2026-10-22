@@ -198,6 +198,9 @@ Para cada vaga nova, faça uma checagem rápida (NÃO a avaliação completa de 
   onde a pessoa não mora, para quem só aceita remoto ou está fora do raio de deslocamento, é
   deal-breaker de local: marque **Baixo** e cite o trecho. `remote_with_visits` não rebaixa:
   cite o trecho nos destaques para a pessoa pesar a frequência. Vale o texto, não o rótulo do portal.
+- **Portais discordam** (`workplace_conflict`): a mesma vaga aparece como remota num portal e
+  híbrida ou presencial em outro. Não apresente como remota: leia o texto (`detail` de um dos
+  portais) e decida por ele; se o texto não disser, mostre a discordância nos destaques.
 - **Seleção interna** (`internal`): marque **Baixo** e cite o trecho — quem não é da empresa não
   pode se candidatar.
 - **Vaga exclusiva** (`affirmative_exclusive`): aplique o filtro de elegibilidade do

@@ -18,6 +18,9 @@ The fit call stays with the model.
                it twice, e.g. for two cities) is kept once, with `also_on`
                listing the other portals (company names are compared without
                legal suffixes, and "FindMe" matches "FINDME TECNOLOGIA LTDA");
+             * when those portals label the work model differently ("remote"
+               on one, "hybrid" on another), `signals.workplace_conflict` maps
+               each portal to its label and the verdict says so;
              * each new posting carries `signals` from tools/posting_signals.py
                (workplace, internal selection, exclusivity, intermediary,
                seniority against the profile's Senioridade-alvo);
@@ -226,6 +229,7 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
 
     collected, seen_before, cross = 0, 0, 0
     new, urls_now = [], set()
+    labels = {}  # id(row) -> {portal: workplace_type}, to spot portals that disagree
     for prio, portal, args, results, err in outcomes:
         st = stats[portal]
         st["calls"] += 1
@@ -252,14 +256,22 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
                 cross += 1
                 if portal != twin["portal"] and portal not in twin["also_on"]:
                     twin["also_on"].append(portal)
+                if r.get("workplace_type"):
+                    labels.setdefault(id(twin), {}).setdefault(portal, r["workplace_type"])
                 continue
             row = dict(r)
             row.update(portal=portal, priority=prio, query=query, also_on=[])
-            findings = analyse(str(r.get("description") or ""), str(title or ""), str(company or ""), accept,
-                               r.get("seniority"))
-            findings["verdict"] = verdict(findings)
-            row["signals"] = findings
+            row["signals"] = analyse(str(r.get("description") or ""), str(title or ""), str(company or ""), accept,
+                                     r.get("seniority"))
+            if r.get("workplace_type"):
+                labels[id(row)] = {portal: r["workplace_type"]}
             new.append(row)
+
+    for row in new:
+        by_portal = labels.get(id(row), {})
+        if len(set(by_portal.values())) > 1:
+            row["signals"]["workplace_conflict"] = by_portal
+        row["signals"]["verdict"] = verdict(row["signals"])
 
     return {
         "meta": {
