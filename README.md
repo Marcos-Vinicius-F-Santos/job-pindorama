@@ -102,8 +102,9 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 
 > **Prefere botões?** `python3 tools/painel.py` (no Windows, dois cliques em `abrir-painel.bat`)
 > abre um painel local no navegador: busca, lista com filtros e avisos, "me interessa" e
-> "descartar" gravados no histórico, e as candidaturas. É a parte mecânica do `/scrape`, sem o
-> Claude; avaliar a vaga e escrever currículo e carta continuam no `/apply`.
+> "descartar" gravados no histórico, e as candidaturas. A busca é a parte mecânica do `/scrape`,
+> sem o Claude. Na aba "Me interessam", dois botões chamam o Claude Code sem conversa para
+> avaliar a vaga e para fazer currículo e carta (veja [O `/apply` pelo painel](#o-apply-pelo-painel)).
 
 ```bash
 /scrape
@@ -242,6 +243,22 @@ Toda afirmação do currículo e da carta é conferida com o seu perfil real. O 
 - **Verificação de ATS na camada de texto.** O ATS (Gupy, Solides, Workday...) lê o texto embutido no PDF, não a página desenhada. O `/apply` extrai a camada de texto do currículo compilado e confere contatos, ordem de leitura e cobertura de palavras-chave contra o que um leitor de fato vê.
 - **Corte por relevância.** Quando o currículo passa de 2 páginas, o fluxo não corta mecanicamente a seção "mais antiga": pontua cada linha por relevância para a vaga, exclusividade e dependência da carta, e corta primeiro a de menor pontuação.
 - **Separação entre redação e revisão.** Quem redige escreve; um segundo agente, com contexto novo, pesquisa a empresa e critica. Depois quem redige revisa. Isso pega palavras-chave esquecidas, enquadramentos fracos e linguagem genérica.
+
+### O `/apply` pelo painel
+
+Na aba **Me interessam** do painel local (`tools/painel.py`), cada vaga marcada tem dois botões que rodam o Claude Code sem conversa (`claude -p`, com o login do Claude Code do seu computador):
+
+- **Avaliar com o Claude** roda os passos 1 e 2 acima (coleta, filtro de integridade e avaliação de encaixe) e mostra a avaliação no cartão da vaga. Leva alguns minutos.
+- **Fazer currículo e carta** só fica ativo depois da avaliação. Roda o resto do fluxo, a partir da avaliação gravada, e registra a candidatura no `job_search_tracker.csv`. Pode levar meia hora.
+
+Diferenças em relação à conversa:
+
+- **Ninguém aprova nada no meio.** O Claude roda com as permissões do projeto mais as de `tools/painel/claude-settings.json`, que só deixam gravar o currículo, a carta, a pesquisa de empresas, a pasta `documents/applications/` e o tracker, e compilar pelo `tools/compile_doc.py`. Todo o resto é negado. O `tools/security_guards.py` confere esse arquivo em todo PR.
+- **Decisões viram parada.** Se o filtro de integridade acusar algo na vaga ou o host não for verificado, ele para sem redigir e explica, porque essa decisão é sua, na conversa. Os campos de formulário da Gupy e um modelo próprio do `/add-template` também ficam para a conversa.
+- **Sem fonte, sem número.** A referência salarial e os fatos sobre a empresa só entram com uma página consultada na própria execução. Sem isso, a avaliação diz "não consultada".
+- **As respostas ficam em `documents/applications/_painel/`**, fora do git. Uma vaga por vez.
+
+Quer acompanhar e corrigir junto? O botão **Copiar pedido** continua lá: cole o `/apply` na conversa.
 
 ## Personalização
 

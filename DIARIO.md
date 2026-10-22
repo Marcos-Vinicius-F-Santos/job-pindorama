@@ -227,3 +227,57 @@ Ao fim da sessão, o projeto tem **18 portais**: os 16 da sessão 3, mais DigAÍ
 - Texto completo das vagas da Remotar (hoje só um resumo).
 - BNE, se valer a pena para cargos operacionais.
 - Testar o `COMECE-AQUI.md` com alguém sem experiência, num computador limpo.
+
+---
+
+## 2026-10-22: Sessão 5, o painel chama o Claude
+
+**Objetivo:** fazer o painel local (PR #20) ir além da busca, avaliando a vaga e fazendo currículo e carta com botões, sem que a pessoa precise escrever o `/apply` na conversa.
+
+**Decisões tomadas:**
+- O painel chama o Claude Code sem conversa (`claude -p`), com o login do próprio computador. Não há chave de API nem servidor externo.
+- Foram dois botões, e não um: avaliar primeiro e redigir só depois, a partir da avaliação gravada. Assim a pessoa lê a avaliação antes de gastar meia hora numa candidatura.
+- Pelo painel, decisões viram parada: se o filtro de integridade acusar algo, o Claude para sem redigir, e a decisão fica para a conversa.
+- O código não leva dado de ninguém. O pedido fala de "a pessoa candidata", e os dados vêm do perfil de cada fork.
+
+### O que foi feito
+
+| Frente | Resultado |
+|---|---|
+| Botões no painel | "Avaliar com o Claude" (Passos 0 e 1 do `/apply`) e "Fazer currículo e carta" (Passos 2 a 6b), na aba "Me interessam". Uma vaga por vez, só as marcadas ali |
+| Resposta no painel | A avaliação e o relatório aparecem no cartão da vaga, em markdown montado nó a nó (nunca como HTML), com os links passando pelo `safeUrl` |
+| Permissões | `tools/painel/claude-settings.json` soma às do projeto só a gravação dos arquivos do `/apply` e o `compile_doc.py` |
+| `tools/compile_doc.py` | Compila só `cv/main_*.tex` e `cover_letters/cover_*.tex`, sempre com a execução de comandos do LaTeX desligada, e limpa os intermediários |
+| `security_guards.py` | Checagem 6: o arquivo de permissões do painel só pode ter entradas da lista revisada |
+| Documentação | README (seção "O `/apply` pelo painel"), `COMECE-AQUI.md`, `SECURITY.md`, CHANGELOG e este diário |
+
+### Problemas e como foram resolvidos
+
+1. **"Não consigo ver o painel".** O painel funcionava; o que confundia era fechar a janela preta (que é o próprio painel) e o navegador não abrir sozinho. *Solução:* o `COMECE-AQUI.md` agora diz para deixar a janela aberta e traz o endereço para colar.
+2. **O filtro de integridade não rodou na primeira avaliação.** O agente de coleta chamou `python3 D:/.../tools/posting_guard.py`, com caminho absoluto, e as permissões só liberam `python tools/posting_guard.py`. Sem ninguém para aprovar, o comando foi negado, e o Claude deu um "veredito manual". *Solução:* o pedido exige caminhos relativos e proíbe veredito por conta própria.
+3. **`python3` no Windows.** Aqui ele é só o atalho da Microsoft Store (sai com código 49). *Solução:* o painel manda usar `python` no Windows e `python3` nos outros sistemas.
+4. **Faixa salarial atribuída a guias que ninguém abriu.** Na segunda avaliação, o Claude citou "guias Robert Half / Michael Page" sem ter feito nenhuma busca na web, o que o registro da sessão mostrou. *Solução:* referência salarial e fatos sobre a empresa só com uma página aberta na própria execução, com o endereço; senão, "não consultada". Na terceira avaliação, a faixa veio com as páginas consultadas.
+5. **A primeira versão das permissões abria buracos.** Liberava `lualatex -interaction=nonstopmode main_:*`, que também aprovaria `-shell-escape`, e `rm -f cv/main_:*`, que apagaria qualquer arquivo depois do primeiro. O `security_guards.py` não olhava esse arquivo. *Solução:* o `compile_doc.py` no lugar do motor e do `rm`, e a checagem 6 no guarda.
+6. **Um `&` na URL da vaga.** No Windows, o `claude` é um `.cmd`, e o `cmd.exe` interpretaria o `&`. *Solução:* o pedido vai pela entrada padrão; a linha de comando só tem opções fixas.
+
+### Verificação
+
+- Suíte Python inteira passando, com testes novos do painel, do `compile_doc.py` e da checagem 6.
+- `security_guards` passando.
+- Três avaliações reais pelo painel, numa vaga da Gupy, até sair sem os problemas 2 e 4.
+- `compile_doc.py` testado com cópias do currículo e da carta de exemplo: 2 páginas e 1 página.
+- **Não testado ainda:** o botão "Fazer currículo e carta" de ponta a ponta.
+
+### PRs
+
+| PR | Assunto |
+|---|---|
+| #19 | Texto completo das vagas de agregadores (Remotar, Agrobase) |
+| #20 | Painel local da busca (protótipo) |
+| #21 | O painel chama o Claude para avaliar vagas e fazer currículo e carta |
+
+### Próxima sessão
+
+- Rodar "Fazer currículo e carta" de ponta a ponta numa vaga real e conferir o checklist completo.
+- Avaliar se o painel deve mostrar o currículo e a carta em PDF no próprio cartão.
+- Testar o `COMECE-AQUI.md` com alguém sem experiência, num computador limpo.

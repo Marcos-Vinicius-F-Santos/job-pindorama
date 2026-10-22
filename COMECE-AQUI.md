@@ -105,21 +105,32 @@ buscar e o gênero gramatical para os textos. Responda com calma; dá para mudar
 O Claude sempre pergunta antes de seguir para a próxima etapa. **Nada é enviado a empresa
 nenhuma:** quem se candidata é você, com os arquivos que ele preparou.
 
-### O painel: buscar sem conversar com o Claude
+### O painel: buscar e avaliar vagas com botões
 
-Para buscar vagas com botões, sem escrever nada: abra a pasta do projeto no Explorador de
-Arquivos e dê **dois cliques em `abrir-painel.bat`**. Abre uma janela preta (deixe aberta) e o
-navegador com o painel:
+Para buscar e avaliar vagas com botões, sem escrever nada: abra a pasta do projeto no
+Explorador de Arquivos e dê **dois cliques em `abrir-painel.bat`**. Abre uma janela preta (deixe
+aberta, pode minimizar) e o navegador com o painel. Se o navegador não abrir sozinho, copie o
+endereço que aparece na janela preta (`http://127.0.0.1:8765/`) e cole no navegador.
 
 - **Buscar:** escolha as prioridades e clique em "Buscar vagas" (leva de 1 a 3 minutos).
 - **Vagas novas:** filtre por modelo de trabalho e portal, veja os avisos e abra cada vaga.
   "Me interessa" guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
-- **Me interessam:** as vagas guardadas, com um botão que copia o pedido `/apply` para você
-  colar no Claude quando quiser avaliar a vaga e gerar currículo e carta.
+- **Me interessam:** as vagas guardadas, cada uma com três botões:
+  - **Avaliar com o Claude:** a nota de encaixe, os pontos fortes e as lacunas aparecem ali
+    mesmo, no cartão da vaga (leva alguns minutos).
+  - **Fazer currículo e carta:** depois da avaliação, o Claude escreve, revisa e gera os PDFs,
+    e a vaga entra em Candidaturas (pode levar meia hora). Os arquivos ficam nas pastas `cv` e
+    `cover_letters`.
+  - **Copiar pedido:** para fazer tudo isso conversando com o Claude no VS Code, acompanhando
+    e corrigindo junto.
 - **Candidaturas:** as candidaturas registradas pelo `/apply`.
 
-Para fechar o painel, feche a janela preta. O painel só funciona no seu computador e não
-envia nada para fora, além das buscas nos portais.
+O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa. Pelo painel ele não
+pode perguntar nada: se a vaga tiver algo estranho, ele para e avisa, e você decide na conversa.
+**Confira sempre o currículo e a carta antes de enviar.**
+
+Para fechar o painel, feche a janela preta. O painel só funciona no seu computador. Além das
+buscas nos portais, só o Claude sai para a internet, para ler a vaga e pesquisar a empresa.
 
 ## Seus dados
 
