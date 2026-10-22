@@ -185,9 +185,18 @@ export function decodeHtmlEntities(text: string): string {
 }
 
 /** Texto de uma linha: sem tags, entidades decodificadas, espaços dobrados. */
+/**
+ * Tags trocadas por espaço deixam "backlog , colaborando" quando a pontuação
+ * vinha colada ao fim do negrito (`<strong>backlog</strong>,`): tira o espaço
+ * antes de pontuação e logo depois de parêntese ou colchete aberto.
+ */
+export function tidyPunctuation(text: string): string {
+  return text.replace(/[ \t]+([,.;:!?)\]])/g, "$1").replace(/([(\[])[ \t]+/g, "$1")
+}
+
 export function inlineText(html: string | null | undefined): string | null {
   if (!html) return null
-  const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim()
+  const text = tidyPunctuation(decodeHtmlEntities(html.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ")).trim()
   return text || null
 }
 
@@ -205,8 +214,7 @@ export function cleanHtml(html: string | null | undefined): string | null {
     .replace(/\n{3,}/g, "\n\n")
     .replace(/\n+- /g, "\n- ")
     .replace(/^- \n/gm, "")
-    .trim()
-  return text || null
+  return tidyPunctuation(text).trim() || null
 }
 
 // ---------------------------------------------------------------------------
