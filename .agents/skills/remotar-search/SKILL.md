@@ -83,7 +83,7 @@ Cada resultado traz os campos do contrato de portais (`id`, `title`, `company`,
 | `categories`, `tags` | Categorias e etiquetas do portal (`Produto`, `100% Remoto`...) |
 | `salary` | Faixa em reais, quando informada |
 | `deadline` | Prazo, quando informado |
-| `apply_url` | Link de candidatura (muitas vezes a página da vaga no ATS da empresa) |
+| `apply_url` | Link de candidatura (muitas vezes a página da vaga no ATS da empresa). A descrição da Remotar pode ser um resumo: o texto completo está ali, e o `scrape_run.py` indica em `full_posting` qual portal instalado o lê |
 | `description` | Subtítulo e descrição completa |
 
 Erros vão para o **stderr** como `{ "error": "...", "code": "..." }`, com código de saída `1`.

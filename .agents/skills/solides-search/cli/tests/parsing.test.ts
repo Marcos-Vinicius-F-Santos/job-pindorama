@@ -162,6 +162,7 @@ describe("detalhe", () => {
   test("referência: id ou URL do portal", () => {
     expect(parseRef("939473")).toBe("939473");
     expect(parseRef("https://vagas.solides.com.br/vaga/939473")).toBe("939473");
+    expect(parseRef("https://findme.vagas.solides.com.br/vaga/939473?origem=remotar")).toBe("939473");
     expect(parseRef("https://vagas.solides.com.br.exemplo.com/vaga/1")).toBeNull();
     expect(parseRef("https://example.com/vaga/1")).toBeNull();
   });
