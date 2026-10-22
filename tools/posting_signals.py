@@ -25,9 +25,11 @@ This tool reads the text and reports, with the excerpt that triggered each one:
   * intermediary - the posting is relayed: an aggregator listing "on behalf of
     a partner company", or a recruiting agency's "nosso cliente".
   * seniority - levels named in the title (estágio, júnior, pleno, sênior,
-    especialista, staff/principal, lead, gestão). With --accept, a title whose
-    levels are all outside the accepted ones is a `mismatch`; a title with no
-    level is `unstated`, never a mismatch.
+    especialista, staff/principal, lead, gestão). When the title names none,
+    the level the portal states in its own field ("Pleno", "Sênior /
+    Especialista", "Gerência") is used instead; `seniority_source` says which
+    (`title`, `portal` or null). With --accept, levels all outside the accepted
+    ones are a `mismatch`; no level anywhere is `unstated`, never a mismatch.
 
 It advises; it never decides. The caller maps each signal against the
 profile (a hybrid posting is a deal-breaker only for someone who said so).
@@ -39,8 +41,8 @@ Usage:
 Single mode reads one posting (portal `detail` output, pasted text) from
 --in or stdin; --title adds the title when the text does not start with it.
 Batch mode reads a JSON array of portal search results (or an object with a
-`results` array) and checks each item's title and description; items keep
-their `id`/`url` so the caller can match them back. LEVELS is a comma list of
+`results` array) and checks each item's title, description and `seniority`
+field; items keep their `id`/`url` so the caller can match them back. LEVELS is a comma list of
 estagio, junior, pleno, senior, especialista, staff, lead, gestao.
 
 Output: one verdict line per posting (`posting_signals: none` or
@@ -141,6 +143,15 @@ SENIORITY = [
     ("lead", r"\blead\b|\bl[íi]der\b"),
     ("gestao", r"\bhead\b|\bdiretor[a]?\b|\bdirector\b|\bvp\b|\bcoordenador[a]?\b|\bsupervisor[a]?\b|\bgroup\s*product\s*manager\b"),
 ]
+# Labels portals put in their own level field, on top of SENIORITY: "Gerência"
+# or "Coordenação / Supervisão" is a management level there, while "Gerente de
+# Produto" in a title is the product manager role and stays unread.
+PORTAL_SENIORITY = [
+    ("estagio", r"\btrainee\b|\baprendiz\b|\bsem\s*experi[êe]ncia\b|\biniciante\b|\bentry[- ]?level\b"),
+    ("gestao", r"\bger[êe]ncia\b|\bgest[ãa]o\b|\bgerente\b|\bmanager\b|\bcoordena[çc][ãa]o\b|\bsupervis[ãa]o\b"
+               r"|\bdiretoria\b|\bc-level\b|\bexecutiv[oa]\b|\bs[óo]ci[oa]\b"),
+]
+
 # "Analista de Produtos II", "Product Manager III": a standalone uppercase
 # numeral. Case-sensitive, so "AI" or a lowercase "i" never matches.
 ROMAN = [("junior", r"(?<![\w/])I(?![\w/])"), ("pleno", r"(?<![\w/])II(?![\w/])"),
@@ -175,7 +186,15 @@ def seniority(title: str) -> list:
     return [level for level in LEVELS if level in found]
 
 
-def analyse(text: str, title: str = "", company: str = "", accept=None) -> dict:
+def portal_seniority(label) -> list:
+    """Levels in a portal's own seniority field (free text such as "Sênior / Especialista")."""
+    if not label or not isinstance(label, str):
+        return []
+    found = [level for level, pattern in SENIORITY + PORTAL_SENIORITY if re.search(pattern, label, re.I)]
+    return [level for level in LEVELS if level in found]
+
+
+def analyse(text: str, title: str = "", company: str = "", accept=None, portal_level=None) -> dict:
     body = f"{title}\n{text}" if title and title not in text[:300] else text
     hybrid, onsite = _find(HYBRID, body), _find(ONSITE, body)
     restricted, visits, remote = _find(RESTRICTED, body), _find(VISITS, body), _find(REMOTE, body)
@@ -198,6 +217,10 @@ def analyse(text: str, title: str = "", company: str = "", accept=None) -> dict:
         intermediary.insert(0, f"empresa: {company.strip()}")
 
     levels = seniority(title or body.split("\n", 1)[0])
+    source = "title" if levels else None
+    if not levels:
+        levels = portal_seniority(portal_level)
+        source = "portal" if levels else None
     if accept is None:
         level_verdict = "not_checked"
     elif not levels:
@@ -212,6 +235,7 @@ def analyse(text: str, title: str = "", company: str = "", accept=None) -> dict:
         "affirmative_exclusive": _find(AFFIRMATIVE, body)[:3],
         "intermediary": intermediary[:3],
         "seniority": levels,
+        "seniority_source": source,
         "seniority_verdict": level_verdict,
     }
 
@@ -235,7 +259,8 @@ def verdict(f: dict) -> str:
     if f["intermediary"]:
         parts.append(f'intermediário ("{f["intermediary"][0]}")')
     if f["seniority_verdict"] == "mismatch":
-        parts.append(f'senioridade fora da faixa ({", ".join(f["seniority"])})')
+        where = " pelo portal" if f.get("seniority_source") == "portal" else ""
+        parts.append(f'senioridade fora da faixa{where} ({", ".join(f["seniority"])})')
     if not parts:
         return "posting_signals: none"
     return "posting_signals: ⚠ " + " · ".join(parts)
@@ -298,7 +323,7 @@ def main(argv=None) -> int:
         if not isinstance(item, dict):
             continue
         findings = analyse(str(item.get("description") or ""), str(item.get("title") or ""),
-                           str(item.get("company") or ""), accept)
+                           str(item.get("company") or ""), accept, item.get("seniority"))
         findings.update(id=item.get("id"), url=item.get("url"), title=item.get("title"), verdict=verdict(findings))
         out.append(findings)
     if args.json:

@@ -15,7 +15,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
-from posting_signals import analyse, seniority, verdict  # noqa: E402
+from posting_signals import analyse, portal_seniority, seniority, verdict  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 TOOL = REPO / "tools" / "posting_signals.py"
@@ -137,6 +137,34 @@ class Seniority(unittest.TestCase):
         self.assertEqual(analyse("", "Product Manager", accept=accept)["seniority_verdict"], "unstated")
         self.assertEqual(analyse("", "Product Manager Junior")["seniority_verdict"], "not_checked")
 
+    def test_portal_level_labels(self):
+        # Labels as the portals print them (DigAÍ, Sólides, GeekHunter, VAGAS.com).
+        self.assertEqual(portal_seniority("Pleno"), ["pleno"])
+        self.assertEqual(portal_seniority("Sênior / Especialista"), ["senior", "especialista"])
+        self.assertEqual(portal_seniority("Pleno, Sênior"), ["pleno", "senior"])
+        self.assertEqual(portal_seniority("Gerência"), ["gestao"])
+        self.assertEqual(portal_seniority("Coordenação / Supervisão"), ["gestao"])
+        self.assertEqual(portal_seniority("Diretoria executiva / VP"), ["gestao"])
+        self.assertEqual(portal_seniority("Gestão"), ["gestao"])
+        self.assertEqual(portal_seniority("Estágio / trainee"), ["estagio"])
+        self.assertEqual(portal_seniority("Sem experiência"), ["estagio"])
+        self.assertEqual(portal_seniority("Operacional"), [])
+        self.assertEqual(portal_seniority(None), [])
+
+    def test_portal_level_only_when_the_title_names_none(self):
+        accept = ["pleno", "senior", "especialista"]
+        # The title has no level ("Gerente de Produto" is the PM role): the portal's "Gerência" decides.
+        f = analyse("", "Gerente de Produto Técnico - Agentes com IA", accept=accept, portal_level="Gerência")
+        self.assertEqual((f["seniority"], f["seniority_source"], f["seniority_verdict"]), (["gestao"], "portal", "mismatch"))
+        self.assertIn("fora da faixa pelo portal (gestao)", verdict(f))
+        # The title names a level: it wins over the portal field.
+        f = analyse("", "Product Owner Júnior", accept=accept, portal_level="Pleno")
+        self.assertEqual((f["seniority"], f["seniority_source"], f["seniority_verdict"]), (["junior"], "title", "mismatch"))
+        f = analyse("", "Product Owner", accept=accept, portal_level="Sênior / Especialista")
+        self.assertEqual((f["seniority_source"], f["seniority_verdict"]), ("portal", "ok"))
+        f = analyse("", "Product Owner", accept=accept, portal_level=None)
+        self.assertEqual((f["seniority_source"], f["seniority_verdict"]), (None, "unstated"))
+
 
 class Verdict(unittest.TestCase):
     def test_none(self):
@@ -163,6 +191,7 @@ class Cli(unittest.TestCase):
         results = {"results": [
             {"id": 1, "url": "https://example.com/1", "title": "Product Manager (Híbrido)", "company": "A", "description": ""},
             {"id": 2, "url": "https://example.com/2", "title": "Product Manager", "company": "B", "description": "Trabalho 100% remoto."},
+            {"id": 3, "url": "https://example.com/3", "title": "Product Manager", "company": "C", "description": "", "seniority": "Gerência"},
         ]}
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "r.json"
@@ -170,9 +199,10 @@ class Cli(unittest.TestCase):
             p = self.run_tool("--batch", str(path), "--json", "--accept", "pleno,senior")
         self.assertEqual(p.returncode, 0)
         out = json.loads(p.stdout.decode("utf-8"))
-        self.assertEqual([o["id"] for o in out], [1, 2])
+        self.assertEqual([o["id"] for o in out], [1, 2, 3])
         self.assertEqual(out[0]["workplace"], "hybrid")
         self.assertEqual(out[1]["verdict"], "posting_signals: none")
+        self.assertEqual(out[2]["seniority_verdict"], "mismatch")
 
     def test_unknown_level_exits_2(self):
         p = self.run_tool("--accept", "pleno,chefe", stdin="x")

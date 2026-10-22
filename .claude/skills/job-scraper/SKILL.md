@@ -161,7 +161,7 @@ texto "atuação híbrida (4x presenciais)" em outra cidade; no LinkedIn, o filt
 passar vagas com "Híbrido" no título; uma vaga pode ser seleção interna, só para quem já é da
 empresa. O `tools/posting_signals.py` lê o texto e aponta esses casos, citando o trecho:
 
-1. **Em lote, sobre os resultados da busca** (título e trecho de descrição de cada um), com a
+1. **Em lote, sobre os resultados da busca** (título, trecho de descrição e o campo de senioridade do portal), com a
    faixa de senioridade da pessoa (linha `Senioridade-alvo` do CLAUDE.md, em códigos
    `estagio,junior,pleno,senior,especialista,staff,lead,gestao`; omita `--accept` se a linha
    não existir):
@@ -206,7 +206,8 @@ Para cada vaga nova, faça uma checagem rápida (NÃO a avaliação completa de 
 - **Intermediário** (`intermediary`): não rebaixa por si; diga quem anuncia (agregador ou
   consultoria) e, num agregador, procure a vaga no site da própria empresa (passo 4 da escalada
   de `09-web-research.md`) antes de apresentar.
-- **Senioridade** (`seniority_verdict: mismatch`): no máximo **Médio**, citando o nível do título.
+- **Senioridade** (`seniority_verdict: mismatch`): no máximo **Médio**, citando o nível do título
+  ou, quando o título não diz, o do campo de senioridade do portal (`seniority_source: portal`).
   `unstated` não rebaixa.
 
 **Regime:** se o perfil (deal-breakers no CLAUDE.md) diz que a pessoa não aceita PJ (ou outro regime) e a vaga traz esse regime, marque **Baixo** e cite o regime nos destaques.

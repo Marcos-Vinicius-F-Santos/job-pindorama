@@ -151,6 +151,7 @@ class Collect(unittest.TestCase):
             ("solides-search", "ia"): [
                 job("939473", "Technical Product Manager", "FINDME TECNOLOGIA LTDA", "https://vagas.solides.com.br/vaga/939473"),
                 job("5", "Product Manager Junior", "Kappa", "https://vagas.solides.com.br/vaga/5"),
+                dict(job("6", "Gerente de Produto", "Lambda", "https://vagas.solides.com.br/vaga/6"), seniority="Gerência"),
             ],
         }
         self.calls_made = []
@@ -176,7 +177,7 @@ class Collect(unittest.TestCase):
         self.assertIn(("FindMe", "Technical Product Manager", "remotar-search", ["solides-search"]), titles)
         self.assertNotIn("Omie", [t[0] for t in titles])  # seen by company+title
         c = out["meta"]["counts"]
-        self.assertEqual((c["seen_before"], c["cross_portal"], c["new"]), (1, 1, 3))
+        self.assertEqual((c["seen_before"], c["cross_portal"], c["new"]), (1, 1, 4))
 
     def test_signals_attached_to_each_new_posting(self):
         out = self.run_collect()
@@ -184,6 +185,9 @@ class Collect(unittest.TestCase):
         self.assertEqual(by_title["Product Manager Pleno"]["signals"]["workplace"], "hybrid")
         self.assertEqual(by_title["Product Manager Junior"]["signals"]["seniority_verdict"], "mismatch")
         self.assertTrue(by_title["Product Manager Junior"]["signals"]["verdict"].startswith("posting_signals: ⚠"))
+        # No level in the title: the portal's own seniority field is used.
+        self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_source"], "portal")
+        self.assertEqual(by_title["Gerente de Produto"]["signals"]["seniority_verdict"], "mismatch")
 
     def test_disabled_unknown_and_failing_portals_are_reported_not_run(self):
         calls = parse_queries(QUERIES) + [(2, "vagas-search", ["-q", "x"]), (2, "solides-search", ["-q", "quebra"])]
