@@ -100,6 +100,11 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 
 ### 4. Buscar vagas
 
+> **Prefere botões?** `python3 tools/painel.py` (no Windows, dois cliques em `abrir-painel.bat`)
+> abre um painel local no navegador: busca, lista com filtros e avisos, "me interessa" e
+> "descartar" gravados no histórico, e as candidaturas. É a parte mecânica do `/scrape`, sem o
+> Claude; avaliar a vaga e escrever currículo e carta continuam no `/apply`.
+
 ```bash
 /scrape
 ```
@@ -207,6 +212,7 @@ job-pindorama/
 ├── .github/workflows/ci.yml           # CI: compilações LaTeX, lint das skills, tipagem das CLIs
 ├── salary_lookup.py                   # Referência salarial (com os seus dados)
 ├── tools/                             # Ferramentas de apoio (verificação de PDF, filtro de vagas, ...)
+├── abrir-painel.bat                   # Painel local da busca (Windows, dois cliques)
 ├── job_scraper/                       # Estado da busca (vagas vistas, resultados)
 ├── gmail_sync/                        # Estado do /gmail-sync
 ├── upskill/                           # Relatórios do /upskill
