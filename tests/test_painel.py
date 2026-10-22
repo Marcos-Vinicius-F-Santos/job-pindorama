@@ -71,6 +71,30 @@ class Data(unittest.TestCase):
     def test_search_file_lives_outside_the_repo(self):
         self.assertFalse(str(painel.results_path().resolve()).startswith(str(ROOT.resolve())))
 
+    def test_claude_drafting_needs_a_saved_evaluation(self):
+        url = "https://zeta.gupy.io/jobs/1?a=1&b=2"
+        self.assertIn(url, painel.claude_prompt(url, "avaliar", self.dir))
+        with self.assertRaises(ValueError):
+            painel.claude_prompt(url, "redigir", self.dir)
+        with self.assertRaises(ValueError):
+            painel.claude_prompt(url, "apagar", self.dir)
+        painel.claude_file(url, "avaliar", self.dir).write_text("## Avaliação\nNota 63", encoding="utf-8")
+        self.assertIn("<AVALIACAO>\n## Avaliação\nNota 63\n</AVALIACAO>", painel.claude_prompt(url, "redigir", self.dir))
+        self.assertEqual(painel.claude_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "redigir": None})
+
+    def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
+        f = painel.claude_file("https://x/../../etc", "avaliar", self.dir)
+        self.assertEqual(f.parent, self.dir)
+        self.assertRegex(f.name, r"^[0-9a-f]{16}_avaliacao\.md$")
+
+    def test_claude_command_keeps_the_prompt_off_the_command_line(self):
+        cmd = painel.claude_command("claude")
+        self.assertEqual(cmd[:2], ["claude", "-p"])
+        self.assertTrue(all("http" not in part for part in cmd))
+        settings = json.loads(painel.CLAUDE_SETTINGS.read_text(encoding="utf-8"))
+        self.assertNotIn("Bash", settings["permissions"]["allow"])
+        self.assertFalse(any(r.startswith("Bash(git") or r.startswith("Bash(curl") for r in settings["permissions"]["allow"]))
+
 
 class Server(unittest.TestCase):
     """O servidor de verdade, numa porta livre; nenhum pedido aqui grava nada."""
@@ -82,7 +106,8 @@ class Server(unittest.TestCase):
         job = painel.SearchJob(Path(cls.tmp.name) / "busca.json")
         cls.server = ThreadingHTTPServer(("127.0.0.1", 0), None)
         cls.port = cls.server.server_address[1]
-        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"})
+        claude = painel.ClaudeJob(Path(cls.tmp.name) / "claude", claude_bin="claude-que-nao-roda")
+        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, claude)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
 
     @classmethod
@@ -121,6 +146,13 @@ class Server(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/search", {"priorities": [1], "jobage": 999}, h)[0], 400)
         self.assertEqual(self.request("POST", "/api/mark", {"urls": [], "decision": "x"}, h)[0], 400)
         self.assertEqual(self.request("POST", "/api/mark", ["não", "é", "objeto"], h)[0], 400)
+
+    def test_claude_only_for_jobs_marked_here(self):
+        h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
+        status, data, _ = self.request("POST", "/api/claude", {"url": "https://evil.example/x", "step": "avaliar"}, h)
+        self.assertEqual(status, 400)
+        self.assertIn("Me interessam", json.loads(data)["error"])
+        self.assertEqual(self.request("POST", "/api/claude", {"url": "x", "step": "avaliar"})[0], 403)
 
     def test_results_empty_before_a_search(self):
         status, data, _ = self.request("GET", "/api/results")
