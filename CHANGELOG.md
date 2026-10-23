@@ -15,6 +15,33 @@ per-file diff commands.
 
 ### Added
 
+- **The local panel runs `/apply` from buttons** (`tools/painel.py`, `tools/painel/index.html`,
+  `tools/painel/claude-settings.json`, `tests/test_painel.py`) - the "Me interessam" tab gets
+  "Avaliar com o Claude" (Steps 0-1) and "Fazer currículo e carta" (Steps 2-6b, from the saved
+  evaluation), each an unattended `claude -p` with the prompt on stdin, one job at a time, only for
+  jobs marked there. Answers land in `documents/applications/_painel/` (already ignored) and render
+  in the job card node by node, never as HTML. The prompt forbids a "manual" integrity verdict when
+  `posting_guard` cannot run and any salary or company fact without a page opened in that run - both
+  showed up in live tests before the rule - and stops drafting when the gate is not `clean`.
+- **`tools/compile_doc.py`, a fixed-argv compile for unattended runs** (`tests/test_compile_doc.py`)
+  - compiles only `cv/main_*.tex` (lualatex) and `cover_letters/cover_*.tex` (xelatex), always with
+  shell escape disabled (`--disable-write18` on MiKTeX, `-no-shell-escape` on TeX Live), and
+  `--clean` removes only that document's intermediates. The panel grants this script instead of a
+  `lualatex:*` prefix, which would also approve `-shell-escape`, or an `rm` prefix.
+- **`security_guards.py` check 6: the panel's permissions** (`tests/test_security_guards.py`) -
+  each `tools/painel/claude-settings*.json` may set only `permissions.allow`, every entry drawn from
+  that file's list in `PAINEL_SETTINGS`, because nobody is there to approve what it grants; a
+  settings file without its own list fails.
+- **The panel's "Meu perfil" tab starts `/setup` from buttons** (`tools/painel_perfil.py`,
+  `tools/painel/claude-settings-perfil.json`, `tests/test_painel_perfil.py`, `documents/README.md`) -
+  upload the CV and the LinkedIn PDF (`%PDF-` only, 10 MB, basename only, into `documents/cv/` and
+  `documents/linkedin/`), fill a short form with what a CV does not say (saved to
+  `documents/perfil/respostas.json`, now in `.gitignore` and `REQUIRED_IGNORE_RULES`), and run
+  `/setup` Path A unattended with the form standing in for the questions. On an existing profile it
+  adds what is new, keeps what is recorded and lists conflicts, inferences and gaps. The panel checks
+  whether `origin` is public first and requires a confirmation when it is, or when it cannot tell.
+  That run gets no web access, no Agent and no shell, and writes only the files `/setup` writes.
+
 - **CI runs the Python suite on Windows** (`.github/workflows/ci.yml` `python-tests-windows`) - every
   job ran on Ubuntu, so a Windows-only failure reached master with all checks green: #480's test
   (an atomic rename that Windows file locking refuses) and #486's (a tool printing non-ASCII JSON

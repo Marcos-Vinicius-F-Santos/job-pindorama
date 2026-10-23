@@ -37,6 +37,13 @@ Checks:
    shipped agents read untrusted postings. `tools:` is tool-name granularity
    (a `Bash(pattern)` entry resolves to plain Bash), so a patterned entry is
    rejected as misleading; settings.json's allow list is what scopes Bash.
+6. tools/painel/claude-settings*.json — the extra permissions the local panel
+   (tools/painel.py) hands to `claude -p`, which runs with nobody to approve
+   anything. Only `permissions.allow` may be set, and every entry must be in
+   the allowlist for that file (ALLOWED_PAINEL_PERMISSIONS for /apply,
+   ALLOWED_PAINEL_PERFIL_PERMISSIONS for /setup); an unknown file fails. Catches a widening (a raw `lualatex:*` would
+   also approve -shell-escape; an `rm` prefix deletes outside the repo) that
+   would run unattended on every fork.
 
 Stdlib only. Exit 0 on success, 1 with a failure list otherwise.
 """
@@ -108,6 +115,40 @@ ALLOWED_PERMISSIONS = {
     # job_scraper/seen_jobs.json; never fetches anything else.
     "Bash(python tools/scrape_run.py:*)",
     "Bash(python3 tools/scrape_run.py:*)",
+}
+
+# What tools/painel/claude-settings.json may add on top of settings.json for the
+# panel's unattended `claude -p` runs (/apply Steps 0-6b). Writes are scoped to
+# the files /apply produces; the only extra command is the fixed-argv compile
+# wrapper, which refuses anything but cv/main_*.tex and cover_letters/cover_*.tex
+# and always disables shell escape.
+ALLOWED_PAINEL_PERMISSIONS = {
+    "Read", "Glob", "Grep", "WebFetch", "WebSearch", "Agent",
+    "Skill(apply)", "Skill(job-application-assistant)",
+    "Write(cv/main_*)", "Edit(cv/main_*)",
+    "Write(cover_letters/cover_*)", "Edit(cover_letters/cover_*)",
+    "Write(company_research/**)", "Edit(company_research/**)",
+    "Write(documents/applications/**)", "Edit(documents/applications/**)",
+    "Write(job_search_tracker.csv)", "Edit(job_search_tracker.csv)",
+    "Bash(python tools/compile_doc.py:*)",
+    "Bash(python3 tools/compile_doc.py:*)",
+}
+
+# The panel's "Meu perfil" run (/setup Path A from documents/ and the form).
+# It writes the profile files /setup writes, and has no web access and no shell:
+# a CV is read, never fetched, and nothing leaves the machine.
+ALLOWED_PAINEL_PERFIL_PERMISSIONS = {
+    "Read", "Glob", "Grep",
+    "Skill(setup)", "Skill(job-application-assistant)",
+    "Write(CLAUDE.md)", "Edit(CLAUDE.md)",
+    "Write(.claude/skills/job-application-assistant/0*.md)", "Edit(.claude/skills/job-application-assistant/0*.md)",
+    "Write(.claude/skills/job-scraper/search-queries.md)", "Edit(.claude/skills/job-scraper/search-queries.md)",
+    "Write(cv/main_example.tex)", "Edit(cv/main_example.tex)",
+}
+
+PAINEL_SETTINGS = {
+    "claude-settings.json": ALLOWED_PAINEL_PERMISSIONS,
+    "claude-settings-perfil.json": ALLOWED_PAINEL_PERFIL_PERMISSIONS,
 }
 
 # Rules that must stay in .claude/settings.json permissions.ask. An ask rule
@@ -187,6 +228,8 @@ REQUIRED_IGNORE_RULES = [
     "documents/projects/**",
     "documents/applications/**",
     "documents/postings/**",
+    # The panel's profile form: city, salary expectation, deal-breakers.
+    "documents/perfil/**",
     # Belt-and-braces, not the primary guard: nothing writes here.
     # /interview's prep packs land under documents/applications/**, above.
     "documents/interview/**",
@@ -620,6 +663,45 @@ def check_agent_tool_grants() -> None:
             )
 
 
+def check_painel_permissions() -> None:
+    for path in sorted((ROOT / "tools" / "painel").glob("claude-settings*.json")):
+        allowed = PAINEL_SETTINGS.get(path.name)
+        if allowed is None:
+            errors.append(
+                f"{path.relative_to(ROOT).as_posix()}: unknown panel settings file - every file the panel "
+                "can hand to `claude -p` needs its own allowlist in PAINEL_SETTINGS."
+            )
+            continue
+        _check_painel_file(path, allowed)
+
+
+def _check_painel_file(path: Path, allowed: set) -> None:
+    rel = path.relative_to(ROOT).as_posix()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        errors.append(f"{rel}: unreadable or invalid JSON: {exc}")
+        return
+    if not isinstance(data, dict) or set(data) != {"permissions"} or not isinstance(data["permissions"], dict) \
+            or set(data["permissions"]) != {"allow"}:
+        errors.append(
+            f"{rel}: may only set permissions.allow - the panel runs `claude -p` with nobody to "
+            "approve anything, so hooks, other keys or a permission mode would apply unattended."
+        )
+        return
+    allow = data["permissions"]["allow"]
+    if not isinstance(allow, list) or not all(isinstance(e, str) for e in allow):
+        errors.append(f"{rel}: permissions.allow must be a list of strings")
+        return
+    for entry in allow:
+        if entry not in allowed:
+            errors.append(
+                f"{rel}: permission not in the reviewed allowlist: {entry!r}. The panel's "
+                "`claude -p` runs it unattended on every fork. If the grant is intentional, add "
+                "it to that file's allowlist in PAINEL_SETTINGS (tools/security_guards.py) in the same PR."
+            )
+
+
 def main() -> int:
     check_permissions()
     check_gitignore()
@@ -627,6 +709,7 @@ def main() -> int:
     check_tracked_node_modules()
     check_skill_tool_grants()
     check_agent_tool_grants()
+    check_painel_permissions()
     if errors:
         print(f"security_guards: {len(errors)} failure(s)")
         for err in errors:
@@ -634,7 +717,8 @@ def main() -> int:
         return 1
     print(
         "security_guards: OK (permissions allowlist, hooks allowlist, gitignore rules, "
-        "package manifests, no tracked node_modules, skill/command allowed-tools, agent tools)"
+        "package manifests, no tracked node_modules, skill/command allowed-tools, agent tools, "
+        "panel permissions)"
     )
     return 0
 
