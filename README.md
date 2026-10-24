@@ -6,11 +6,11 @@
 
 *A sua busca de emprego, rodando na sua máquina — adaptada ao mercado brasileiro.*
 
-O **job-pindorama** é a adaptação para o Brasil do [ai-job-search](https://github.com/MadsLorentzen/ai-job-search), de Mads Lorentzen: um projeto que transforma o [Claude Code](https://claude.com/claude-code) num assistente completo de candidaturas. Você preenche o seu perfil e o Claude avalia vagas, personaliza o currículo, escreve cartas de apresentação e prepara você para entrevistas.
+O **job-pindorama** é a adaptação para o Brasil do [ai-job-search](https://github.com/MadsLorentzen/ai-job-search), de Mads Lorentzen. Nesta cópia, o fluxo de candidaturas é executado pelo [Codex CLI](https://developers.openai.com/codex/cli/): você preenche o seu perfil e o Codex avalia vagas, personaliza o currículo, escreve cartas de apresentação e prepara você para entrevistas.
 
 O que muda em relação ao original:
 
-- **Tudo em português do Brasil** — instruções, comandos, documentação e os textos que o Claude produz.
+- **Tudo em português do Brasil** — instruções, comandos, documentação e os textos que o Codex produz.
 - **Portal Gupy** — uma CLI nova (`gupy-search`) busca no Portal Gupy, onde milhares de empresas brasileiras publicam vagas, com filtro por cidade, estado (UF), modelo de trabalho e **regime de contratação**.
 - **CLT × PJ** — a avaliação de vagas compara a remuneração total de cada regime (13º, férias + 1/3, FGTS, benefícios, impostos do PJ) em vez de comparar o número do anúncio.
 - **Currículo à brasileira** — sem foto, CPF, idade ou estado civil (LGPD), datas `MM/AAAA`, títulos de seção em português, `R\$` com escape no LaTeX.
@@ -29,7 +29,7 @@ Se o projeto original ajudou você, considere [pagar um café ao autor](https://
 
 ## O que é
 
-Um fluxo estruturado que transforma o Claude Code num assistente de candidaturas de ponta a ponta. O núcleo (autoconhecimento do perfil, avaliação de encaixe e o fluxo de redação com revisão) funciona em qualquer idioma e país; esta versão vem configurada para o Brasil.
+Um fluxo estruturado que transforma o Codex num assistente de candidaturas de ponta a ponta. O núcleo (autoconhecimento do perfil, avaliação de encaixe e o fluxo de redação com revisão) funciona em qualquer idioma e país; esta versão vem configurada para o Brasil.
 
 ```
 /setup          /scrape              /apply <url>
@@ -51,7 +51,7 @@ O projeto incorpora boas práticas de orientação de carreira: critérios de av
 
 ## Pré-requisitos
 
-- [Claude Code](https://claude.com/claude-code) (CLI). O Claude Code não tem plano gratuito: é preciso uma assinatura Claude Pro/Max/Team ou créditos da API da Anthropic (pagamento por uso, geralmente mais barato para uso ocasional). Usa outro agente (Codex, Antigravity, Gemini CLI)? Comece pelo [`AGENTS.md`](AGENTS.md) — as skills de busca em portais funcionam lá direto.
+- [Codex CLI](https://developers.openai.com/codex/cli/) instalado e autenticado. Usa outro agente? Comece pelo [`AGENTS.md`](AGENTS.md) — as skills de busca em portais funcionam lá direto.
 - Python 3.10 ou mais novo
 - [Bun](https://bun.sh) (para as CLIs de busca de vagas)
 - Uma distribuição LaTeX com `lualatex` e `xelatex`: [MiKTeX](https://miktex.org/) (comum no Windows), [TeX Live](https://tug.org/texlive/), [MacTeX](https://tug.org/mactex/) ou [TinyTeX](https://yihui.org/tinytex/). O currículo compila com `lualatex` (o `pdflatex` costuma falhar no MiKTeX recente com erros de expansão de fonte do `fontawesome5`); a carta compila com `xelatex`, porque o `cover.cls` exige `fontspec`. Com uma instalação mínima, como TinyTeX ou BasicTeX, instale os pacotes extras listados no [SETUP.md](SETUP.md#instalação-mínima-de-tex-tinytexbasictex).
@@ -60,7 +60,7 @@ O projeto incorpora boas práticas de orientação de carreira: critérios de av
 ## Início rápido
 
 > **Nunca usou terminal nem GitHub?** Siga o [COMECE-AQUI.md](COMECE-AQUI.md): você instala
-> dois programas com cliques e pede o resto ao Claude, em português.
+> dois programas com cliques e pede o resto ao Codex, em português.
 
 ### 1. Fork e clone
 
@@ -91,12 +91,12 @@ Para todas as CLIs de portal que vêm no projeto a instalação é opcional: nen
 ### 3. Configurar o seu perfil
 
 ```bash
-claude
-# Depois, dentro do Claude Code:
+codex
+# Depois, dentro do Codex:
 /setup
 ```
 
-> **Prefere botões?** A aba **Meu perfil** do painel (`python3 tools/painel.py`) recebe o currículo e o PDF do LinkedIn (gravados em `documents/cv/` e `documents/linkedin/`), um formulário com o que o currículo não diz (gravado em `documents/perfil/respostas.json`, fora do git) e um botão que roda o Caminho A do `/setup` sem conversa, com o formulário no lugar das perguntas. Num perfil que já existe, ele acrescenta o que é novo, mantém o que está gravado e lista os conflitos, o que foi inferido e as lacunas. Antes, o painel confere se o `origin` é público e, se for (ou se não der para saber), pede confirmação. Esse Claude não tem acesso à web nem ao shell, e só grava os arquivos que o `/setup` grava (`tools/painel/claude-settings-perfil.json`).
+> **Prefere botões?** A aba **Meu perfil** do painel (`python3 tools/painel.py`) recebe o currículo e o PDF do LinkedIn (gravados em `documents/cv/` e `documents/linkedin/`), um formulário com o que o currículo não diz (gravado em `documents/perfil/respostas.json`, fora do git) e um botão que roda o Caminho A do `/setup` sem conversa, com o formulário no lugar das perguntas. Num perfil que já existe, ele acrescenta o que é novo, mantém o que está gravado e lista os conflitos, o que foi inferido e as lacunas. Antes, o painel confere se o `origin` é público e, se for (ou se não der para saber), pede confirmação. O Codex recebe o pedido com sandbox local e o prompt limita os arquivos de perfil que devem ser alterados.
 
 O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preencheu (currículo em PDF, exportação do LinkedIn, diplomas, cartas de recomendação, candidaturas anteriores), importar um único currículo colado no chat, ou conduzir uma entrevista. Ele detecta o que você tem e pergunta. O modo da pasta de documentos é idempotente e pode rodar de novo à medida que você acrescentar material; veja o `documents/README.md` para a organização.
 
@@ -105,7 +105,7 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 > **Prefere botões?** `python3 tools/painel.py` (no Windows, dois cliques em `abrir-painel.bat`)
 > abre um painel local no navegador: busca, lista com filtros e avisos, "me interessa" e
 > "descartar" gravados no histórico, e as candidaturas. A busca é a parte mecânica do `/scrape`,
-> sem o Claude. Na aba "Me interessam", dois botões chamam o Claude Code sem conversa para
+> sem o Codex. Na aba "Me interessam", dois botões chamam o Codex sem conversa para
 > avaliar a vaga e para fazer currículo e carta (veja [O `/apply` pelo painel](#o-apply-pelo-painel)).
 
 ```bash
@@ -114,7 +114,7 @@ O `/setup` oferece três caminhos: ler a sua pasta `documents/` se você a preen
 
 Busca vagas compatíveis com o seu perfil em vários portais (Gupy, Sólides, VAGAS.com, InfoJobs, Remotar, Greenhouse, Programathor, GeekHunter, Michael Page, Robert Half, Trampos, PCD Online, Agrobase, AGROSearch, DigAÍ, Empregos.com.br, LinkedIn, freehire), elimina duplicatas e apresenta tudo ordenado por encaixe, com o regime (CLT, PJ, estágio) quando o portal informa. Escolha uma vaga para rodar o `/apply` direto — ou, quando a busca trouxer mais vagas do que dá para olhar, rode `/rank` para pontuar todas em lote e receber uma lista final ordenada.
 
-A parte mecânica do `/scrape` fica em `tools/scrape_run.py`. O subcomando `search` lê as buscas do `search-queries.md` por prioridade e roda os portais. Ele também descarta as vagas já vistas e junta numa só a mesma vaga encontrada em portais diferentes. O resultado é gravado fora do repositório. Depois da apresentação, o `record` grava o histórico. Em cada vaga, o `tools/posting_signals.py` lê o texto e aponta o que o rótulo do portal esconde: modelo de trabalho declarado (uma vaga "Remoto" que no texto é híbrida), seleção interna, vaga exclusiva para um grupo, intermediário e senioridade fora da linha `Senioridade-alvo` do `CLAUDE.md`. Vale o texto, não o rótulo.
+A parte mecânica do `/scrape` fica em `tools/scrape_run.py`. O subcomando `search` lê as buscas do `search-queries.md` por prioridade e roda os portais. Ele também descarta as vagas já vistas e junta numa só a mesma vaga encontrada em portais diferentes. O resultado é gravado fora do repositório. Depois da apresentação, o `record` grava o histórico. Em cada vaga, o `tools/posting_signals.py` lê o texto e aponta o que o rótulo do portal esconde: modelo de trabalho declarado (uma vaga "Remoto" que no texto é híbrida), seleção interna, vaga exclusiva para um grupo, intermediário e senioridade fora da linha `Senioridade-alvo` do perfil.
 
 ### 5. Candidatar-se a uma vaga
 
@@ -220,7 +220,7 @@ job-pindorama/
 ├── gmail_sync/                        # Estado do /gmail-sync
 ├── upskill/                           # Relatórios do /upskill
 ├── job_search_tracker.csv             # Planilha de acompanhamento das candidaturas
-├── COMECE-AQUI.md                     # Instalação sem terminal (cliques + pedidos ao Claude)
+├── COMECE-AQUI.md                     # Instalação sem terminal (cliques + pedidos ao Codex)
 └── SETUP.md                           # Guia de instalação detalhado
 ```
 
@@ -233,7 +233,7 @@ O comando `/apply` roda um **fluxo de redação e revisão** com compilação ob
 3. **Rascunha** um currículo e uma carta personalizados em LaTeX
 4. **Cria um agente revisor** que pesquisa a empresa e critica os rascunhos
 5. **Revisa** com base no retorno do revisor
-6. **Compila e inspeciona** os dois PDFs: lualatex para o currículo, xelatex para a carta. O Claude lê as páginas geradas e ajusta o LaTeX até o currículo ter exatamente 2 páginas, sem títulos órfãos, e a carta exatamente 1 página, com a assinatura visível e as fontes consistentes.
+6. **Compila e inspeciona** os dois PDFs: lualatex para o currículo, xelatex para a carta. O Codex lê as páginas geradas e ajusta o LaTeX até o currículo ter exatamente 2 páginas, sem títulos órfãos, e a carta exatamente 1 página, com a assinatura visível e as fontes consistentes.
 7. **Confere o currículo como um ATS**: extrai a camada de texto do PDF e verifica como um leitor de ATS a vê — contatos como texto literal, nada embaralhado, acentos intactos, ordem de leitura certa — e mede a cobertura das palavras-chave da vaga. Palavras-chave que o perfil sustenta entram; lacunas reais ficam visíveis, nunca enchidas.
 8. **Apresenta** o resultado final com um checklist de verificação
 
@@ -248,14 +248,14 @@ Toda afirmação do currículo e da carta é conferida com o seu perfil real. O 
 
 ### O `/apply` pelo painel
 
-Na aba **Me interessam** do painel local (`tools/painel.py`), cada vaga marcada tem dois botões que rodam o Claude Code sem conversa (`claude -p`, com o login do Claude Code do seu computador):
+Na aba **Me interessam** do painel local (`tools/painel.py`), cada vaga marcada tem dois botões que rodam o Codex sem conversa (`codex exec`, usando a autenticação local do Codex):
 
-- **Avaliar com o Claude** roda os passos 1 e 2 acima (coleta, filtro de integridade e avaliação de encaixe) e mostra a avaliação no cartão da vaga. Leva alguns minutos.
+- **Avaliar com o Codex** roda os passos 1 e 2 acima (coleta, filtro de integridade e avaliação de encaixe) e mostra a avaliação no cartão da vaga. Leva alguns minutos.
 - **Fazer currículo e carta** só fica ativo depois da avaliação. Roda o resto do fluxo, a partir da avaliação gravada, e registra a candidatura no `job_search_tracker.csv`. Pode levar meia hora.
 
 Diferenças em relação à conversa:
 
-- **Ninguém aprova nada no meio.** O Claude roda com as permissões do projeto mais as de `tools/painel/claude-settings.json`, que só deixam gravar o currículo, a carta, a pesquisa de empresas, a pasta `documents/applications/` e o tracker, e compilar pelo `tools/compile_doc.py`. Todo o resto é negado. O `tools/security_guards.py` confere esse arquivo em todo PR.
+- **Ninguém aprova nada no meio.** A avaliação roda com `--sandbox read-only`; a redação e o perfil usam `--sandbox workspace-write`, sempre com `-a never` e modo efêmero. O prompt limita a execução aos arquivos necessários do fluxo, e não há arquivo de permissões antigo do Claude sendo passado ao processo.
 - **Decisões viram parada.** Se o filtro de integridade acusar algo na vaga ou o host não for verificado, ele para sem redigir e explica, porque essa decisão é sua, na conversa. Os campos de formulário da Gupy e um modelo próprio do `/add-template` também ficam para a conversa.
 - **Sem fonte, sem número.** A referência salarial e os fatos sobre a empresa só entram com uma página consultada na própria execução. Sem isso, a avaliação diz "não consultada".
 - **As respostas ficam em `documents/applications/_painel/`**, fora do git. Uma vaga por vez.
@@ -339,7 +339,7 @@ O projeto tem três pontos de extensão, e nenhum exige mexer no upstream:
 
 **Emprestar uma skill de portal de outro fork** é o caminho previsto para ter um portal que este projeto não traz: abra o fork e copie a pasta para o seu `.agents/skills/`. Antes de rodar:
 
-- **Leia o código.** Inteiro — essas CLIs rodam pré-aprovadas na sua máquina (o `.claude/settings.json` as autoriza) contra os seus dados de carreira. Confira que as únicas chamadas de rede vão para o portal que ela diz buscar, que o `package.json` não tem `dependencies` nem scripts de ciclo de vida (`postinstall` etc.) e que nada lê ou grava fora da própria pasta.
+- **Leia o código.** Inteiro — essas CLIs rodam na sua máquina contra os seus dados de carreira. Confira que as únicas chamadas de rede vão para o portal que ela diz buscar, que o `package.json` não tem `dependencies` nem scripts de ciclo de vida (`postinstall` etc.) e que nada lê ou grava fora da própria pasta.
 - **Rode os testes sem internet** (`bun test` na pasta `cli/` da skill) — os testes de uma skill bem feita passam sem rede.
 - Confira a chave `enabled:` e as observações sobre termos de uso da skill.
 

@@ -1,7 +1,7 @@
 # Comece aqui: instalação sem terminal
 
 Este guia é para quem nunca usou terminal nem GitHub. Você instala dois programas com
-cliques e, a partir daí, **pede em português** para o Claude fazer o resto. Leva uns 40
+cliques e, a partir daí, **pede em português** para o Codex fazer o resto. Leva uns 40
 minutos, a maior parte esperando downloads.
 
 Se você já usa terminal e git, o [SETUP.md](SETUP.md) é mais direto.
@@ -9,21 +9,21 @@ Se você já usa terminal e git, o [SETUP.md](SETUP.md) é mais direto.
 ## O que você precisa
 
 - Um computador com **Windows 10 ou 11** (no Mac os passos são parecidos; veja o fim).
-- Uma **assinatura do Claude** (Pro ou Max) em [claude.ai](https://claude.ai). O plano gratuito
-  não dá acesso ao Claude Code.
+- O **Codex CLI** instalado e autenticado. Consulte a documentação oficial do [Codex](https://developers.openai.com/codex/cli/)
+  se ele ainda não estiver disponível no terminal.
 - Uns **3 GB livres** no disco.
 - O seu **currículo em PDF**. Se ele estiver no Word, abra e use Arquivo → Salvar como → PDF.
 
 ## Passo 1: instale o VS Code
 
-O VS Code é o programa onde você vai conversar com o Claude e ver os arquivos.
+O VS Code é opcional; você pode conversar com o Codex no terminal ou no aplicativo Codex e ver os arquivos no VS Code.
 
 1. Baixe em [code.visualstudio.com](https://code.visualstudio.com) (botão azul "Download for Windows").
 2. Abra o instalador e vá clicando em "Próximo". Pode aceitar tudo como vem.
 
 ## Passo 2: instale o Git
 
-O Claude Code usa o Git no Windows. Você não vai precisar mexer nele.
+O Codex usa o Git no Windows. Você não vai precisar mexer nele.
 
 1. Baixe em [git-scm.com/download/win](https://git-scm.com/download/win)
    ("Click here to download").
@@ -33,25 +33,21 @@ O Claude Code usa o Git no Windows. Você não vai precisar mexer nele.
 > às vezes fica escondida atrás das outras. Procure um ícone piscando na barra de tarefas e
 > clique em "Sim".
 
-## Passo 3: ligue o Claude no VS Code
+## Passo 3: abra o Codex
 
-1. Abra o VS Code.
-2. Na barra da esquerda, clique no ícone de quatro quadradinhos (**Extensões**).
-3. Procure **Claude Code**, confira se o autor é a **Anthropic** e clique em **Install**.
-4. Clique no ícone do Claude que apareceu e entre com a sua conta do claude.ai.
-5. Abra uma pasta para trabalhar: menu **File → Open Folder** (Arquivo → Abrir Pasta),
-   escolha **Documentos** e confirme. Se o VS Code perguntar se você confia nos autores da
-   pasta, responda que sim.
+1. Abra o Codex no terminal ou no aplicativo.
+2. Confirme que ele está autenticado e abra a pasta do projeto como diretório de trabalho.
+3. Se usar o VS Code para editar os arquivos, abra a mesma pasta por **File → Open Folder**.
 
-**Como funciona a conversa:** você escreve no painel do Claude como num chat. Antes de rodar
+**Como funciona a conversa:** você escreve no Codex como num chat. Antes de rodar
 qualquer comando no seu computador, ele mostra o comando e **pede licença**. Leia e clique em
 permitir. Se não entender um comando, pergunte "o que esse comando faz?" antes de permitir.
 
-## Passo 4: peça ao Claude para instalar o resto
+## Passo 4: peça ao Codex para instalar o resto
 
 O projeto precisa de mais três programas: o **Python** (ferramentas de apoio), o **Bun**
 (busca nos portais de vagas) e o **MiKTeX** (gera o PDF do currículo e da carta). Copie e
-cole esta mensagem no painel do Claude:
+cole esta mensagem no Codex:
 
 ```text
 Instale o que o projeto job-pindorama precisa neste Windows, usando o winget:
@@ -87,9 +83,9 @@ em diante, sempre abra o VS Code nessa pasta.
    `documents\linkedin`, diplomas em `documents\diplomas` e cartas de recomendação em
    `documents\references`. Antes, se quiser, tire do currículo CPF, RG e data de nascimento:
    a busca de vagas não precisa deles.
-2. No painel do Claude, escreva **`/setup`** e envie.
+2. No Codex, escreva **`/setup`** e envie.
 
-O Claude lê os seus documentos e faz perguntas sobre o que faltar: os regimes que você aceita
+O Codex lê os seus documentos e faz perguntas sobre o que faltar: os regimes que você aceita
 (CLT, PJ, estágio), a pretensão salarial, o modelo de trabalho, a senioridade que faz sentido
 buscar e o gênero gramatical para os textos. Responda com calma; dá para mudar tudo depois.
 
@@ -100,25 +96,25 @@ aba **Meu perfil**, que faz o mesmo sem conversa:
    pastas `documents\cv` e `documents\linkedin`.
 2. **O que o currículo não diz:** um formulário curto (cidade, gênero gramatical, idiomas,
    cargos, níveis, modelo de trabalho, regimes, pretensão). Clique em "Salvar respostas".
-3. **Montar meu perfil com o Claude:** ele lê os documentos e as respostas e grava o perfil.
+3. **Montar meu perfil com o Codex:** ele lê os documentos e as respostas e grava o perfil.
    Leva alguns minutos. No fim, aparece o que ele gravou, o que deduziu sozinho e o que
    ficou faltando.
 
 Se você já tem perfil, o botão vira "Atualizar meu perfil": ele acrescenta o que é novo,
 mantém o que já existe e lista as diferenças para você revisar. Confira sempre a lista
-**"inferido"**: é o que o Claude deduziu, não o que você disse. Se o projeto estiver ligado a
+**"inferido"**: é o que o Codex deduziu, não o que você disse. Se o projeto estiver ligado a
 um repositório público no GitHub, o painel avisa antes e pede a sua confirmação.
 
 ## Passo 7: use
 
-| Escreva no Claude | O que acontece |
+| Escreva no Codex | O que acontece |
 |---|---|
 | `/scrape` | Busca vagas compatíveis com o seu perfil em vários portais brasileiros |
 | `/rank` | Pontua e ordena muitas vagas de uma vez |
 | `/apply` seguido do link da vaga | Avalia a vaga e, se você quiser, escreve currículo e carta sob medida |
 | `/interview` | Prepara você para uma entrevista marcada |
 
-O Claude sempre pergunta antes de seguir para a próxima etapa. **Nada é enviado a empresa
+O Codex sempre pergunta antes de seguir para a próxima etapa. **Nada é enviado a empresa
 nenhuma:** quem se candidata é você, com os arquivos que ele preparou.
 
 ### O painel: buscar e avaliar vagas com botões
@@ -135,28 +131,28 @@ endereço que aparece na janela preta (`http://127.0.0.1:8765/`) e cole no naveg
 - **Vagas novas:** filtre por modelo de trabalho e portal, veja os avisos e abra cada vaga.
   "Me interessa" guarda a vaga; "Descartar" tira da lista. As duas somem das próximas buscas.
 - **Me interessam:** as vagas guardadas, cada uma com três botões:
-  - **Avaliar com o Claude:** a nota de encaixe, os pontos fortes e as lacunas aparecem ali
+  - **Avaliar com o Codex:** a nota de encaixe, os pontos fortes e as lacunas aparecem ali
     mesmo, no cartão da vaga (leva alguns minutos).
-  - **Fazer currículo e carta:** depois da avaliação, o Claude escreve, revisa e gera os PDFs,
+  - **Fazer currículo e carta:** depois da avaliação, o Codex escreve, revisa e gera os PDFs,
     e a vaga entra em Candidaturas (pode levar meia hora). Os arquivos ficam nas pastas `cv` e
     `cover_letters`.
-  - **Copiar pedido:** para fazer tudo isso conversando com o Claude no VS Code, acompanhando
+  - **Copiar pedido:** para fazer tudo isso conversando com o Codex, acompanhando
     e corrigindo junto.
 - **Candidaturas:** as candidaturas registradas pelo `/apply`.
 
-O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa. Pelo painel ele não
+O Codex trabalha numa vaga por vez e usa o seu plano, como numa conversa. Pelo painel ele não
 pode perguntar nada: se a vaga tiver algo estranho, ele para e avisa, e você decide na conversa.
 **Confira sempre o currículo e a carta antes de enviar.**
 
 Para fechar o painel, feche a janela preta. O painel só funciona no seu computador. Além das
-buscas nos portais, só o Claude sai para a internet, para ler a vaga e pesquisar a empresa.
+buscas nos portais, só o Codex sai para a internet, para ler a vaga e pesquisar a empresa.
 
 ## Seus dados
 
 - O seu perfil, o seu currículo e as vagas ficam **só no seu computador**, na pasta do projeto.
 - Não publique essa pasta no GitHub nem em outro lugar público. Se um dia quiser uma cópia de
-  segurança na nuvem, peça ajuda ao Claude para criar um repositório **privado**.
-- O conteúdo das conversas passa pelo Claude, como em qualquer conversa no claude.ai.
+  segurança na nuvem, peça ajuda ao Codex para criar um repositório **privado**.
+- O conteúdo das conversas passa pelo Codex, conforme a autenticação e as configurações da sua conta.
 
 ## Atualizar o projeto
 
@@ -176,7 +172,7 @@ personalizações. Se houver conflito, me explique antes de resolver.
   da instalação. Feche e abra de novo.
 - **Um instalador parece travado:** procure a janela de permissão escondida na barra de
   tarefas (veja o passo 2).
-- **Qualquer outra coisa:** descreva o problema para o Claude com as suas palavras e cole a
+- **Qualquer outra coisa:** descreva o problema para o Codex com as suas palavras e cole a
   mensagem de erro. Ele também conhece o [SETUP.md](SETUP.md), que tem a seção
   "Solução de problemas".
 

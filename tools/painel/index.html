@@ -68,7 +68,7 @@
   .md p, .md ul { margin: 6px 0; }
   .md code { background: var(--chip); border-radius: 4px; padding: 0 4px; font-size: .9em; }
   .md table { margin: 8px 0; }
-  .claude-status { margin: 8px 0 0; font-size: .95rem; }
+  .codex-status { margin: 8px 0 0; font-size: .95rem; }
   .ok { color: var(--accent); }
   form.perfil fieldset { border: 0; padding: 0; margin: 0 0 16px; }
   form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; padding: 0; }
@@ -120,11 +120,11 @@
     </div>
     <div class="panel">
       <h2>3. Montar o perfil</h2>
-      <p>O Claude lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
+      <p>O Codex lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
         Leva alguns minutos. Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças para você revisar.</p>
       <label id="confirm-box" hidden><input type="checkbox" id="confirm-public"> Entendi o aviso de privacidade e quero continuar</label>
-      <p><button class="btn" id="btn-perfil">Montar meu perfil com o Claude</button></p>
-      <p id="perfil-status" class="claude-status" aria-live="polite"></p>
+      <p><button class="btn" id="btn-perfil">Montar meu perfil com o Codex</button></p>
+      <p id="perfil-status" class="codex-status" aria-live="polite"></p>
     </div>
     <div id="perfil-out"></div>
   </section>
@@ -163,11 +163,11 @@
 
   <section id="tab-interesse" role="tabpanel" hidden>
     <div class="panel">
-      <p><strong>Avaliar com o Claude</strong> traz a nota de encaixe, os pontos fortes e as lacunas (leva alguns minutos).
+      <p><strong>Avaliar com o Codex</strong> traz a nota de encaixe, os pontos fortes e as lacunas (leva alguns minutos).
         Depois, <strong>Fazer currículo e carta</strong> escreve, revisa e compila os dois documentos (pode levar meia hora) e registra a candidatura.
-        O Claude trabalha numa vaga por vez e usa o seu plano, como numa conversa.</p>
-      <p class="muted">Prefere acompanhar e corrigir junto? Copie o pedido e cole no painel do Claude, no VS Code.</p>
-      <p id="claude-global" class="claude-status" aria-live="polite"></p>
+        O Codex trabalha numa vaga por vez e usa o seu plano, como numa conversa.</p>
+      <p class="muted">Prefere acompanhar e corrigir junto? Copie o pedido e cole no painel do Codex, no VS Code.</p>
+      <p id="codex-global" class="codex-status" aria-live="polite"></p>
     </div>
     <div id="interesse" class="cards"></div>
   </section>
@@ -229,8 +229,8 @@ function show(name) {
     document.getElementById("tab-" + t.dataset.tab).hidden = !on;
   }
   if (name === "vagas") loadResults();
-  if (name === "interesse") refreshClaude().then(loadSaved);
-  if (name === "perfil") refreshClaude().then(() => loadProfile());
+  if (name === "interesse") refreshCodex().then(loadSaved);
+  if (name === "perfil") refreshCodex().then(() => loadProfile());
   if (name === "candidaturas") loadApplications();
 }
 tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
@@ -246,7 +246,7 @@ function renderStatus(s) {
   if (!box.dataset.done) {
     box.dataset.done = "1";
     if (!s.priorities.length) {
-      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Peça ao Claude: /setup --section search" }));
+      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Peça ao Codex: /setup --section search" }));
       btnSearch.disabled = true;
     }
     for (const p of s.priorities) {
@@ -340,7 +340,7 @@ async function decide(row, decision) {
   } catch (e) { alert("Não consegui gravar: " + e.message); }
 }
 
-// ---- markdown das respostas do Claude, montado nó a nó (nunca como HTML) ----
+// ---- markdown das respostas do Codex, montado nó a nó (nunca como HTML) ----
 function inline(text) {
   const frag = document.createDocumentFragment();
   for (const part of String(text).split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/)) {
@@ -387,26 +387,26 @@ function markdown(text) {
 
 // ---- me interessam ----
 const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil" };
-let claude = { available: true, running: false };
-let claudePolling = null;
+let codex = { available: true, running: false };
+let codexPolling = null;
 
-async function runClaude(s, step) {
+async function runCodex(s, step) {
   try {
-    await api("/api/claude", { url: s.url, step });
-    await refreshClaude();
-    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
-  } catch (e) { alert("Não consegui chamar o Claude: " + e.message); }
+    await api("/api/codex", { url: s.url, step });
+    await refreshCodex();
+    if (!codexPolling) codexPolling = setInterval(refreshCodex, 5000);
+  } catch (e) { alert("Não consegui chamar o Codex: " + e.message); }
 }
-async function refreshClaude() {
-  const was = claude.running;
-  try { claude = (await api("/api/status")).claude; } catch { return; }
-  const g = document.getElementById("claude-global");
+async function refreshCodex() {
+  const was = codex.running;
+  try { codex = (await api("/api/status")).codex; } catch { return; }
+  const g = document.getElementById("codex-global");
   g.replaceChildren();
-  if (!claude.available) g.append(el("span", { class: "error", text: "Não achei o Claude Code neste computador: os botões do Claude ficam desligados." }));
-  else if (claude.running) g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está ${PASSOS[claude.step]} desde ${claude.started.slice(11, 16)}…`);
-  else if (claude.error) g.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
-  if (!claude.running && claudePolling) { clearInterval(claudePolling); claudePolling = null; }
-  if (was !== claude.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
+  if (!codex.available) g.append(el("span", { class: "error", text: "Não achei o Codex neste computador: os botões do Codex ficam desligados." }));
+  else if (codex.running) g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está ${PASSOS[codex.step]} desde ${codex.started.slice(11, 16)}…`);
+  else if (codex.error) g.append(el("span", { class: "error", text: "O Codex não terminou: " + codex.error }));
+  if (!codex.running && codexPolling) { clearInterval(codexPolling); codexPolling = null; }
+  if (was !== codex.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
   renderPerfilStatus();
 }
 
@@ -416,9 +416,9 @@ async function loadSaved() {
   box.replaceChildren(...(saved.length ? saved.map((s) => {
     const url = safeUrl(s.url);
     const cmd = url ? `/apply ${url}` : null;
-    const ans = s.claude || {};
-    const busy = claude.running && claude.url === s.url;
-    const off = !url || !claude.available || claude.running;
+    const ans = s.codex || {};
+    const busy = codex.running && codex.url === s.url;
+    const off = !url || !codex.available || codex.running;
     const answer = (title, text, open) => text ? el("details", { class: "answer", ...(open ? { open: "" } : {}) },
       el("summary", { text: title }), markdown(text)) : null;
     return el("article", { class: "card" },
@@ -426,17 +426,17 @@ async function loadSaved() {
       el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
       el("div", { class: "actions" },
         url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-        el("button", { class: "btn small", onclick: () => runClaude(s, "avaliar"), text: ans.avaliar ? "Avaliar de novo" : "Avaliar com o Claude",
+        el("button", { class: "btn small", onclick: () => runCodex(s, "avaliar"), text: ans.avaliar ? "Avaliar de novo" : "Avaliar com o Codex",
           ...(off ? { disabled: "" } : {}) }),
-        el("button", { class: "btn small", onclick: () => runClaude(s, "redigir"),
+        el("button", { class: "btn small", onclick: () => runCodex(s, "redigir"),
           text: ans.redigir ? "Refazer currículo e carta" : "Fazer currículo e carta",
           title: ans.avaliar ? "" : "Avalie a vaga primeiro", ...(off || !ans.avaliar ? { disabled: "" } : {}) }),
         cmd ? el("button", { class: "btn small secondary", text: "Copiar pedido", onclick: async (e) => {
-          try { await navigator.clipboard.writeText(cmd); e.target.textContent = "Copiado: cole no Claude"; }
+          try { await navigator.clipboard.writeText(cmd); e.target.textContent = "Copiado: cole no Codex"; }
           catch { prompt("Copie este pedido:", cmd); }
         } }) : null),
-      busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está ${PASSOS[claude.step]}…`) : null,
-      answer("Avaliação do Claude", ans.avaliar, !ans.redigir),
+      busy ? el("p", { class: "codex-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está ${PASSOS[codex.step]}…`) : null,
+      answer("Avaliação do Codex", ans.avaliar, !ans.redigir),
       answer("Currículo e carta: relatório", ans.redigir, true));
   }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
 }
@@ -455,11 +455,12 @@ async function loadProfile(refresh) {
   if (!document.getElementById("perfil-form").childElementCount) renderForm();
   renderPerfilStatus();
   const out = document.getElementById("perfil-out");
-  out.replaceChildren(
+  out.replaceChildren(...[
     perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", open: "" },
-      el("summary", { text: "O que o Claude fez na última montagem" }), markdown(perfil.report))) : null,
+      el("summary", { text: "O que o Codex fez na última montagem" }), markdown(perfil.report))) : null,
     perfil.ready && perfil.profile ? el("div", { class: "panel" }, el("details", { class: "answer" },
-      el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null);
+      el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null,
+  ].filter(Boolean));
 }
 
 function renderPrivacy() {
@@ -543,13 +544,13 @@ function renderPerfilStatus() {
   if (!st || !perfil) return;
   const hasDocs = Object.values(perfil.files || {}).some((l) => l.length);
   const needConfirm = !document.getElementById("confirm-box").hidden && !document.getElementById("confirm-public").checked;
-  btn.disabled = !claude.available || claude.running || !hasDocs || needConfirm;
-  btn.textContent = perfil.ready ? "Atualizar meu perfil com o Claude" : "Montar meu perfil com o Claude";
+  btn.disabled = !codex.available || codex.running || !hasDocs || needConfirm;
+  btn.textContent = perfil.ready ? "Atualizar meu perfil com o Codex" : "Montar meu perfil com o Codex";
   st.replaceChildren();
-  if (claude.running && claude.step === "perfil") st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Claude está montando o seu perfil desde ${claude.started.slice(11, 16)}…`);
-  else if (claude.running) st.textContent = `O Claude está ocupado (${PASSOS[claude.step]}). Espere terminar.`;
-  else if (!claude.available) st.append(el("span", { class: "error", text: "Não achei o Claude Code neste computador." }));
-  else if (claude.error && claude.step === "perfil") st.append(el("span", { class: "error", text: "O Claude não terminou: " + claude.error }));
+  if (codex.running && codex.step === "perfil") st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está montando o seu perfil desde ${codex.started.slice(11, 16)}…`);
+  else if (codex.running) st.textContent = `O Codex está ocupado (${PASSOS[codex.step]}). Espere terminar.`;
+  else if (!codex.available) st.append(el("span", { class: "error", text: "Não achei o Codex neste computador." }));
+  else if (codex.error && codex.step === "perfil") st.append(el("span", { class: "error", text: "O Codex não terminou: " + codex.error }));
   else if (!hasDocs) st.textContent = "Envie o currículo para liberar este botão.";
   else if (needConfirm) st.textContent = "Marque a confirmação de privacidade acima para liberar este botão.";
 }
@@ -582,10 +583,10 @@ document.getElementById("confirm-public").addEventListener("change", renderPerfi
 document.getElementById("btn-perfil").addEventListener("click", async () => {
   if (!(await saveForm())) return;
   try {
-    await api("/api/claude", { step: "perfil", confirm: document.getElementById("confirm-public").checked });
-    await refreshClaude();
-    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
-  } catch (e) { alert("Não consegui chamar o Claude: " + e.message); }
+    await api("/api/codex", { step: "perfil", confirm: document.getElementById("confirm-public").checked });
+    await refreshCodex();
+    if (!codexPolling) codexPolling = setInterval(refreshCodex, 5000);
+  } catch (e) { alert("Não consegui chamar o Codex: " + e.message); }
 });
 
 // ---- candidaturas ----
@@ -609,8 +610,8 @@ async function loadApplications() {
 
 refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);
-  claude = s.claude;
-  if (claude.running) claudePolling = setInterval(refreshClaude, 5000);
+  codex = s.codex;
+  if (codex.running) codexPolling = setInterval(refreshCodex, 5000);
   return api("/api/profile");
 }).then((p) => { if (p && !p.ready) show("perfil"); });
 </script>

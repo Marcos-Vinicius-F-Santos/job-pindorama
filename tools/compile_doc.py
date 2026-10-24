@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compila um currículo ou uma carta gerados pelo /apply, com argumentos fixos.
 
-Existe para o painel (tools/painel.py), em que o Claude roda sem ninguém para
+Existe para o painel (tools/painel.py), em que o Codex roda sem ninguém para
 aprovar comandos: em vez de liberar `lualatex:*` - que também aprovaria
 `-shell-escape` e deixaria o LaTeX rodar comandos do sistema -, o painel libera
 só este script. Ele:

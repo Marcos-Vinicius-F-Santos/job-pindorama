@@ -6,10 +6,10 @@
   * Formulário - o que o currículo não diz (gênero gramatical, modelo de
                  trabalho, regimes, pretensão, níveis, cargos a buscar...),
                  gravado em documents/perfil/respostas.json (fora do git);
-  * Privacidade - para onde o repositório publica, conferido antes de o Claude
+  * Privacidade - para onde o repositório publica, conferido antes de o Codex
                  gravar o perfil em arquivos rastreados pelo git.
 
-Funções puras, testadas sem servidor; quem chama o Claude é o painel.
+Funções puras, testadas sem servidor; quem chama o Codex é o painel.
 """
 
 import base64
@@ -112,7 +112,7 @@ def save_answers(data: dict, path: Path = ANSWERS) -> dict:
 
 
 def format_answers(answers: dict) -> str:
-    """As respostas como "Pergunta: resposta", para o pedido ao Claude."""
+    """As respostas como "Pergunta: resposta", para o pedido ao Codex."""
     lines = []
     for _, fields in SCHEMA:
         for f in fields:
@@ -219,9 +219,9 @@ def profile_text(path: Path = PROFILE_MD) -> str | None:
         return None
 
 
-def profile_ready(claude_md: Path = ROOT / "CLAUDE.md") -> bool:
-    """O /setup já rodou: o CLAUDE.md não tem mais o marcador do modelo."""
+def profile_ready(profile_md: Path = ROOT / "CLAUDE.md") -> bool:
+    """O /setup já rodou: o arquivo de perfil não tem mais o marcador do modelo."""
     try:
-        return "[YOUR_NAME]" not in claude_md.read_text(encoding="utf-8")
+        return "[YOUR_NAME]" not in profile_md.read_text(encoding="utf-8")
     except OSError:
         return False

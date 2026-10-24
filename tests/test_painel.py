@@ -3,10 +3,12 @@
 import base64
 import http.client
 import json
+import os
 import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -73,48 +75,51 @@ class Data(unittest.TestCase):
     def test_search_file_lives_outside_the_repo(self):
         self.assertFalse(str(painel.results_path().resolve()).startswith(str(ROOT.resolve())))
 
-    def test_claude_drafting_needs_a_saved_evaluation(self):
+    def test_codex_drafting_needs_a_saved_evaluation(self):
         url = "https://zeta.gupy.io/jobs/1?a=1&b=2"
-        prompt = painel.claude_prompt(url, "avaliar", self.dir)
+        prompt = painel.codex_prompt(url, "avaliar", self.dir)
         self.assertIn(url, prompt)
         self.assertIn(f"`{painel.PYTHON} tools/posting_guard.py", prompt)
         self.assertNotIn("{python}", prompt)
         with self.assertRaises(ValueError):
-            painel.claude_prompt(url, "redigir", self.dir)
+            painel.codex_prompt(url, "redigir", self.dir)
         with self.assertRaises(ValueError):
-            painel.claude_prompt(url, "apagar", self.dir)
-        painel.claude_file(url, "avaliar", self.dir).write_text("## Avaliação\nNota 63", encoding="utf-8")
-        drafting = painel.claude_prompt(url, "redigir", self.dir)
+            painel.codex_prompt(url, "apagar", self.dir)
+        painel.codex_file(url, "avaliar", self.dir).write_text("## Avaliação\nNota 63", encoding="utf-8")
+        drafting = painel.codex_prompt(url, "redigir", self.dir)
         self.assertIn("<AVALIACAO>\n## Avaliação\nNota 63\n</AVALIACAO>", drafting)
         self.assertIn(f"`{painel.PYTHON} tools/compile_doc.py", drafting)
         self.assertNotIn("{python}", drafting)
-        self.assertEqual(painel.claude_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "redigir": None})
+        self.assertEqual(painel.codex_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "redigir": None})
 
     def test_profile_prompt_needs_a_document_and_carries_the_form_as_data(self):
         docs, answers = self.dir / "documents", self.dir / "respostas.json"
         with self.assertRaises(ValueError):
-            painel.claude_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs)
+            painel.codex_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs)
         painel_perfil.save_upload("cv", "cv.pdf", base64.b64encode(b"%PDF-1.4 x").decode(), docs)
-        self.assertIn("(formulário em branco)", painel.claude_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs))
+        self.assertIn("(formulário em branco)", painel.codex_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs))
         painel_perfil.save_answers({"genero": "neutro", "cargos": "PM\nPO"}, answers)
-        prompt = painel.claude_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs)
+        prompt = painel.codex_prompt(painel.PERFIL_KEY, "perfil", self.dir, answers, docs)
         self.assertIn("<FORMULARIO>\nNos textos em português, escrever no: neutro\nCargos a buscar, um por linha: PM; PO\n</FORMULARIO>", prompt)
         self.assertIn("/setup pelo Caminho A", prompt)
 
-    def test_claude_answer_files_are_named_by_hash_inside_the_folder(self):
-        f = painel.claude_file("https://x/../../etc", "avaliar", self.dir)
+    def test_codex_answer_files_are_named_by_hash_inside_the_folder(self):
+        f = painel.codex_file("https://x/../../etc", "avaliar", self.dir)
         self.assertEqual(f.parent, self.dir)
         self.assertRegex(f.name, r"^[0-9a-f]{16}_avaliacao\.md$")
 
-    def test_claude_command_keeps_the_prompt_off_the_command_line(self):
-        cmd = painel.claude_command("claude", "avaliar")
-        self.assertEqual(cmd[:2], ["claude", "-p"])
+    def test_codex_command_keeps_the_prompt_off_the_command_line(self):
+        cmd = painel.codex_command("codex", "avaliar")
+        self.assertEqual(cmd, ["codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "read-only", "-"])
+        self.assertEqual(painel.codex_command("codex", "redigir"),
+                         ["codex", "-a", "never", "exec", "--ephemeral", "--sandbox", "workspace-write", "-"])
         self.assertTrue(all("http" not in part for part in cmd))
-        self.assertIn(str(painel.CLAUDE_SETTINGS_PERFIL), painel.claude_command("claude", "perfil"))
-        settings = json.loads(painel.CLAUDE_SETTINGS.read_text(encoding="utf-8"))
-        bash = [r for r in settings["permissions"]["allow"] if r.startswith("Bash")]
-        self.assertTrue(bash)
-        self.assertTrue(all("tools/compile_doc.py:*)" in r for r in bash), bash)
+
+    def test_codex_binary_can_be_configured_outside_the_path(self):
+        binary = self.dir / "codex.exe"
+        binary.write_bytes(b"placeholder")
+        with mock.patch.dict(os.environ, {"CODEX_BIN": str(binary)}):
+            self.assertEqual(painel.find_codex(), str(binary))
 
 
 class Server(unittest.TestCase):
@@ -129,9 +134,9 @@ class Server(unittest.TestCase):
         cls.port = cls.server.server_address[1]
         tmp = Path(cls.tmp.name)
         cls.documents = tmp / "documents"
-        claude = painel.ClaudeJob(tmp / "claude", claude_bin="claude-que-nao-roda",
-                                  documents=cls.documents, answers=tmp / "respostas.json")
-        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, claude)
+        codex = painel.CodexJob(tmp / "codex", codex_bin="codex-que-nao-roda",
+                                documents=cls.documents, answers=tmp / "respostas.json")
+        cls.server.RequestHandlerClass = painel.make_handler(cls.token, job, {f"127.0.0.1:{cls.port}"}, codex)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
 
     @classmethod
@@ -171,12 +176,12 @@ class Server(unittest.TestCase):
         self.assertEqual(self.request("POST", "/api/mark", {"urls": [], "decision": "x"}, h)[0], 400)
         self.assertEqual(self.request("POST", "/api/mark", ["não", "é", "objeto"], h)[0], 400)
 
-    def test_claude_only_for_jobs_marked_here(self):
+    def test_codex_only_for_jobs_marked_here(self):
         h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
-        status, data, _ = self.request("POST", "/api/claude", {"url": "https://evil.example/x", "step": "avaliar"}, h)
+        status, data, _ = self.request("POST", "/api/codex", {"url": "https://evil.example/x", "step": "avaliar"}, h)
         self.assertEqual(status, 400)
         self.assertIn("Me interessam", json.loads(data)["error"])
-        self.assertEqual(self.request("POST", "/api/claude", {"url": "x", "step": "avaliar"})[0], 403)
+        self.assertEqual(self.request("POST", "/api/codex", {"url": "x", "step": "avaliar"})[0], 403)
 
     def test_profile_upload_and_form(self):
         h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
@@ -197,7 +202,7 @@ class Server(unittest.TestCase):
     def test_only_uploads_get_the_big_body_limit(self):
         self.assertEqual(painel.body_limit("/api/upload"), painel.MAX_UPLOAD_BODY)
         self.assertEqual(painel.body_limit("/api/upload?x=1"), painel.MAX_UPLOAD_BODY)
-        for path in ("/api/profile", "/api/claude", "/api/uploadX"):
+        for path in ("/api/profile", "/api/codex", "/api/uploadX"):
             self.assertEqual(painel.body_limit(path), painel.MAX_BODY)
 
     def test_results_empty_before_a_search(self):
