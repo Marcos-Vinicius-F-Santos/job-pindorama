@@ -27,6 +27,31 @@ equivalente **ao pé da letra** e classifique:
 | Diz que aceita a condição da pessoa explicitamente | **PASS** — e vale citar como ponto positivo na candidatura. |
 | **Silencia** sobre o requisito | **PROSSIGA, marcando como não verificado.** Confira a página de carreiras da empresa antes de redigir. |
 
+### Vagas internacionais: local de contratação e autorização
+
+Quando a vaga estiver fora do Brasil, separe quatro coisas que os portais frequentemente
+misturam: **onde a pessoa trabalha**, **onde a entidade empregadora está**, **qual é o regime
+do contrato** e **qual autorização de trabalho é exigida**. Não presuma que "remote" significa
+"remoto de qualquer país".
+
+- **PASS:** o anúncio diz que aceita contratação a partir do Brasil ou da América Latina, ou
+  aceita explicitamente contractor/PJ/EOR a partir do Brasil, sem exigir residência ou visto
+  local. Cite a evidência.
+- **FLAG:** o anúncio diz apenas "remote" ou "worldwide" sem esclarecer país de contratação,
+  folha, impostos, fuso ou autorização. A vaga pode ser pesquisada, mas não deve ser tratada
+  como compatível definitiva até a confirmação na fonte oficial.
+- **FAIL:** exige residência, cidadania, visto ou autorização de trabalho em outro país que a
+  pessoa não informou ter. Cite o trecho exato; não invente elegibilidade.
+- **FAIL:** exige híbrido ou presencial fora do deslocamento viável a partir da base declarada,
+  salvo acordo prévio de mudança.
+- **PASS/FLAG:** o fuso horário só é compatível quando o horário exigido se sobrepõe de forma
+  razoável ao Brasil; registre a janela de trabalho quando ela estiver no anúncio. Uma exigência
+  de disponibilidade integral em um fuso incompatível é FLAG até confirmação.
+
+Se o anúncio for ambíguo, confira a página oficial da empresa e registre a dúvida em vez de
+convertê-la em PASS. A aprovação explícita para contratar no Brasil prevalece sobre a origem do
+portal.
+
 **Duas regras fáceis de errar:**
 
 1. **Silêncio não é permissão.** Programas de trainee e estágio de grandes empresas costumam
@@ -139,6 +164,12 @@ avaliações, notícias, conexões no LinkedIn e contatos que conheçam a empres
 - Exige mudança de cidade: FAIL (eliminatório)
 - Viagens frequentes: FLAG (conversar com a pessoa)
 
+**Preferência registrada no perfil:** remoto no Brasil é aceito. Remoto internacional só passa
+quando a empresa aceita contratação a partir do Brasil/LATAM via contractor, EOR ou equivalente,
+sem exigir autorização de trabalho local; um anúncio remoto ambíguo é FLAG, não PASS. Híbrido ou
+presencial só passa quando o deslocamento for viável conforme a base declarada no perfil, ou
+houver acordo prévio de mudança; caso contrário, é FAIL.
+
 **Vale o texto da vaga, não o rótulo do portal.** O "Remoto" da Gupy e o filtro de remoto do
 LinkedIn já deixaram passar vagas cujo próprio texto dizia "híbrida (4x presenciais)" ou
 "Híbrido" no título. Rode `python3 tools/posting_signals.py` no texto da vaga: ele aponta o
@@ -213,6 +244,20 @@ precisar de 30% a 50% a mais que o bruto CLT** para empatar. Mostre a conta com 
 vaga, deixe claras as suposições (alíquota, custos) e **recomende confirmar com um contador**:
 as alíquotas dependem da atividade e da faixa de faturamento, e a reforma tributária (transição
 de 2026 a 2033) ainda vai mudar regras.
+
+**Vagas internacionais:** não aplique a fórmula CLT/PJ nem a referência em reais
+automaticamente. Registre separadamente:
+- moeda e período da remuneração (hora, mês ou ano);
+- empregado local, contractor/freelance, EOR ou outro regime;
+- país da contratação, entidade pagadora e quem responde por impostos e conformidade;
+- benefícios, férias, feriados, equipamento, taxas de câmbio e custos de recebimento;
+- fuso horário e janela de disponibilidade exigida.
+
+Um valor em USD ou EUR sem país e regime de contratação não é diretamente comparável a CLT ou
+PJ no Brasil. Conversão cambial é apenas uma referência secundária: informe a data e a taxa
+usadas, preserve a moeda original e não invente benefícios, impostos ou equivalência jurídica.
+Quando faltarem esses dados, marque a remuneração como não verificada e peça confirmação antes
+de recomendar candidatura.
 
 **Outros regimes:**
 - **Estágio:** bolsa + auxílio-transporte, sem vínculo empregatício; limite de 6 h/dia e de 2
