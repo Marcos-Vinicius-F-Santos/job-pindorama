@@ -274,8 +274,9 @@ def applications(tracker_path: Path = scrape_run.TRACKER) -> list:
         return [dict(row) for row in csv.DictReader(fh)]
 
 
-def priorities(queries_path: Path = scrape_run.QUERIES) -> list:
+def priorities(queries_path: Path | None = None) -> list:
     """As prioridades com linhas de busca prontas (as do modelo, com [YOUR_...], não contam)."""
+    queries_path = scrape_run.active_queries_path(queries_path)
     try:
         calls = scrape_run.parse_queries(queries_path.read_text(encoding="utf-8"))
     except OSError:
@@ -313,6 +314,12 @@ class SearchJob:
             self.started = datetime.now().isoformat(timespec="seconds")
         cmd = [sys.executable, str(ROOT / "tools" / "scrape_run.py"), "search",
                "--priority", ",".join(str(p) for p in prios), "--jobage", str(jobage), "--out", str(self.out)]
+        local_queries = scrape_run.active_queries_path()
+        if local_queries != scrape_run.QUERIES:
+            cmd.extend(["--queries", str(local_queries)])
+        local_accept = scrape_run.local_target_seniority()
+        if local_accept:
+            cmd.extend(["--accept", ",".join(local_accept)])
         threading.Thread(target=self._run, args=(cmd,), daemon=True).start()
         return True
 

@@ -33,7 +33,7 @@ LEVELS = ["estagio", "junior", "pleno", "senior", "especialista", "staff", "lead
 # entrada por linha, gravada como lista), choice (uma opção), multi (várias).
 SCHEMA = [
     ("Quem é você", [
-        {"key": "cidade", "label": "Cidade e UF", "type": "text", "placeholder": "Campinas - SP"},
+        {"key": "cidade", "label": "Cidade e UF", "type": "text", "placeholder": "Lagoa da Prata - MG"},
         {"key": "genero", "label": "Nos textos em português, escrever no", "type": "choice",
          "options": ["feminino", "masculino", "neutro"],
          "help": "Feminino: \"formada\"; masculino: \"formado\"; neutro: \"tenho formação em\"."},
