@@ -1,4 +1,4 @@
-"""tools/compile_doc.py: só documentos do /apply, sempre sem execução de comandos pelo LaTeX."""
+"""tools/compile_doc.py: só documentos do /apply e de entrevista, sempre sem execução de comandos pelo LaTeX."""
 
 import sys
 import tempfile
@@ -14,9 +14,10 @@ class Target(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        for d in ("cv", "cover_letters", "tools"):
-            (self.root / d).mkdir()
+        for d in ("cv", "cover_letters", "tools", "documents/interview", "documents/cv"):
+            (self.root / d).mkdir(parents=True, exist_ok=True)
         for f in ("cv/main_acme_pm.tex", "cover_letters/cover_acme_pm.tex", "cover_letters/Cover_acme_pm.tex",
+                  "documents/interview/prep_acme_pm.tex", "documents/cv/main_acme_pm.tex",
                   "cv/main_example.tex", "cv/outro.tex", "tools/main_x.tex"):
             (self.root / f).write_text("x", encoding="utf-8")
 
@@ -27,10 +28,13 @@ class Target(unittest.TestCase):
         self.assertEqual(compile_doc.target("cv/main_acme_pm.tex", self.root)[1], "lualatex")
         self.assertEqual(compile_doc.target("cover_letters/cover_acme_pm.tex", self.root)[1], "xelatex")
         self.assertEqual(compile_doc.target("cover_letters/Cover_acme_pm.tex", self.root)[1], "xelatex")
+        self.assertEqual(compile_doc.target("documents/interview/prep_acme_pm.tex", self.root)[1], "lualatex")
 
     def test_refuses_anything_else(self):
-        for path in ("cv/outro.tex", "tools/main_x.tex", "cv/../tools/main_x.tex", "cv/main_example.tex",
-                     "cv/main_nao_existe.tex", "cover_letters/cover_acme_pm.pdf", str(Path(self.tmp.name).parent / "main_x.tex")):
+        for path in ("cv/outro.tex", "tools/main_x.tex", "documents/cv/main_acme_pm.tex",
+                     "cv/../tools/main_x.tex", "cv/main_example.tex",
+                     "cv/main_nao_existe.tex", "cover_letters/cover_acme_pm.pdf",
+                     str(Path(self.tmp.name).parent / "main_x.tex")):
             with self.assertRaises(ValueError, msg=path):
                 compile_doc.target(path, self.root)
 

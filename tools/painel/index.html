@@ -42,6 +42,12 @@
   input[type=text], select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
                              background: var(--surface); color: var(--text); }
   input[type=text] { flex: 1 1 220px; min-width: 0; }
+  input[type=password] { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+                         background: var(--surface); color: var(--text); flex: 1 1 220px; min-width: 0; }
+  fieldset.prov { border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px 12px; margin: 12px 0; }
+  fieldset.prov legend { font-weight: 700; padding: 0 6px; }
+  fieldset.prov .row { margin: 8px 0; }
+  fieldset.prov label.lbl { min-width: 8em; font-weight: 600; }
   .muted { color: var(--muted); }
   pre.summary { white-space: pre-wrap; background: var(--chip); padding: 12px; border-radius: 8px; font-size: .85rem; overflow-x: auto; }
   .error { color: var(--danger); white-space: pre-wrap; }
@@ -68,7 +74,7 @@
   .md p, .md ul { margin: 6px 0; }
   .md code { background: var(--chip); border-radius: 4px; padding: 0 4px; font-size: .9em; }
   .md table { margin: 8px 0; }
-  .codex-status { margin: 8px 0 0; font-size: .95rem; }
+  .claude-status { margin: 8px 0 0; font-size: .95rem; }
   .ok { color: var(--accent); }
   form.perfil fieldset { border: 0; padding: 0; margin: 0 0 16px; }
   form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; padding: 0; }
@@ -82,18 +88,26 @@
   ul.files { margin: 8px 0 0; padding-left: 18px; }
   ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+  .badge-fit { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
+  .badge-fit-high { background: #134e2f; color: #4ade80; border: 1px solid #22c55e; }
+  .badge-fit-med { background: #4a3e13; color: #fde047; border: 1px solid #eab308; }
+  .badge-fit-low { background: #4a1d1d; color: #f87171; border: 1px solid #ef4444; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .screening-summary { font-size: .9rem; color: var(--text); background: var(--chip); padding: 6px 10px; border-radius: 6px; margin: 6px 0 8px; }
+  .batch-bar { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 <header>
   <h1>Minha Busca</h1>
-  <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador.</p>
+  <p class="sub">Busque vagas nos portais, separe as que interessam e acompanhe as candidaturas. Tudo fica no seu computador. <span id="active-engine" class="muted" style="margin-left: 8px; font-weight: 600;"></span></p>
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-tab="perfil" aria-selected="false">Meu perfil</button>
     <button role="tab" data-tab="buscar" aria-selected="true">Buscar</button>
     <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
     <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
     <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
+    <button role="tab" data-tab="config" aria-selected="false">Configurações</button>
   </nav>
 </header>
 
@@ -120,11 +134,11 @@
     </div>
     <div class="panel">
       <h2>3. Montar o perfil</h2>
-      <p>O Codex lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
-        Leva alguns minutos. Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças para você revisar.</p>
+      <p>O assistente de IA escolhido em Configurações lê os seus documentos e as respostas e monta o perfil que a busca, a avaliação e o currículo usam.
+        Leva alguns instantes. Se você já tem um perfil, ele acrescenta o que é novo, mantém o que já existe e lista as diferenças para você revisar.</p>
       <label id="confirm-box" hidden><input type="checkbox" id="confirm-public"> Entendi o aviso de privacidade e quero continuar</label>
-      <p><button class="btn" id="btn-perfil">Montar meu perfil com o Codex</button></p>
-      <p id="perfil-status" class="codex-status" aria-live="polite"></p>
+      <p><button class="btn" id="btn-perfil">Montar meu perfil com a IA</button></p>
+      <p id="perfil-status" class="claude-status" aria-live="polite"></p>
     </div>
     <div id="perfil-out"></div>
   </section>
@@ -136,7 +150,7 @@
       <div id="prio-box" class="row"></div>
       <p class="row">
         <label>Publicadas nos últimos
-          <select id="jobage"><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="30">30 dias</option></select>
+          <select id="jobage"><option value="1">24 horas (1 dia)</option><option value="2">Últimos 2 dias</option><option value="3">3 dias</option><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="30">30 dias</option></select>
         </label>
       </p>
       <button class="btn" id="btn-search">Buscar vagas</button>
@@ -154,7 +168,30 @@
           <option value="hybrid">Híbrido</option><option value="on-site">Presencial</option><option value="none">Não informado</option>
         </select>
         <select id="f-portal" aria-label="Portal"><option value="">Todos os portais</option></select>
+        <select id="f-days" aria-label="Período"><option value="">Todas as datas</option><option value="1">Últimas 24 horas</option><option value="2">Últimos 2 dias</option><option value="3">Últimos 3 dias</option><option value="7">Últimos 7 dias</option></select>
+        <select id="f-score" aria-label="Filtrar por nota">
+          <option value="">Todas as notas</option>
+          <option value="high">Maiores notas (80+)</option>
+          <option value="med">Notas médias ou maiores (60+)</option>
+          <option value="triadas">Apenas vagas com nota</option>
+        </select>
         <label><input type="checkbox" id="f-nowarn"> Só sem avisos</label>
+      </div>
+      <div class="batch-bar">
+        <label><input type="checkbox" id="check-all"> Selecionar tudo</label>
+        <select id="batch-scope">
+          <option value="5">Top 5 da lista filtrada</option>
+          <option value="10">Top 10 da lista filtrada</option>
+          <option value="all-visible">Todas as vagas filtradas</option>
+          <option value="selected">Vagas selecionadas</option>
+        </select>
+        <button class="btn small" id="btn-batch">Triar vagas com a IA</button>
+        <select id="f-sort">
+          <option value="date">Ordenar por: Mais recentes</option>
+          <option value="score-asc">Ordenar por: Maiores notas (ordem crescente)</option>
+          <option value="score-desc">Ordenar por: Maiores notas (ordem decrescente)</option>
+        </select>
+        <span id="batch-status" class="muted"></span>
       </div>
     </div>
     <p id="vagas-info" class="muted"></p>
@@ -163,17 +200,41 @@
 
   <section id="tab-interesse" role="tabpanel" hidden>
     <div class="panel">
-      <p><strong>Avaliar com o Codex</strong> traz a nota de encaixe, os pontos fortes e as lacunas (leva alguns minutos).
-        Depois, <strong>Fazer currículo e carta</strong> escreve, revisa e compila os dois documentos (pode levar meia hora) e registra a candidatura.
-        O Codex trabalha numa vaga por vez e usa o seu plano, como numa conversa.</p>
-      <p class="muted">Prefere acompanhar e corrigir junto? Copie o pedido e cole no painel do Codex, no VS Code.</p>
-      <p id="codex-global" class="codex-status" aria-live="polite"></p>
+      <p><strong>Avaliar</strong> traz a nota de encaixe, os pontos fortes e as lacunas (com uma chave de API leva poucos segundos).
+        Depois, <strong>Fazer currículo e carta</strong> escreve e compila os dois documentos em PDF via MiKTeX e registra a candidatura.
+        O assistente trabalha numa vaga por vez e usa o seu perfil consolidado.</p>
+      <p id="claude-global" class="claude-status" aria-live="polite"></p>
     </div>
     <div id="interesse" class="cards"></div>
   </section>
 
   <section id="tab-candidaturas" role="tabpanel" hidden>
     <div id="candidaturas"></div>
+  </section>
+
+  <section id="tab-config" role="tabpanel" hidden>
+    <div class="panel">
+      <h2>Assistente de IA</h2>
+      <p class="muted">Escolha qual IA avalia as vagas, escreve o currículo e prepara a entrevista: Gemini, ChatGPT (OpenAI) ou Claude,
+        por chave de API ou pela ferramenta de linha de comando que você já instalou e em que já entrou. O que você salva aqui vai para o
+        arquivo <code>.env</code> deste computador, que o git não envia, e a chave nunca volta para esta página.</p>
+      <p><strong id="cfg-active"></strong></p>
+      <div class="row">
+        <label for="cfg-provider"><strong>Usar</strong></label>
+        <select id="cfg-provider">
+          <option value="auto">Automático (o primeiro que estiver configurado)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="openai">OpenAI (ChatGPT)</option>
+          <option value="claude">Anthropic Claude</option>
+        </select>
+      </div>
+      <div id="cfg-providers"></div>
+      <div class="warn">
+        <label><input type="checkbox" id="cfg-consent"> Entendo que o texto das vagas e o meu perfil (sem CPF, RG, CNPJ nem endereço) serão enviados
+          ao provedor escolhido, que é um terceiro e pode guardá-los conforme a política dele.</label>
+      </div>
+      <div class="row"><button class="btn" id="btn-cfg-save" type="button">Salvar configurações</button> <span id="cfg-status" aria-live="polite"></span></div>
+    </div>
   </section>
 </main>
 
@@ -229,9 +290,10 @@ function show(name) {
     document.getElementById("tab-" + t.dataset.tab).hidden = !on;
   }
   if (name === "vagas") loadResults();
-  if (name === "interesse") refreshCodex().then(loadSaved);
-  if (name === "perfil") refreshCodex().then(() => loadProfile());
+  if (name === "interesse") refreshClaude().then(loadSaved);
+  if (name === "perfil") refreshClaude().then(() => loadProfile());
   if (name === "candidaturas") loadApplications();
+  if (name === "config") loadSettings();
 }
 tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
 
@@ -246,13 +308,17 @@ function renderStatus(s) {
   if (!box.dataset.done) {
     box.dataset.done = "1";
     if (!s.priorities.length) {
-      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Peça ao Codex: /setup --section search" }));
+      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Rode /setup --section search no seu assistente de IA" }));
       btnSearch.disabled = true;
     }
     for (const p of s.priorities) {
       box.append(el("label", {}, el("input", { type: "checkbox", value: p.priority, ...(p.priority <= 2 ? { checked: "" } : {}) }),
         `Prioridade ${p.priority} (${p.queries} buscas)`));
     }
+  }
+  if (s.provider && s.provider.label) {
+    const eng = document.getElementById("active-engine");
+    if (eng) eng.textContent = `[Motor: ${s.provider.label}]`;
   }
   const job = s.search;
   btnSearch.disabled = job.running || !s.priorities.length;
@@ -276,7 +342,7 @@ btnSearch.addEventListener("click", async () => {
 });
 
 // ---- vagas novas ----
-const filters = ["f-text", "f-model", "f-portal", "f-nowarn"].map((id) => document.getElementById(id));
+const filters = ["f-text", "f-model", "f-portal", "f-days", "f-score", "f-nowarn"].map((id) => document.getElementById(id));
 filters.forEach((f) => f.addEventListener("input", renderResults));
 
 async function loadResults() {
@@ -291,6 +357,9 @@ async function loadResults() {
   renderResults();
 }
 
+const selectedUrls = new Set();
+let currentVisibleRows = [];
+
 function card(row, decide) {
   const chips = el("div", { class: "chips" });
   const add = (t) => t && chips.append(el("span", { class: "chip", text: t }));
@@ -304,11 +373,39 @@ function card(row, decide) {
   const warn = warningOf(row);
   const url = safeUrl(row.url);
   const full = row.full_posting && safeUrl(row.full_posting.url);
+
+  let badge = null;
+  let summary = null;
+  if (row.screening) {
+    const sc = row.screening.score;
+    const verd = row.screening.verdict || "";
+    const bClass = sc >= 75 ? "badge-fit badge-fit-high" : (sc >= 50 ? "badge-fit badge-fit-med" : "badge-fit badge-fit-low");
+    badge = el("span", { class: bClass, text: `${sc}/100 · ${verd}` });
+    if (row.screening.summary) {
+      summary = el("p", { class: "screening-summary", text: row.screening.summary });
+    }
+  }
+
+  const check = el("input", { type: "checkbox", value: row.url, checked: selectedUrls.has(row.url), onchange: (e) => {
+    if (e.target.checked) selectedUrls.add(row.url);
+    else selectedUrls.delete(row.url);
+    const checkAll = document.getElementById("check-all");
+    if (checkAll) {
+      checkAll.checked = currentVisibleRows.length > 0 && currentVisibleRows.every((r) => selectedUrls.has(r.url));
+    }
+  } });
+
+  const topRow = el("div", { class: "card-top" },
+    el("div", { style: "display: flex; gap: 8px; align-items: flex-start;" }, check, el("div", {},
+      el("h3", { text: row.title || "(sem título)" }),
+      el("p", { class: "company", text: row.company || "Empresa não informada" }))),
+    badge);
+
   return el("article", { class: "card" },
-    el("h3", { text: row.title || "(sem título)" }),
-    el("p", { class: "company", text: row.company || "Empresa não informada" }),
+    topRow,
+    summary,
     chips,
-    warn ? el("div", { class: "warn", text: "⚠ " + warn }) : null,
+    warn ? el("div", { class: "warn", text: "[Aviso] " + warn }) : null,
     el("div", { class: "actions" },
       url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
       full ? el("a", { href: full, target: "_blank", rel: "noopener noreferrer", text: "Vaga completa na empresa" }) : null,
@@ -317,19 +414,133 @@ function card(row, decide) {
 }
 
 function renderResults() {
-  const [text, model, portal, nowarn] = [filters[0].value.toLowerCase(), filters[1].value, filters[2].value, filters[3].checked];
+  const [text, model, portal, days, scoreFilter, nowarn] = [
+    filters[0].value.toLowerCase(),
+    filters[1].value,
+    filters[2].value,
+    filters[3].value,
+    filters[4].value,
+    filters[5].checked
+  ];
+  const maxDays = days ? Number(days) : null;
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
   const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-  const rows = results.filter((r) =>
+  let rows = results.filter((r) =>
     (!text || fold(`${r.title} ${r.company}`).includes(fold(text))) &&
     (!model || (model === "none" ? !r.workplace_type : r.workplace_type === model)) &&
     (!portal || r.portal === portal) &&
-    (!nowarn || !warningOf(r)));
+    (!nowarn || !warningOf(r)) &&
+    (!maxDays || (r.date && Math.floor((today - new Date(r.date + "T00:00:00")) / 86400000) <= maxDays)) &&
+    (!scoreFilter || (
+      scoreFilter === "triadas" ? (r.screening && typeof r.screening.score === "number") :
+      scoreFilter === "high" ? (r.screening && r.screening.score >= 80) :
+      scoreFilter === "med" ? (r.screening && r.screening.score >= 60) :
+      scoreFilter === "low" ? (r.screening && r.screening.score < 60) : true
+    )));
+
+  const sortBy = document.getElementById("f-sort") ? document.getElementById("f-sort").value : "date";
+  if (sortBy === "score-desc" || sortBy === "score") {
+    rows.sort((a, b) => {
+      const sa = (a.screening && typeof a.screening.score === "number") ? a.screening.score : -1;
+      const sb = (b.screening && typeof b.screening.score === "number") ? b.screening.score : -1;
+      return sb - sa;
+    });
+  } else if (sortBy === "score-asc") {
+    rows.sort((a, b) => {
+      const hasA = a.screening && typeof a.screening.score === "number";
+      const hasB = b.screening && typeof b.screening.score === "number";
+      if (!hasA && !hasB) return 0;
+      if (!hasA) return 1;
+      if (!hasB) return -1;
+      return a.screening.score - b.screening.score;
+    });
+  }
+
+  currentVisibleRows = rows;
+  const checkAll = document.getElementById("check-all");
+  if (checkAll) {
+    checkAll.checked = currentVisibleRows.length > 0 && currentVisibleRows.every((r) => selectedUrls.has(r.url));
+  }
+
   const box = document.getElementById("vagas");
   document.getElementById("vagas-info").textContent = results.length
     ? `${rows.length} de ${results.length} vagas novas. "Me interessa" e "Descartar" tiram a vaga desta lista e das próximas buscas.` : "";
   box.replaceChildren(...(rows.length ? rows.map((r) => card(r, decide))
     : [el("p", { class: "empty", text: results.length ? "Nenhuma vaga com esses filtros." : "Nenhuma vaga nova ainda. Rode uma busca na aba Buscar." })]));
 }
+
+
+let batchPolling = null;
+
+async function checkBatchStatus() {
+  try {
+    const st = (await api("/api/status")).batch;
+    const bSpan = document.getElementById("batch-status");
+    if (!bSpan) return;
+    if (st && st.running) {
+      bSpan.replaceChildren(el("span", { class: "spinner", "aria-hidden": "true" }), ` Triando ${st.current} de ${st.total}: ${st.current_title.slice(0, 30)}…`);
+      if (st.results && Object.keys(st.results).length > 0) {
+        let hasNew = false;
+        for (const [u, screenData] of Object.entries(st.results)) {
+          const row = results.find((r) => r.url === u);
+          if (row && (!row.screening || row.screening.score !== screenData.score)) {
+            row.screening = screenData;
+            hasNew = true;
+          }
+        }
+        if (hasNew) renderResults();
+      }
+    } else {
+      if (batchPolling) { clearInterval(batchPolling); batchPolling = null; }
+      if (st && st.total > 0 && !st.running) {
+        bSpan.textContent = `Triagem de ${st.total} vagas concluída!`;
+        loadResults();
+      }
+    }
+  } catch {}
+}
+
+document.getElementById("f-sort") && document.getElementById("f-sort").addEventListener("change", renderResults);
+
+document.getElementById("check-all") && document.getElementById("check-all").addEventListener("change", (e) => {
+  const isChecked = e.target.checked;
+  currentVisibleRows.forEach((r) => {
+    if (isChecked) selectedUrls.add(r.url);
+    else selectedUrls.delete(r.url);
+  });
+  const checks = document.querySelectorAll("#vagas input[type=checkbox]");
+  checks.forEach((c) => {
+    c.checked = isChecked;
+  });
+});
+
+document.getElementById("btn-batch") && document.getElementById("btn-batch").addEventListener("click", async () => {
+  const scope = document.getElementById("batch-scope").value;
+  let targetUrls = [];
+  const visibleUrls = currentVisibleRows.map((r) => r.url);
+  if (scope === "selected") {
+    targetUrls = visibleUrls.filter((u) => selectedUrls.has(u));
+    if (!targetUrls.length) {
+      alert("Nenhuma vaga da lista filtrada foi selecionada com checkbox.");
+      return;
+    }
+  } else if (scope === "all-visible") {
+    targetUrls = visibleUrls;
+  } else {
+    const count = parseInt(scope, 10) || 5;
+    targetUrls = visibleUrls.slice(0, count);
+  }
+  if (!targetUrls.length) {
+    alert("Nenhuma vaga disponível na lista filtrada para triar.");
+    return;
+  }
+  try {
+    await api("/api/batch-screen", { urls: targetUrls });
+    document.getElementById("batch-status").replaceChildren(el("span", { class: "spinner" }), ` Iniciando triagem de ${targetUrls.length} vagas…`);
+    if (!batchPolling) batchPolling = setInterval(checkBatchStatus, 1500); checkBatchStatus();
+  } catch (err) { alert("Não consegui iniciar triagem: " + err.message); }
+});
 
 async function decide(row, decision) {
   try {
@@ -340,7 +551,7 @@ async function decide(row, decision) {
   } catch (e) { alert("Não consegui gravar: " + e.message); }
 }
 
-// ---- markdown das respostas do Codex, montado nó a nó (nunca como HTML) ----
+// ---- markdown das respostas do Claude, montado nó a nó (nunca como HTML) ----
 function inline(text) {
   const frag = document.createDocumentFragment();
   for (const part of String(text).split(/(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)\s]+\))/)) {
@@ -386,27 +597,36 @@ function markdown(text) {
 }
 
 // ---- me interessam ----
-const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", perfil: "montando o seu perfil" };
-let codex = { available: true, running: false };
-let codexPolling = null;
+const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", entrevista: "preparando o dossiê de entrevista", perfil: "montando o seu perfil" };
+let claude = { available: true, running: false };
+let claudePolling = null;
 
-async function runCodex(s, step) {
+async function runClaude(s, step) {
   try {
-    await api("/api/codex", { url: s.url, step });
-    await refreshCodex();
-    if (!codexPolling) codexPolling = setInterval(refreshCodex, 5000);
-  } catch (e) { alert("Não consegui chamar o Codex: " + e.message); }
+    await api("/api/claude", { url: s.url, step });
+    await refreshClaude();
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+  } catch (e) { alert("Não consegui chamar a IA: " + e.message); }
 }
-async function refreshCodex() {
-  const was = codex.running;
-  try { codex = (await api("/api/status")).codex; } catch { return; }
-  const g = document.getElementById("codex-global");
+async function refreshClaude() {
+  const was = claude.running;
+  try {
+    const s = await api("/api/status");
+    claude = s.agent || s.claude;
+  } catch { return; }
+  const g = document.getElementById("claude-global");
   g.replaceChildren();
-  if (!codex.available) g.append(el("span", { class: "error", text: "Não achei o Codex neste computador: os botões do Codex ficam desligados." }));
-  else if (codex.running) g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está ${PASSOS[codex.step]} desde ${codex.started.slice(11, 16)}…`);
-  else if (codex.error) g.append(el("span", { class: "error", text: "O Codex não terminou: " + codex.error }));
-  if (!codex.running && codexPolling) { clearInterval(codexPolling); codexPolling = null; }
-  if (was !== codex.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
+  const pName = claude.name || "IA";
+  if (!claude.available) {
+    g.append(el("span", { class: "error", text: "Nenhuma IA configurada. Abra a aba Configurações e escolha o provedor (Gemini, ChatGPT ou Claude)." }));
+  } else if (claude.running) {
+    const modelInfo = claude.model && claude.model !== "cli" ? ` (${claude.model})` : "";
+    g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName}${modelInfo} está ${PASSOS[claude.step]} desde ${claude.started.slice(11, 16)}…`);
+  } else if (claude.error) {
+    g.append(el("span", { class: "error", text: `O ${pName} não terminou: ` + claude.error }));
+  }
+  if (!claude.running && claudePolling) { clearInterval(claudePolling); claudePolling = null; }
+  if (was !== claude.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
   renderPerfilStatus();
 }
 
@@ -416,28 +636,31 @@ async function loadSaved() {
   box.replaceChildren(...(saved.length ? saved.map((s) => {
     const url = safeUrl(s.url);
     const cmd = url ? `/apply ${url}` : null;
-    const ans = s.codex || {};
-    const busy = codex.running && codex.url === s.url;
-    const off = !url || !codex.available || codex.running;
+    const ans = s.claude || {};
+    const busy = claude.running && claude.url === s.url;
+    const off = !url || !claude.available || claude.running;
     const answer = (title, text, open) => text ? el("details", { class: "answer", ...(open ? { open: "" } : {}) },
       el("summary", { text: title }), markdown(text)) : null;
-    return el("article", { class: "card" },
-      el("h3", { text: s.title || "(sem título)" }),
-      el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
-      el("div", { class: "actions" },
-        url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-        el("button", { class: "btn small", onclick: () => runCodex(s, "avaliar"), text: ans.avaliar ? "Avaliar de novo" : "Avaliar com o Codex",
-          ...(off ? { disabled: "" } : {}) }),
-        el("button", { class: "btn small", onclick: () => runCodex(s, "redigir"),
-          text: ans.redigir ? "Refazer currículo e carta" : "Fazer currículo e carta",
-          title: ans.avaliar ? "" : "Avalie a vaga primeiro", ...(off || !ans.avaliar ? { disabled: "" } : {}) }),
-        cmd ? el("button", { class: "btn small secondary", text: "Copiar pedido", onclick: async (e) => {
-          try { await navigator.clipboard.writeText(cmd); e.target.textContent = "Copiado: cole no Codex"; }
-          catch { prompt("Copie este pedido:", cmd); }
-        } }) : null),
-      busy ? el("p", { class: "codex-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está ${PASSOS[codex.step]}…`) : null,
-      answer("Avaliação do Codex", ans.avaliar, !ans.redigir),
-      answer("Currículo e carta: relatório", ans.redigir, true));
+      const pName = claude.name || "IA";
+      const evalText = ans.avaliar ? "Avaliar de novo" : `Avaliar com o ${pName}`;
+      return el("article", { class: "card" },
+        el("h3", { text: s.title || "(sem título)" }),
+        el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
+        el("div", { class: "actions" },
+          url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
+          el("button", { class: "btn small", onclick: () => runClaude(s, "avaliar"), text: evalText,
+            ...(off ? { disabled: "" } : {}) }),
+          el("button", { class: "btn small", onclick: () => runClaude(s, "redigir"),
+            text: ans.redigir ? "Refazer currículo e carta" : "Fazer currículo e carta",
+            title: ans.avaliar ? "" : "Avalie a vaga primeiro", ...(off || !ans.avaliar ? { disabled: "" } : {}) }),
+          el("button", { class: "btn small secondary", onclick: () => runClaude(s, "entrevista"),
+            text: ans.entrevista ? "Atualizar Entrevista" : `Preparar entrevista com o ${pName}`,
+            title: "Gera pitch, perguntas técnicas prováveis, casos STAR e PDF via MiKTeX", ...(off ? { disabled: "" } : {}) }),
+          s.pdf_entrevista ? el("a", { class: "btn small", href: `/api/file?path=${s.pdf_entrevista}`, target: "_blank", text: "Baixar Dossiê (PDF)" }) : null),
+        busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está ${PASSOS[claude.step] || "processando"}…`) : null,
+        answer(`Avaliação do ${pName}`, ans.avaliar, !ans.redigir),
+        answer("Currículo e carta: relatório", ans.redigir, true),
+        answer("Dossiê de Preparação para Entrevista", ans.entrevista, true));
   }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
 }
 
@@ -455,12 +678,11 @@ async function loadProfile(refresh) {
   if (!document.getElementById("perfil-form").childElementCount) renderForm();
   renderPerfilStatus();
   const out = document.getElementById("perfil-out");
-  out.replaceChildren(...[
+  out.replaceChildren(
     perfil.report ? el("div", { class: "panel" }, el("details", { class: "answer", open: "" },
-      el("summary", { text: "O que o Codex fez na última montagem" }), markdown(perfil.report))) : null,
+      el("summary", { text: "O que a IA fez na última montagem" }), markdown(perfil.report))) : null,
     perfil.ready && perfil.profile ? el("div", { class: "panel" }, el("details", { class: "answer" },
-      el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null,
-  ].filter(Boolean));
+      el("summary", { text: "Seu perfil como está agora" }), markdown(perfil.profile.replace(/^---[\s\S]*?---\s*/, "")))) : null);
 }
 
 function renderPrivacy() {
@@ -476,7 +698,7 @@ function renderPrivacy() {
     desconhecido: ["warn", `Não consegui conferir se o seu repositório${repo} é privado. Se ele for público, o perfil (nome, contatos, histórico) ` +
       "fica visível para qualquer pessoa depois de um push."],
   }[p.status] || ["warn", "Não consegui conferir para onde este projeto publica."];
-  box.replaceChildren(MSG[0] === "ok" ? el("p", { class: "muted", text: "🔒 " + MSG[1] }) : el("div", { class: "warn", text: "⚠ " + MSG[1] }));
+  box.replaceChildren(MSG[0] === "ok" ? el("p", { class: "muted", text: MSG[1] }) : el("div", { class: "warn", text: "[Aviso] " + MSG[1] }));
   document.getElementById("confirm-box").hidden = !["publico", "desconhecido"].includes(p.status);
 }
 
@@ -544,13 +766,14 @@ function renderPerfilStatus() {
   if (!st || !perfil) return;
   const hasDocs = Object.values(perfil.files || {}).some((l) => l.length);
   const needConfirm = !document.getElementById("confirm-box").hidden && !document.getElementById("confirm-public").checked;
-  btn.disabled = !codex.available || codex.running || !hasDocs || needConfirm;
-  btn.textContent = perfil.ready ? "Atualizar meu perfil com o Codex" : "Montar meu perfil com o Codex";
+  const pName = claude.name || "IA";
+  btn.disabled = !claude.available || claude.running || !hasDocs || needConfirm;
+  btn.textContent = perfil.ready ? `Atualizar meu perfil com o ${pName}` : `Montar meu perfil com o ${pName}`;
   st.replaceChildren();
-  if (codex.running && codex.step === "perfil") st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O Codex está montando o seu perfil desde ${codex.started.slice(11, 16)}…`);
-  else if (codex.running) st.textContent = `O Codex está ocupado (${PASSOS[codex.step]}). Espere terminar.`;
-  else if (!codex.available) st.append(el("span", { class: "error", text: "Não achei o Codex neste computador." }));
-  else if (codex.error && codex.step === "perfil") st.append(el("span", { class: "error", text: "O Codex não terminou: " + codex.error }));
+  if (claude.running && claude.step === "perfil") st.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está montando o seu perfil desde ${claude.started.slice(11, 16)}…`);
+  else if (claude.running) st.textContent = `O ${pName} está ocupado (${PASSOS[claude.step]}). Espere terminar.`;
+  else if (!claude.available) st.append(el("span", { class: "error", text: "Nenhuma IA configurada. Abra a aba Configurações para ativar a montagem de perfil." }));
+  else if (claude.error && claude.step === "perfil") st.append(el("span", { class: "error", text: `O ${pName} não terminou: ` + claude.error }));
   else if (!hasDocs) st.textContent = "Envie o currículo para liberar este botão.";
   else if (needConfirm) st.textContent = "Marque a confirmação de privacidade acima para liberar este botão.";
 }
@@ -583,11 +806,93 @@ document.getElementById("confirm-public").addEventListener("change", renderPerfi
 document.getElementById("btn-perfil").addEventListener("click", async () => {
   if (!(await saveForm())) return;
   try {
-    await api("/api/codex", { step: "perfil", confirm: document.getElementById("confirm-public").checked });
-    await refreshCodex();
-    if (!codexPolling) codexPolling = setInterval(refreshCodex, 5000);
-  } catch (e) { alert("Não consegui chamar o Codex: " + e.message); }
+    await api("/api/claude", { step: "perfil", confirm: document.getElementById("confirm-public").checked });
+    await refreshClaude();
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+  } catch (e) { alert("Não consegui chamar a IA: " + e.message); }
 });
+
+// ---- configurações ----
+let settings = null;
+
+async function loadSettings() {
+  try { settings = await api("/api/settings"); }
+  catch (e) { document.getElementById("cfg-status").textContent = e.message; return; }
+  renderSettings();
+}
+
+function renderSettings() {
+  document.getElementById("cfg-provider").value = settings.provider;
+  document.getElementById("cfg-consent").checked = settings.consent;
+  const act = settings.active || {};
+  document.getElementById("cfg-active").textContent = act.mode === "none" ? "Nenhuma IA configurada ainda." : `Em uso agora: ${act.label}`;
+  document.getElementById("cfg-providers").replaceChildren(...settings.providers.map(providerBlock));
+}
+
+function providerBlock(p) {
+  const id = "cfg-" + p.id;
+  const keyState = p.has_key ? `Chave salva (${p.key_hint})` : "Sem chave";
+  const cliState = p.cli_found ? `${p.cli_name} encontrado: dá para usar sem chave` : `${p.cli_name} não encontrado`;
+  const row = (...kids) => el("div", { class: "row" }, ...kids);
+  return el("fieldset", { class: "prov" },
+    el("legend", { text: p.label }),
+    el("p", { class: "muted", text: `${keyState} · ${cliState}` }),
+    row(el("label", { class: "lbl", for: id + "-model", text: "Modelo" }),
+      el("input", { type: "text", id: id + "-model", value: p.model, list: id + "-models", autocomplete: "off", spellcheck: "false" }),
+      el("datalist", { id: id + "-models" }, ...p.suggested_models.map((m) => el("option", { value: m })))),
+    row(el("label", { class: "lbl", for: id + "-key", text: "Chave de API" }),
+      el("input", { type: "password", id: id + "-key", autocomplete: "new-password",
+        placeholder: p.has_key ? "vazio mantém a chave salva" : "cole a chave aqui (opcional se usar a CLI)" }),
+      p.key_url ? el("a", { href: p.key_url, target: "_blank", rel: "noopener noreferrer", text: "Obter chave" }) : null),
+    p.has_key ? row(el("label", {}, el("input", { type: "checkbox", id: id + "-clear" }), " Remover a chave salva")) : null,
+    p.supports_base_url ? row(el("label", { class: "lbl", for: id + "-base", text: "Endereço da API" }),
+      el("input", { type: "text", id: id + "-base", value: p.base_url, autocomplete: "off", spellcheck: "false",
+        placeholder: "vazio = api.openai.com; ou um servidor compatível, como http://localhost:11434/v1" })) : null,
+    row(el("button", { class: "btn small secondary", type: "button", onclick: () => testProvider(p.id), text: "Salvar e testar" }),
+      el("span", { id: id + "-test", "aria-live": "polite" })));
+}
+
+function collectSettings() {
+  const providers = {};
+  for (const p of settings.providers) {
+    const id = "cfg-" + p.id;
+    const cfg = {
+      model: document.getElementById(id + "-model").value.trim(),
+      api_key: document.getElementById(id + "-key").value.trim(),
+      clear_key: !!(document.getElementById(id + "-clear") || {}).checked,
+    };
+    const base = document.getElementById(id + "-base");
+    if (base) cfg.base_url = base.value.trim();
+    providers[p.id] = cfg;
+  }
+  return { provider: document.getElementById("cfg-provider").value, consent: document.getElementById("cfg-consent").checked, providers };
+}
+
+async function saveSettings() {
+  const st = document.getElementById("cfg-status");
+  try {
+    settings = await api("/api/settings", collectSettings());
+    renderSettings();
+    st.textContent = "Configurações salvas.";
+    await refreshStatus();
+    await refreshClaude();
+    return true;
+  } catch (e) { st.textContent = "Não consegui salvar: " + e.message; return false; }
+}
+
+async function testProvider(id) {
+  if (!(await saveSettings())) return;
+  const out = document.getElementById("cfg-" + id + "-test");
+  out.className = "";
+  out.replaceChildren(el("span", { class: "spinner", "aria-hidden": "true" }), " Testando…");
+  try {
+    const r = await api("/api/settings/test", { provider: id });
+    out.className = r.ok ? "ok" : "error";
+    out.textContent = (r.ok ? "Funcionou. " : "Falhou: ") + r.message;
+  } catch (e) { out.className = "error"; out.textContent = "Falhou: " + e.message; }
+}
+
+document.getElementById("btn-cfg-save").addEventListener("click", saveSettings);
 
 // ---- candidaturas ----
 const STATUS = { drafted: "Rascunho", applied: "Enviada", interview: "Entrevista", offer: "Proposta", hired: "Contratação",
@@ -610,8 +915,8 @@ async function loadApplications() {
 
 refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);
-  codex = s.codex;
-  if (codex.running) codexPolling = setInterval(refreshCodex, 5000);
+  claude = s.claude;
+  if (claude.running) claudePolling = setInterval(refreshClaude, 5000);
   return api("/api/profile");
 }).then((p) => { if (p && !p.ready) show("perfil"); });
 </script>

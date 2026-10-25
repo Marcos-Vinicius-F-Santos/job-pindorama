@@ -34,6 +34,28 @@ linkedin_Profile.pdf
 # fetching service; the .env holding it must never be committed.
 .env
 .env.*
+!.env.example
+# The panel's "Configurações" tab writes the AI provider and API keys to .env.
+# Keys and certificates of any kind never belong in the repo.
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+client_secret*.json
+service-account*.json
+service_account*.json
+
+# Your own extra patterns for tools/check_privacy.py (names, employers, etc.).
+.privacy-patterns
+
+# Local state of other agent CLIs/IDEs (chat history, auth, caches).
+.gemini/
+.codex/
+.cursor/
+.aider*
+.pytest_cache/
+.ruff_cache/
 
 # Personal photos and signatures
 *.jpg
@@ -71,6 +93,23 @@ cover_letters/Cover_*.*
 !cover_letters/cover_example.tex
 
 # documents/ subfolder contents are personal — only README and folder structure are tracked
+# Loose files dropped straight into documents/ (e.g. a CNPJ proof, an ID scan).
+# No negation on purpose: documents/README.md stays tracked because only these
+# extensions are listed, and tools/security_guards.py keeps negations allowlisted.
+documents/*.pdf
+documents/*.png
+documents/*.jpg
+documents/*.jpeg
+documents/*.doc
+documents/*.docx
+documents/*.odt
+documents/*.rtf
+documents/*.txt
+documents/*.json
+documents/*.csv
+documents/*.xlsx
+documents/*.zip
+documents/comprovante*
 documents/cv/**
 documents/linkedin/**
 documents/diplomas/**
@@ -122,3 +161,6 @@ company_research/*.json
 
 # Brainstorm mockups (superpowers visual companion) - never ship
 .superpowers/
+
+# Local specification and planning notes
+spec/

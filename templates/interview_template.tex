@@ -1,0 +1,45 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{top=2cm, bottom=2cm, left=2.2cm, right=2.2cm}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{microtype}
+
+\definecolor{primary}{RGB}{24, 76, 120}
+\definecolor{secondary}{RGB}{70, 130, 180}
+\definecolor{darktext}{RGB}{33, 37, 41}
+\definecolor{lightbg}{RGB}{245, 247, 250}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=secondary
+}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{primary}}{\thesection}{1em}{}[{\titlerule[0.8pt]}]
+
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{secondary}}{\thesubsection}{1em}{}
+
+\setlist{itemsep=3pt, parsep=2pt, topsep=4pt}
+
+\begin{document}
+
+\begin{center}
+    {\Huge \textbf{\color{primary} Dossiê de Preparação para Entrevista}}\\[6pt]
+    {\Large \textbf{[CARGO]} na \textbf{[EMPRESA]}}\\[4pt]
+    {\small Candidato: \textbf{[CANDIDATO]} \quad|\quad Data: \textbf{[DATA]}}\\[2pt]
+    {\footnotesize \url{[URL]}}
+\end{center}
+
+\vspace{1em}
+
+[CONTEUDO]
+
+\end{document}
+
