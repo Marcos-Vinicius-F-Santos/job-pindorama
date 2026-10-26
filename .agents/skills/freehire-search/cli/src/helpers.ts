@@ -20,7 +20,7 @@ export function writeError(error: string, code: string): void {
 // plus a contact URL), so the API's operators can reach the maintainer before a
 // limit or a field changes. The old value linked to freehire.me itself, which
 // identified the API, not the caller.
-const UA = "MadsLorentzen/ai-job-search/1.0 (+https://github.com/MadsLorentzen/ai-job-search; freehire-search)"
+const UA = "MadsLorentzen/ai-job-search/1.0 (freehire-search)"
 
 /** The shared API response envelope: {data, meta, error}. */
 export interface Envelope<T> {

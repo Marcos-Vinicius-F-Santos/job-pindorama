@@ -37,6 +37,7 @@ Uso:
 """
 
 import argparse
+import concurrent.futures
 import csv
 import hashlib
 import json
@@ -64,7 +65,7 @@ ROOT = scrape_run.ROOT
 PAGE = Path(__file__).resolve().parent / "painel" / "index.html"
 MAX_BODY = 1_000_000
 MAX_UPLOAD_BODY = 15_000_000  # um PDF de 10 MB em base64, mais o JSON em volta
-MAX_BATCH = 50  # vagas por triagem em lote
+MAX_BATCH = 500  # vagas por triagem em lote
 # O que /api/file pode servir: só documentos gerados, nunca .tex, .aux ou .log.
 FILE_TYPES = {".pdf": "application/pdf", ".md": "text/plain; charset=utf-8"}
 
@@ -79,6 +80,8 @@ CLAUDE_SETTINGS_PERFIL = Path(__file__).resolve().parent / "painel" / "claude-se
 # passo -> (sufixo do arquivo da resposta, tempo máximo em segundos, permissões)
 CLAUDE_STEPS = {
     "avaliar": ("avaliacao", 1200, CLAUDE_SETTINGS),
+    "curriculo": ("curriculo", 2400, CLAUDE_SETTINGS),
+    "carta": ("carta", 1800, CLAUDE_SETTINGS),
     "redigir": ("rascunho", 3600, CLAUDE_SETTINGS),
     "entrevista": ("entrevista", 1800, CLAUDE_SETTINGS),
     "perfil": ("perfil", 3600, CLAUDE_SETTINGS_PERFIL),
@@ -100,7 +103,7 @@ modo e em todo agente que você acionar:
 
 HEADLESS = HEADLESS_BASE + """
 Se o `tools/posting_guard.py` não rodar, não dê veredito de integridade por conta própria: abra o \
-relatório com "⚠ O filtro de integridade não rodou" e o motivo.
+relatório com " O filtro de integridade não rodou" e o motivo.
 
 Referência salarial: só com uma página que você abriu nesta execução (WebSearch e WebFetch estão \
 liberados), citando o endereço dela. Sem isso, escreva "Referência salarial: não consultada" — \
@@ -209,6 +212,10 @@ def mark(results: dict | None, urls: list, decision: str, seen_path: Path = scra
         if row is None:
             missing.append(url)
             continue
+        try:
+            painel_ia.save_job_cache(url, row)
+        except Exception:
+            pass
         rows.append({
             "title": row.get("title"), "company": row.get("company"), "url": row.get("url"),
             "date": row.get("date"), "deadline": row.get("deadline"), "portal": row.get("portal"),
@@ -217,6 +224,102 @@ def mark(results: dict | None, urls: list, decision: str, seen_path: Path = scra
     out = scrape_run.record(rows, seen_path)
     out["missing"] = missing
     return out
+
+
+def record_applied(url: str, company: str, role: str, portal: str = "",
+                   tracker_path: Path = scrape_run.TRACKER, seen_path: Path = scrape_run.SEEN) -> dict:
+    """Registra a candidatura no tracker.csv e atualiza o status para 'applied' no seen_jobs.json."""
+    today_iso = date.today().isoformat()
+    # 1. Atualiza seen_jobs.json para que a vaga saia imediatamente de "Me interessam"
+    try:
+        state = {"version": 1, "updated": today_iso, "seen": {}}
+        if seen_path.exists():
+            state = json.loads(seen_path.read_text(encoding="utf-8"))
+        seen = state.setdefault("seen", {})
+        target = None
+        key = scrape_run.make_key(company, role, url)
+        if key in seen:
+            target = seen[key]
+        else:
+            for k, v in seen.items():
+                if isinstance(v, dict) and v.get("url") == url:
+                    target = v
+                    break
+        if target is not None:
+            target["status"] = "applied"
+            target["applied_date"] = today_iso
+            target["source"] = target.get("source") or "painel"
+            if company and not target.get("company"):
+                target["company"] = company
+            if role and not target.get("title"):
+                target["title"] = role
+        else:
+            seen[key] = {
+                "title": role, "company": company, "url": url, "portal": portal or "painel",
+                "source": "painel", "status": "applied", "fit": "medium", "applied_date": today_iso,
+                "first_seen": today_iso,
+            }
+        seen_path.parent.mkdir(parents=True, exist_ok=True)
+        seen_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception:
+        pass
+
+    # 2. Registra ou atualiza no tracker.csv
+    header = list(painel_ia.TRACKER_FIELDS)
+    existing = []
+    if tracker_path.exists():
+        try:
+            with tracker_path.open(encoding="utf-8", newline="") as fh:
+                reader = csv.DictReader(fh)
+                if reader.fieldnames:
+                    header = list(reader.fieldnames)
+                existing = [dict(r) for r in reader]
+        except Exception:
+            pass
+
+    updated_existing = False
+    for r in existing:
+        if (r.get("source") or "") == url:
+            r["status"] = "applied"
+            r["date"] = r.get("date") or today_iso
+            if company and not r.get("company"):
+                r["company"] = company
+            if role and not r.get("role"):
+                r["role"] = role
+            if portal and not r.get("channel"):
+                r["channel"] = portal
+            updated_existing = True
+
+    if updated_existing:
+        try:
+            with tracker_path.open("w", encoding="utf-8", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=header, extrasaction="ignore", restval="")
+                writer.writeheader()
+                writer.writerows(existing)
+        except Exception:
+            pass
+    else:
+        row = {
+            "date": today_iso,
+            "company": company,
+            "role": role,
+            "channel": portal or "portal",
+            "status": "applied",
+            "notes": "Registrado pelo painel",
+            "source": url,
+        }
+        new_file = not tracker_path.exists() or tracker_path.stat().st_size == 0
+        try:
+            tracker_path.parent.mkdir(parents=True, exist_ok=True)
+            with tracker_path.open("a", encoding="utf-8", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=header, extrasaction="ignore", restval="")
+                if new_file:
+                    writer.writeheader()
+                writer.writerow(row)
+        except Exception:
+            pass
+
+    return {"applied": True, "company": company, "role": role, "url": url}
 
 
 def saved(seen_path: Path = scrape_run.SEEN) -> list:
@@ -228,9 +331,223 @@ def saved(seen_path: Path = scrape_run.SEEN) -> list:
     rows = [
         {k: e.get(k) for k in ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status")}
         for e in state.get("seen", {}).values()
-        if e.get("source") == "painel" and e.get("fit") != "low"
+        if isinstance(e, dict) and e.get("source") == "painel"
+        and e.get("fit") != "low" and e.get("status") not in ("applied", "skipped")
     ]
     return sorted(rows, key=lambda r: r.get("first_seen") or "", reverse=True)
+
+
+def discarded(seen_path: Path = scrape_run.SEEN) -> list:
+    """As vagas descartadas pelo painel ou pela triagem automática, mais recentes primeiro."""
+    try:
+        state = json.loads(seen_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    rows = [
+        {k: e.get(k) for k in ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status", "fit")}
+        for e in state.get("seen", {}).values()
+        if isinstance(e, dict) and e.get("source") == "painel"
+        and (e.get("status") == "skipped" or e.get("fit") == "low")
+    ]
+    return sorted(rows, key=lambda r: r.get("first_seen") or "", reverse=True)
+
+
+def remove_application(url: str, to_status: str = "skipped",
+                       tracker_path: Path = scrape_run.TRACKER, seen_path: Path = scrape_run.SEEN) -> dict:
+    """Remove uma vaga da lista de candidaturas no tracker.csv e atualiza seen_jobs.json."""
+    if tracker_path.exists():
+        try:
+            with tracker_path.open(encoding="utf-8", newline="") as fh:
+                reader = csv.DictReader(fh)
+                fieldnames = list(reader.fieldnames or painel_ia.TRACKER_FIELDS)
+                rows = [r for r in reader if (r.get("source") or "").strip() != url.strip()]
+            with tracker_path.open("w", encoding="utf-8", newline="") as fh:
+                writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="")
+                writer.writeheader()
+                writer.writerows(rows)
+        except Exception:
+            pass
+
+    if seen_path.exists():
+        try:
+            state = json.loads(seen_path.read_text(encoding="utf-8"))
+            seen = state.get("seen", {})
+            for k, v in seen.items():
+                if isinstance(v, dict) and (v.get("url") or "").strip() == url.strip():
+                    v["status"] = to_status
+                    v["fit"] = "low"
+            seen_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    return {"removed": True, "url": url}
+
+
+def restore_job(url: str, seen_path: Path = scrape_run.SEEN) -> dict:
+    """Restaura uma vaga descartada para 'Me interessam'."""
+    if not seen_path.exists():
+        return {"restored": False, "url": url}
+    try:
+        state = json.loads(seen_path.read_text(encoding="utf-8"))
+        seen = state.get("seen", {})
+        found = False
+        for k, v in seen.items():
+            if isinstance(v, dict) and v.get("url") == url:
+                v["fit"] = "medium"
+                v["status"] = "new"
+                v["source"] = "painel"
+                found = True
+        if found:
+            seen_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"restored": found, "url": url}
+    except Exception:
+        return {"restored": False, "url": url}
+
+
+def discard_job(url: str, seen_path: Path = scrape_run.SEEN) -> dict:
+    """Move uma vaga de 'Me interessam' para 'Descartadas'."""
+    if not seen_path.exists():
+        return {"discarded": False, "url": url}
+    try:
+        state = json.loads(seen_path.read_text(encoding="utf-8"))
+        seen = state.get("seen", {})
+        found = False
+        for k, v in seen.items():
+            if isinstance(v, dict) and v.get("url") == url:
+                v["fit"] = "low"
+                v["status"] = "skipped"
+                v["source"] = "painel"
+                found = True
+        if found:
+            seen_path.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"discarded": found, "url": url}
+    except Exception:
+        return {"discarded": False, "url": url}
+
+
+def job_pdfs(company: str, role: str) -> dict:
+    """Localiza os PDFs de currículo, carta e dossiê de entrevista para uma empresa/cargo."""
+    company_slug = painel_ia.sanitize_filename(company or "")
+    role_slug = painel_ia.sanitize_filename(role or "")
+    out = {"pdf_cv": None, "pdf_carta": None, "pdf_entrevista": None}
+    if not company_slug or company_slug == "documento":
+        return out
+
+    def _find_best(folder: Path, prefix: str) -> str | None:
+        if not folder.exists():
+            return None
+        if role_slug and role_slug != "documento":
+            exact = sorted(folder.glob(f"{prefix}_{company_slug}_*{role_slug[:20]}*.pdf"),
+                           key=lambda p: p.stat().st_mtime, reverse=True)
+            if exact:
+                return str(exact[0].relative_to(ROOT)).replace("\\", "/")
+        matches = sorted(folder.glob(f"{prefix}_*{company_slug}*.pdf"),
+                         key=lambda p: p.stat().st_mtime, reverse=True)
+        if matches:
+            return str(matches[0].relative_to(ROOT)).replace("\\", "/")
+        return None
+
+    out["pdf_cv"] = _find_best(ROOT / "cv", "main")
+    out["pdf_carta"] = _find_best(ROOT / "cover_letters", "cover")
+    out["pdf_entrevista"] = _find_best(ROOT / "documents" / "interview", "prep")
+    return out
+
+
+def list_generated_documents() -> list:
+    """Lista todos os PDFs gerados (currículos, cartas e dossiês de entrevista)."""
+    known_jobs = []
+    try:
+        if scrape_run.SEEN.exists():
+            st = json.loads(scrape_run.SEEN.read_text(encoding="utf-8"))
+            for v in st.get("seen", {}).values():
+                if isinstance(v, dict) and v.get("company"):
+                    known_jobs.append({
+                        "company": v.get("company") or "",
+                        "role": v.get("title") or "",
+                        "url": v.get("url") or "",
+                        "company_slug": painel_ia.sanitize_filename(v.get("company") or ""),
+                        "role_slug": painel_ia.sanitize_filename(v.get("title") or ""),
+                    })
+    except Exception:
+        pass
+    for app in applications():
+        if app.get("company"):
+            known_jobs.append({
+                "company": app.get("company") or "",
+                "role": app.get("role") or "",
+                "url": app.get("source") or "",
+                "company_slug": painel_ia.sanitize_filename(app.get("company") or ""),
+                "role_slug": painel_ia.sanitize_filename(app.get("role") or ""),
+            })
+
+    items = []
+    sources = [
+        ("cv", "Currículo", ROOT / "cv", "main_*.pdf"),
+        ("carta", "Carta de Apresentação", ROOT / "cover_letters", "cover_*.pdf"),
+        ("entrevista", "Dossiê de Entrevista", ROOT / "documents" / "interview", "prep_*.pdf"),
+    ]
+    for kind, label, folder, pattern in sources:
+        if not folder.exists():
+            continue
+        for pdf in folder.glob(pattern):
+            if not pdf.is_file():
+                continue
+            stat = pdf.stat()
+            stem = pdf.stem
+            matched_company = ""
+            matched_role = ""
+            matched_url = ""
+            for kj in known_jobs:
+                c_slug = kj["company_slug"]
+                if c_slug and c_slug != "documento" and c_slug in stem:
+                    matched_company = kj["company"]
+                    matched_role = kj["role"]
+                    matched_url = kj["url"]
+                    if kj["role_slug"] and kj["role_slug"][:15] in stem:
+                        break
+            comp = job_pdfs(matched_company, matched_role)
+            letter_text = ""
+            if matched_url:
+                h = hashlib.sha256(matched_url.encode("utf-8")).hexdigest()[:16]
+                tf = CLAUDE_DIR / f"{h}_carta_texto.txt"
+                if tf.exists():
+                    try:
+                        letter_text = tf.read_text(encoding="utf-8").strip()
+                    except Exception:
+                        pass
+            if not letter_text and comp.get("pdf_carta"):
+                tex_file = (ROOT / comp["pdf_carta"]).with_suffix(".tex")
+                if tex_file.exists():
+                    try:
+                        letter_text = painel_ia._extract_plain_letter("", tex_file.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+            elif not letter_text and kind == "carta":
+                tex_file = pdf.with_suffix(".tex")
+                if tex_file.exists():
+                    try:
+                        letter_text = painel_ia._extract_plain_letter("", tex_file.read_text(encoding="utf-8"))
+                    except Exception:
+                        pass
+
+            items.append({
+                "kind": kind,
+                "label": label,
+                "name": pdf.name,
+                "path": str(pdf.relative_to(ROOT)).replace("\\", "/"),
+                "mtime": stat.st_mtime,
+                "date": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                "size_kb": max(1, round(stat.st_size / 1024)),
+                "company": matched_company,
+                "role": matched_role,
+                "url": matched_url,
+                "letter_text": letter_text,
+                "pdf_cv": comp.get("pdf_cv"),
+                "pdf_carta": comp.get("pdf_carta"),
+                "pdf_entrevista": comp.get("pdf_entrevista"),
+            })
+    items.sort(key=lambda x: x["mtime"], reverse=True)
+    return items
 
 
 def claude_file(url: str, step: str, base: Path = CLAUDE_DIR) -> Path:
@@ -247,7 +564,7 @@ def claude_answer(url: str, step: str, base: Path = CLAUDE_DIR) -> str | None:
 
 
 def claude_answers(url: str, base: Path = CLAUDE_DIR) -> dict:
-    return {step: claude_answer(url, step, base) for step in ("avaliar", "redigir", "entrevista")}
+    return {step: claude_answer(url, step, base) for step in ("avaliar", "curriculo", "carta", "redigir", "entrevista")}
 
 
 def claude_prompt(url: str, step: str, base: Path = CLAUDE_DIR, answers_path: Path = painel_perfil.ANSWERS,
@@ -260,7 +577,7 @@ def claude_prompt(url: str, step: str, base: Path = CLAUDE_DIR, answers_path: Pa
         return PROMPT_PERFIL.format(respostas=respostas or "(formulário em branco)")
     if step == "avaliar":
         return PROMPT_AVALIAR.format(url=url)
-    if step == "redigir":
+    if step in ("redigir", "curriculo", "carta"):
         avaliacao = claude_answers(url, base)["avaliar"]
         if not avaliacao:
             raise ValueError("avalie a vaga antes de pedir currículo e carta")
@@ -286,8 +603,9 @@ def applications(tracker_path: Path = scrape_run.TRACKER) -> list:
         return [dict(row) for row in csv.DictReader(fh)]
 
 
-def priorities(queries_path: Path = scrape_run.QUERIES) -> list:
+def priorities(queries_path: Path | None = None) -> list:
     """As prioridades com linhas de busca prontas (as do modelo, com [YOUR_...], não contam)."""
+    queries_path = scrape_run.active_queries_path(queries_path)
     try:
         calls = scrape_run.parse_queries(queries_path.read_text(encoding="utf-8"))
     except OSError:
@@ -317,14 +635,24 @@ class SearchJob:
         with self.lock:
             return {"running": self.running, "started": self.started, "error": self.error, "summary": self.summary}
 
-    def start(self, prios: list, jobage: int) -> bool:
+    def start(self, prios: list, jobage: int, all_prios: bool = False) -> bool:
         with self.lock:
             if self.running:
                 return False
             self.running, self.error, self.summary = True, None, None
             self.started = datetime.now().isoformat(timespec="seconds")
-        cmd = [sys.executable, str(ROOT / "tools" / "scrape_run.py"), "search",
-               "--priority", ",".join(str(p) for p in prios), "--jobage", str(jobage), "--out", str(self.out)]
+        cmd = [sys.executable, str(ROOT / "tools" / "scrape_run.py"), "search"]
+        if all_prios or not prios:
+            cmd.append("--all")
+        else:
+            cmd.extend(["--priority", ",".join(str(p) for p in prios)])
+        cmd.extend(["--jobage", str(jobage), "--out", str(self.out)])
+        local_queries = scrape_run.active_queries_path()
+        if local_queries != scrape_run.QUERIES:
+            cmd.extend(["--queries", str(local_queries)])
+        local_accept = scrape_run.local_target_seniority()
+        if local_accept:
+            cmd.extend(["--accept", ",".join(local_accept)])
         threading.Thread(target=self._run, args=(cmd,), daemon=True).start()
         return True
 
@@ -343,6 +671,12 @@ class SearchJob:
         finally:
             with self.lock:
                 self.running = False
+
+    def _safe_prep_interview(self, url: str, job_data: dict | None = None) -> None:
+        try:
+            painel_ia.preparar_entrevista(url, job_data=job_data)
+        except Exception:
+            pass
 
 
 class AgentJob:
@@ -402,6 +736,28 @@ class AgentJob:
         try:
             if step == "avaliar":
                 text = painel_ia.avaliar_vaga(url)
+                try:
+                    m_sc = re.search(r"Nota\s*(?:geral)?\s*[:=]?\s*\**\s*(\d+)", text, re.IGNORECASE)
+                    if m_sc and int(m_sc.group(1)) >= 65:
+                        painel_ia.preparar_entrevista(url)
+                except Exception:
+                    pass
+            elif step == "curriculo":
+                avaliacao = claude_answers(url, self.base)["avaliar"]
+                if not avaliacao:
+                    avaliacao = painel_ia.avaliar_vaga(url)
+                    eval_out = claude_file(url, "avaliar", self.base)
+                    eval_out.parent.mkdir(parents=True, exist_ok=True)
+                    eval_out.write_text(avaliacao + "\n", encoding="utf-8")
+                text = painel_ia.redigir_curriculo(url, avaliacao)
+            elif step == "carta":
+                avaliacao = claude_answers(url, self.base)["avaliar"]
+                if not avaliacao:
+                    avaliacao = painel_ia.avaliar_vaga(url)
+                    eval_out = claude_file(url, "avaliar", self.base)
+                    eval_out.parent.mkdir(parents=True, exist_ok=True)
+                    eval_out.write_text(avaliacao + "\n", encoding="utf-8")
+                text = painel_ia.redigir_carta(url, avaliacao)
             elif step == "redigir":
                 avaliacao = claude_answers(url, self.base)["avaliar"]
                 if not avaliacao:
@@ -454,30 +810,96 @@ ClaudeJob = AgentJob  # nome antigo, que os testes e o make_handler ainda usam
 
 
 def get_cached_score(url: str, batch_results: dict | None = None) -> dict | None:
-    if batch_results and url in batch_results:
+    if batch_results and url in batch_results and batch_results[url].get("score") is not None:
         return batch_results[url]
     h = hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
     eval_f = CLAUDE_DIR / f"{h}_avaliacao.md"
     if eval_f.exists():
         try:
             content = eval_f.read_text(encoding="utf-8")
-            m_score = re.search(r"Nota geral:\s*\**\s*(\d+)\s*/\s*100", content)
-            m_verdict = re.search(r"Veredito:\s*\**\s*([^\n*]+)", content)
+            m_score = re.search(r"Nota\s*(?:geral)?\s*[:=]?\s*\**\s*(\d+)\s*(?:/\s*100)?", content, re.IGNORECASE)
+            m_verdict = re.search(r"(?:Veredito|Encaixe)\s*[:=]?\s*\**\s*([^\n*]+)", content, re.IGNORECASE)
+            summary = ""
+            m_sum = re.search(r"##+\s*Resumo[^\n]*\n+(.+?)(?:\n\n|\n-\s*URL:|$)", content, re.IGNORECASE | re.DOTALL)
+            if m_sum:
+                summary = m_sum.group(1).strip()
 
             if m_score:
                 return {
                     "score": int(m_score.group(1)),
                     "verdict": m_verdict.group(1).strip() if m_verdict else "Concluído",
+                    "summary": summary,
                 }
         except Exception:
             pass
     return None
 
 
+def enriched_applications(tracker_path: Path = scrape_run.TRACKER, seen_path: Path = scrape_run.SEEN,
+                          claude_base: Path = CLAUDE_DIR, batch_results: dict | None = None) -> list:
+    """Enriquece as candidaturas do tracker.csv (e seen_jobs.json) com avaliação, PDFs e notas."""
+    raw_rows = applications(tracker_path)
+    seen_by_url = {}
+    try:
+        if seen_path.exists():
+            st = json.loads(seen_path.read_text(encoding="utf-8"))
+            for v in st.get("seen", {}).values():
+                if isinstance(v, dict) and v.get("url"):
+                    seen_by_url[v["url"]] = v
+                    if v.get("status") == "applied" and not any((r.get("source") or "") == v["url"] for r in raw_rows):
+                        raw_rows.append({
+                            "date": v.get("applied_date") or v.get("first_seen") or "",
+                            "company": v.get("company") or "",
+                            "role": v.get("title") or "",
+                            "channel": v.get("portal") or "painel",
+                            "status": "applied",
+                            "notes": "Registrado pelo painel",
+                            "source": v["url"],
+                        })
+    except Exception:
+        pass
+
+    out = []
+    seen_urls = set()
+    for r in reversed(raw_rows):
+        url = (r.get("source") or r.get("url") or "").strip()
+        if r.get("status") == "drafted" and seen_by_url.get(url, {}).get("status") != "applied":
+            continue
+        if url and url in seen_urls:
+            continue
+        if url:
+            seen_urls.add(url)
+        s_info = seen_by_url.get(url, {})
+        company = r.get("company") or s_info.get("company") or ""
+        role = r.get("role") or r.get("title") or s_info.get("title") or ""
+        portal = r.get("channel") or r.get("portal") or s_info.get("portal") or ""
+        pdfs = job_pdfs(company, role)
+        answers = claude_answers(url, claude_base) if url else {}
+        screening = get_cached_score(url, batch_results) if url else None
+        out.append({
+            **r,
+            "url": url,
+            "title": role,
+            "role": role,
+            "company": company,
+            "portal": portal,
+            "first_seen": r.get("date") or s_info.get("first_seen") or "",
+            "claude": answers,
+            "screening": screening,
+            **pdfs,
+        })
+    out.sort(key=lambda item: (
+        item.get("date") or "",
+        (item.get("screening") or {}).get("score", -1) if isinstance(item.get("screening"), dict) else -1,
+    ), reverse=True)
+    return out
+
+
 class BatchScreeningJob:
     """Fila assíncrona para triagem rápida de várias vagas, com o provedor de IA escolhido."""
 
-    def __init__(self):
+    def __init__(self, out: Path | None = None):
+        self.out = out or results_path()
         self.lock = threading.Lock()
         self.running = False
         self.total = 0
@@ -485,6 +907,8 @@ class BatchScreeningJob:
         self.current_title = ""
         self.results = {}
         self.errors = []
+        self._prep_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self._prep_scheduled = set()
 
     def status(self) -> dict:
         with self.lock:
@@ -512,18 +936,52 @@ class BatchScreeningJob:
 
     def _run(self, urls: list) -> None:
         try:
+            jobs_map = {}
+            try:
+                data = load_results(self.out)
+                for j in data.get("new", []) + data.get("jobs", []):
+                    if isinstance(j, dict) and j.get("url"):
+                        jobs_map[j["url"]] = j
+            except Exception:
+                jobs_map = {}
+
             for idx, url in enumerate(urls, start=1):
                 with self.lock:
                     self.current = idx
                     self.current_title = url
                 try:
-                    res = painel_ia.triar_vaga_rapida(url)
+                    res = painel_ia.triar_vaga_rapida(url, jobs_map.get(url))
+                    score = res.get("score")
+                    # Descarta automaticamente da lista se a nota for baixa (< 40)
+                    if isinstance(score, (int, float)) and score < 40:
+                        try:
+                            mark(load_results(self.out), [url], "descartar")
+                            res["discarded"] = True
+                        except Exception:
+                            pass
+                    # Para vagas com nota 65+, move automaticamente para "Me interessam" e prepara o dossiê em segundo plano!
+                    elif isinstance(score, (int, float)) and score >= 65:
+                        try:
+                            mark(load_results(self.out), [url], "interesse")
+                            res["interested"] = True
+                        except Exception:
+                            pass
+                        try:
+                            job_meta = jobs_map.get(url)
+                            if url not in self._prep_scheduled:
+                                self._prep_scheduled.add(url)
+                                self._prep_executor.submit(self._safe_prep_interview, url, job_meta)
+                            res["interview_ready"] = True
+                        except Exception:
+                            pass
                     with self.lock:
                         self.results[url] = res
                         self.current_title = res.get("title") or url
                 except Exception as exc:
+                    err_msg = str(exc)
                     with self.lock:
-                        self.errors.append({"url": url, "error": str(exc)})
+                        self.errors.append({"url": url, "error": err_msg})
+                        self.results[url] = {"url": url, "error": err_msg, "score": None}
         finally:
             with self.lock:
                 self.running = False
@@ -533,7 +991,7 @@ class BatchScreeningJob:
 # ---------------------------------------------------------------------------
 
 def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJob | None = None, batch: BatchScreeningJob | None = None):
-    batch = batch or BatchScreeningJob()
+    batch = batch or BatchScreeningJob(job.out)
     claude = claude or ClaudeJob()
     privacy_cache: dict = {}
 
@@ -590,8 +1048,11 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(200, target.read_bytes(), ctype)
             if path == "/api/status":
                 st = claude.status()
+                prios = priorities()
+                total_q = sum(p["queries"] for p in prios)
                 return self._send(200, {"search": job.status(), "claude": st, "agent": st, "batch": batch.status(),
-                                        "provider": ai_providers.get_ai_provider().get_info(), "priorities": priorities(),
+                                        "provider": ai_providers.get_ai_provider().get_info(), "priorities": prios,
+                                        "total_queries": total_q,
                                         "has_results": job.out.exists(), "today": date.today().isoformat()})
             if path == "/api/results":
                 data = unseen(load_results(job.out))
@@ -602,22 +1063,37 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(200, data)
             if path == "/api/saved":
                 rows = []
-                interview_dir = ROOT / "documents" / "interview"
                 for s in saved():
                     if s.get("url"):
                         answers = claude_answers(s["url"], claude.base)
-                        company_slug = painel_ia.sanitize_filename(s.get("company") or "")
-                        pdf_path = None
-                        if interview_dir.exists() and company_slug:
-                            matches = list(interview_dir.glob(f"prep_*{company_slug}*.pdf"))
-                            if matches:
-                                pdf_path = str(matches[0].relative_to(ROOT)).replace("\\", "/")
-                        rows.append({**s, "claude": answers, "pdf_entrevista": pdf_path})
+                        pdfs = job_pdfs(s.get("company") or "", s.get("title") or "")
+                        screening = get_cached_score(s["url"], batch.results)
+                        rows.append({**s, "claude": answers, **pdfs, "screening": screening})
                     else:
                         rows.append(s)
+                # Ordena inicialmente de forma decrescente: maior nota primeiro
+                rows.sort(key=lambda r: (
+                    (r.get("screening") or {}).get("score", -1) if isinstance(r.get("screening"), dict) else -1,
+                    r.get("first_seen") or ""
+                ), reverse=True)
                 return self._send(200, {"saved": rows})
             if path == "/api/applications":
-                return self._send(200, {"applications": applications()})
+                return self._send(200, {"applications": enriched_applications(claude_base=claude.base, batch_results=batch.results)})
+            if path == "/api/discarded":
+                rows = []
+                for d in discarded():
+                    if d.get("url"):
+                        screening = get_cached_score(d["url"], batch.results)
+                        rows.append({**d, "screening": screening})
+                    else:
+                        rows.append(d)
+                rows.sort(key=lambda r: (
+                    r.get("first_seen") or "",
+                    (r.get("screening") or {}).get("score", -1) if isinstance(r.get("screening"), dict) else -1,
+                ), reverse=True)
+                return self._send(200, {"discarded": rows})
+            if path == "/api/documents":
+                return self._send(200, {"documents": list_generated_documents()})
             if path == "/api/settings":
                 return self._send(200, ai_providers.public_settings())
             if path == "/api/profile":
@@ -656,15 +1132,50 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(400, {"error": "o pedido precisa ser um objeto JSON"})
             path = self.path.split("?", 1)[0]
             if path == "/api/search":
+                all_prios = bool(body.get("all", False))
                 prios = [int(p) for p in body.get("priorities", []) if str(p).isdigit()]
-                jobage = int(body.get("jobage") or 14)
-                if not prios:
+                jobage = int(body.get("jobage") or 2)
+                if not prios and not all_prios:
                     return self._send(400, {"error": "escolha ao menos uma prioridade"})
                 if not 1 <= jobage <= 365:
                     return self._send(400, {"error": "jobage fora de 1 a 365"})
-                if not job.start(prios, jobage):
+                if not job.start(prios, jobage, all_prios=all_prios):
                     return self._send(409, {"error": "já há uma busca em andamento"})
                 return self._send(202, {"started": True})
+            if path == "/api/clear-pending":
+                data = unseen(load_results(job.out))
+                rows = data.get("new", [])
+                urls = [r["url"] for r in rows if isinstance(r, dict) and r.get("url")]
+                cleared_count = 0
+                if urls:
+                    res = mark(load_results(job.out), urls, "descartar")
+                    cleared_count = res.get("recorded", len(urls))
+                return self._send(200, {"cleared": cleared_count})
+            if path == "/api/applied":
+                url = str(body.get("url") or "")
+                company = str(body.get("company") or "")
+                role = str(body.get("role") or body.get("title") or "")
+                portal = str(body.get("portal") or "")
+                if not url:
+                    return self._send(400, {"error": "url da vaga obrigatória"})
+                res = record_applied(url, company, role, portal, tracker_path=scrape_run.TRACKER, seen_path=scrape_run.SEEN)
+                return self._send(200, res)
+            if path == "/api/restore":
+                url = str(body.get("url") or "")
+                if not url:
+                    return self._send(400, {"error": "url da vaga obrigatória"})
+                return self._send(200, restore_job(url, seen_path=scrape_run.SEEN))
+            if path in ("/api/remove-application", "/api/application/remove"):
+                url = str(body.get("url") or "")
+                if not url:
+                    return self._send(400, {"error": "url da vaga obrigatória"})
+                to_status = str(body.get("to_status") or "skipped")
+                return self._send(200, remove_application(url, to_status=to_status, tracker_path=scrape_run.TRACKER, seen_path=scrape_run.SEEN))
+            if path == "/api/discard":
+                url = str(body.get("url") or "")
+                if not url:
+                    return self._send(400, {"error": "url da vaga obrigatória"})
+                return self._send(200, discard_job(url, seen_path=scrape_run.SEEN))
             if path == "/api/mark":
                 urls = [u for u in body.get("urls", []) if isinstance(u, str)]
                 try:
@@ -717,9 +1228,9 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                     if painel_perfil.needs_confirmation(privacy_cache) and body.get("confirm") is not True:
                         return self._send(400, {"error": "confirme o aviso de privacidade antes de montar o perfil"})
                     url = PERFIL_KEY
-                # Só vagas marcadas como "me interessa": a URL do navegador tem que estar lá.
-                elif url not in {s.get("url") for s in saved()}:
-                    return self._send(400, {"error": "a vaga não está em Me interessam"})
+                # Vagas marcadas como "me interessa" ou já em "Candidaturas":
+                elif url not in ({s.get("url") for s in saved()} | {a.get("url") for a in enriched_applications()} | {d.get("url") for d in list_generated_documents() if d.get("url")}):
+                    return self._send(400, {"error": "a vaga não está em Me interessam nem em Candidaturas"})
                 try:
                     if not claude.start(url, step):
                         return self._send(409, {"error": f"O {claude.status().get('name') or 'assistente'} já está trabalhando em outro pedido"})

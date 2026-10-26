@@ -77,6 +77,18 @@ class Latex(unittest.TestCase):
     def test_fenced_latex_is_unwrapped(self):
         self.assertEqual(painel_ia._latex_from_reply("```latex\n\\section{A}\n```"), "\\section{A}")
 
+    def test_extract_plain_letter_from_markdown_or_latex(self):
+        md = "## Texto da Carta (para colar no formulário)\nPrezada equipe,\nTenho interesse na vaga.\n\n```latex\n\\documentclass{cover}\n```"
+        extracted = painel_ia._extract_plain_letter(md)
+        self.assertIn("Prezada equipe,", extracted)
+        self.assertIn("Tenho interesse na vaga.", extracted)
+        self.assertNotIn("documentclass", extracted)
+
+        latex = "\\lettercontent{Olá equipe,}\n\\lettercontent{Apresento meu perfil para a vaga.}\n\\closing{Atenciosamente,}\n\\signature{Pessoa Candidata}"
+        from_latex = painel_ia._extract_plain_letter("", latex)
+        self.assertIn("Olá equipe,", from_latex)
+        self.assertIn("Apresento meu perfil para a vaga.", from_latex)
+
     def test_file_reading_and_execution_are_refused(self):
         for bad in ("\\input{/etc/passwd}", "\\immediate\\write18{x}", "\\openin5=chave", "\\directlua{os.execute('x')}"):
             with self.assertRaises(ai_providers.ProviderError, msg=bad):

@@ -30,12 +30,60 @@ PAGE = (
     "<noscript>noscript text</noscript><svg><text>svg text</text></svg>"
     "</body></html>"
 )
+KOREAN_PAGE = (
+    '<html><head><meta http-equiv="Content-Type" content="text/html; charset=euc-kr">'
+    "<title>채용공고</title></head><body><h1>백엔드 개발자 채용</h1></body></html>"
+)
+CONTENT_TYPES = {"/euc-kr.html": "text/html; charset=euc-kr"}
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):  # noqa: N802 (http.server naming)
-        if self.path == "/ok.html":
+        self.server.paths.append(self.path)
+        if self.path in ("/ok.html", "/ok.html?q=a%20b", "/ok.html?t=%C3%A6%C3%B8%C3%A5") or (
+            self.path.startswith("/unicode/") and self.path.endswith("?page=2")
+        ):
             body = PAGE.encode("utf-8")
+            self.send_response(200)
+        elif self.path.startswith("/unicode/"):
+            self.send_response(302)
+            self.send_header("Location", "?page=2")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        elif self.path == "/redirect-utf8":
+            # http.server writes header values as latin-1; preserve raw UTF-8 bytes.
+            self.send_response(302)
+            self.send_header("Location", "/ok.html?t=" + "æøå".encode("utf-8").decode("latin-1"))
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        elif self.path == "/euc-kr.html":
+            body = KOREAN_PAGE.encode("cp949")
+            self.send_response(200)
+        elif self.path == "/robots.txt":
+            body = b"User-agent: *\nAllow: /redirect\nDisallow: /blocked\n"
+            self.send_response(200)
+        elif self.path in ("/redirect", "/redirect-allowed"):
+            self.send_response(302)
+            self.send_header("Location", "/blocked" if self.path == "/redirect" else "/ok.html")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        elif self.path == "/redirect-space":
+            self.send_response(302)
+            self.send_header("Location", "/ok.html?q=a b")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        elif self.path == "/redirect-other":
+            self.send_response(302)
+            self.send_header("Location", self.server.redirect_to)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        elif self.path == "/blocked":
+            body = b"<html><body>blocked posting</body></html>"
             self.send_response(200)
         elif self.path == "/forbidden":
             body = b"<html><body>denied</body></html>"
@@ -54,7 +102,7 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         else:
             body = b"nope"
             self.send_response(404)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Type", CONTENT_TYPES.get(self.path, "text/html; charset=utf-8"))
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
@@ -67,6 +115,7 @@ class FetchPageFixture(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+        cls.server.paths = []
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.base = f"http://127.0.0.1:{cls.server.server_address[1]}"
@@ -126,6 +175,90 @@ class RobotsGate(FetchPageFixture):
         self.run_main(f"{self.base}/ok.html", "--out", str(self.out))
         self.assertEqual(self.gate_calls, [f"{self.base}/ok.html"])
 
+    def test_redirect_target_is_checked_before_fetching(self):
+        # The documented retry follows redirects. An allowed posting URL can
+        # redirect to a path this site's robots.txt explicitly disallows.
+        fetch_page.gate = self._orig_gate
+        for path in ("curl", "urllib"):
+            with self.subTest(path=path):
+                if path == "urllib":
+                    original_which = fetch_page.shutil.which
+                    fetch_page.shutil.which = lambda name: None
+                    self.addCleanup(setattr, fetch_page.shutil, "which", original_which)
+                self.server.paths.clear()
+                code, out, err = self.run_main(f"{self.base}/redirect", "--out", str(self.out))
+                self.assertEqual(code, 1, out + err)
+                self.assertIn("DISALLOWED", out)
+                self.assertNotIn("/blocked", self.server.paths)
+                self.assertFalse(self.out.exists())
+
+    def test_allowed_redirect_still_fetches_the_posting(self):
+        fetch_page.gate = self._orig_gate
+        for path in ("curl", "urllib"):
+            with self.subTest(path=path):
+                if path == "urllib":
+                    original_which = fetch_page.shutil.which
+                    fetch_page.shutil.which = lambda name: None
+                    self.addCleanup(setattr, fetch_page.shutil, "which", original_which)
+                self.server.paths.clear()
+                code, out, err = self.run_main(f"{self.base}/redirect-allowed", "--out", str(self.out))
+                self.assertEqual(code, 0, out + err)
+                self.assertEqual(self.out.read_text(encoding="utf-8"), PAGE)
+                self.assertIn("/ok.html", self.server.paths)
+                self.assertGreaterEqual(self.server.paths.count("/robots.txt"), 2)
+                self.out.unlink()
+
+    def test_raw_space_in_location_is_encoded_on_both_paths(self):
+        for path in ("curl", "urllib"):
+            with self.subTest(path=path):
+                if path == "urllib":
+                    original_which = fetch_page.shutil.which
+                    fetch_page.shutil.which = lambda name: None
+                    self.addCleanup(setattr, fetch_page.shutil, "which", original_which)
+                self.server.paths.clear()
+                code, out, err = self.run_main(f"{self.base}/redirect-space", "--out", str(self.out))
+                self.assertEqual(code, 0, out + err)
+                self.assertIn("/ok.html?q=a%20b", self.server.paths)
+                self.assertEqual(self.out.read_text(encoding="utf-8"), PAGE)
+                self.out.unlink()
+
+    def test_raw_utf8_in_location_keeps_its_bytes_on_both_paths(self):
+        for path in ("curl", "urllib"):
+            with self.subTest(path=path):
+                if path == "urllib":
+                    original_which = fetch_page.shutil.which
+                    fetch_page.shutil.which = lambda name: None
+                    self.addCleanup(setattr, fetch_page.shutil, "which", original_which)
+                self.server.paths.clear()
+                code, out, err = self.run_main(f"{self.base}/redirect-utf8", "--out", str(self.out))
+                self.assertEqual(code, 0, out + err)
+                self.assertIn("/ok.html?t=%C3%A6%C3%B8%C3%A5", self.server.paths)
+                self.out.unlink()
+
+    @unittest.skipUnless(shutil.which("curl"), "urllib cannot send a URL with raw non-ASCII characters")
+    def test_relative_redirect_from_a_unicode_url(self):
+        self.server.paths.clear()
+        code, out, err = self.run_main(f"{self.base}/unicode/日本", "--out", str(self.out))
+        self.assertEqual(code, 0, out + err)
+        self.assertTrue(any(p.endswith("?page=2") for p in self.server.paths), self.server.paths)
+
+    def test_cross_origin_redirect_uses_destination_policy(self):
+        destination = http.server.ThreadingHTTPServer(("127.0.0.1", 0), _Handler)
+        destination.paths = []
+        thread = threading.Thread(target=destination.serve_forever, daemon=True)
+        thread.start()
+        self.addCleanup(destination.server_close)
+        self.addCleanup(destination.shutdown)
+        self.server.redirect_to = f"http://127.0.0.1:{destination.server_address[1]}/blocked"
+        fetch_page.gate = self._orig_gate
+
+        code, out, err = self.run_main(f"{self.base}/redirect-other", "--out", str(self.out))
+
+        self.assertEqual(code, 1, out + err)
+        self.assertIn("/robots.txt", destination.paths)
+        self.assertNotIn("/blocked", destination.paths)
+        self.assertFalse(self.out.exists())
+
 
 class Fetching(FetchPageFixture):
     def test_fetches_and_reports_status(self):
@@ -151,6 +284,14 @@ class Fetching(FetchPageFixture):
         self.assertIn("Visible text & more.", text)
         for leaked in ("alert(", "color:red", "hidden comment", "noscript text", "svg text", "<p>"):
             self.assertNotIn(leaked, text)
+
+    def test_text_decodes_a_page_by_its_declared_charset(self):
+        code, out, err = self.run_main(f"{self.base}/euc-kr.html", "--out", str(self.out), "--text")
+        self.assertEqual(code, 0, err)
+        self.assertEqual(self.out.read_bytes(), KOREAN_PAGE.encode("cp949"))
+        text = out.split("--- text ---", 1)[1]
+        self.assertIn("백엔드 개발자 채용", text)
+        self.assertNotIn("\ufffd", text)
 
     def test_max_chars_caps_text(self):
         code, out, err = self.run_main(
@@ -216,7 +357,7 @@ class CurlArgvShape(unittest.TestCase):
 
     def test_curl_argv_is_get_only_and_terminates_options(self):
         url = "-https://example.com/x"  # a URL that would read as a flag
-        argv = fetch_page.build_curl_argv(url, Path("out.html"))
+        argv = fetch_page.build_curl_argv(url, Path("out.html"), Path("headers.txt"), 45)
         self.assertEqual(argv[0], "curl")
         self.assertEqual(argv[-2:], ["--", url])
         for forbidden in ("-d", "--data", "--data-binary", "--data-raw", "-F", "--form",
@@ -224,60 +365,14 @@ class CurlArgvShape(unittest.TestCase):
             self.assertNotIn(forbidden, argv[:-1])
         self.assertIn("--max-filesize", argv)
         self.assertIn("--max-redirs", argv)
+        self.assertEqual(argv[argv.index("--max-redirs") + 1], "0")
+        self.assertNotIn("-L", argv)
         self.assertIn("-A", argv)
         self.assertEqual(argv[argv.index("-A") + 1], fetch_page.BROWSER)
-
-    def test_compressed_flag_is_omitted_when_curl_cannot_decode(self):
-        argv = fetch_page.build_curl_argv("https://example.com/x", Path("out.html"), compressed=False)
-        self.assertNotIn("--compressed", argv)
-        self.assertEqual(argv[-2:], ["--", "https://example.com/x"])
-        self.assertIn("--compressed", fetch_page.build_curl_argv("https://example.com/x", Path("out.html")))
 
     def test_user_agent_is_the_one_robots_check_uses(self):
         import robots_check
         self.assertEqual(fetch_page.BROWSER, robots_check.BROWSER)
-
-
-class CurlCompressionProbe(unittest.TestCase):
-    """`--compressed` is only passed to a curl build that can decode.
-
-    The curl.exe Windows ships in System32 has no decoders and rejects the flag
-    with exit 2, so every fetch failed there - and a bare `curl` argv resolves to
-    System32 before PATH, so installing a fuller curl did not help.
-    """
-
-    # Real `Features:` lines: the System32 build (curl 8.0.1, Schannel) and a
-    # winget cURL build (8.23.0, mingw).
-    WINDOWS_SYSTEM32 = (
-        "curl 8.0.1 (Windows) libcurl/8.0.1 Schannel WinIDN\n"
-        "Protocols: dict file ftp ftps http https imap imaps pop3 pop3s smtp smtps telnet tftp\n"
-        "Features: AsynchDNS HSTS HTTPS-proxy IDN IPv6 Kerberos Largefile NTLM SPNEGO SSL SSPI "
-        "threadsafe Unicode UnixSockets\n"
-    )
-    FULL_BUILD = (
-        "curl 8.23.0 (x86_64-w64-mingw32) libcurl/8.23.0 LibreSSL/4.3.3 zlib/1.3.1.zlib-ng\n"
-        "Features: alt-svc AsynchDNS brotli HSTS HTTP2 HTTP3 HTTPS-proxy IDN IPv6 Kerberos "
-        "Largefile libz NativeCA SPNEGO SSL SSPI threadsafe UnixSockets zstd\n"
-    )
-
-    def test_build_without_decoders_is_detected(self):
-        self.assertFalse(fetch_page.curl_supports_compression(self.WINDOWS_SYSTEM32))
-
-    def test_build_with_decoders_is_detected(self):
-        self.assertTrue(fetch_page.curl_supports_compression(self.FULL_BUILD))
-        self.assertTrue(fetch_page.curl_supports_compression("Features: SSL zstd\n"))
-
-    def test_unreadable_version_output_means_no_flag(self):
-        self.assertFalse(fetch_page.curl_supports_compression(""))
-        self.assertFalse(fetch_page.curl_supports_compression("curl: command failed\n"))
-
-    def test_probe_failure_means_no_flag(self):
-        def boom(*args, **kwargs):
-            raise OSError("curl vanished")
-        orig = fetch_page.subprocess.run
-        fetch_page.subprocess.run = boom
-        self.addCleanup(setattr, fetch_page.subprocess, "run", orig)
-        self.assertFalse(fetch_page.probe_curl_compression())
 
 
 if __name__ == "__main__":

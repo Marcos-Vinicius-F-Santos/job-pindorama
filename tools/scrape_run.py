@@ -445,7 +445,7 @@ def main(argv=None) -> int:
     s = sub.add_parser("search", help="run the portal searches, deduplicate, flag")
     s.add_argument("--priority", default="1,2,3", help="comma list of priorities to run (default 1,2,3)")
     s.add_argument("--all", action="store_true", help="every priority in the file")
-    s.add_argument("--jobage", type=int, default=14, help="days (default 14), unless the query line sets its own")
+    s.add_argument("--jobage", type=int, default=2, help="days (default 2), unless the query line sets its own")
     s.add_argument("--accept", default=None, help="seniority codes; default: Senioridade-alvo in CLAUDE.md")
     s.add_argument("--queries", type=Path, default=QUERIES,
                    help="search plan file (default: public template)")

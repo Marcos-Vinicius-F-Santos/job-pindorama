@@ -7,94 +7,274 @@
 <title>Minha Busca</title>
 <style>
   :root {
-    --bg: #f6f5f1; --surface: #ffffff; --text: #1f2328; --muted: #5d636b; --line: #dedbd2;
-    --accent: #1d6b52; --accent-text: #ffffff; --warn-bg: #fff4d6; --warn-text: #6b4a00;
-    --chip: #eceae3; --danger: #9b2c2c; --focus: #2f6fd6;
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-elevated: #f1f5f9;
+    --border-subtle: #e2e8f0;
+    --border-card: #cbd5e1;
+    --border-focus: #2563eb;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --accent: #0d9488;
+    --accent-hover: #0f766e;
+    --accent-text: #ffffff;
+    --accent-subtle: rgba(13, 148, 136, 0.08);
+    --chip-bg: #f1f5f9;
+    --chip-text: #334155;
+    --fit-high-bg: rgba(34, 197, 94, 0.12);
+    --fit-high-text: #15803d;
+    --fit-high-border: rgba(34, 197, 94, 0.3);
+    --fit-med-bg: rgba(234, 179, 8, 0.12);
+    --fit-med-text: #a16207;
+    --fit-med-border: rgba(234, 179, 8, 0.3);
+    --fit-low-bg: rgba(239, 68, 68, 0.12);
+    --fit-low-text: #b91c1c;
+    --fit-low-border: rgba(239, 68, 68, 0.3);
+    --warn-bg: #fffbeb;
+    --warn-text: #92400e;
+    --warn-border: #fde68a;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --card-shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #16181b; --surface: #1f2226; --text: #e8e6e1; --muted: #a3a8ae; --line: #33373c;
-      --accent: #4fb38f; --accent-text: #0e1a15; --warn-bg: #3a3016; --warn-text: #f1d88c;
-      --chip: #2a2e33; --danger: #e08b8b; --focus: #7aa7f0;
+      --bg-app: #0b0f17;
+      --bg-surface: #111827;
+      --bg-elevated: #1e293b;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-card: rgba(255, 255, 255, 0.12);
+      --border-focus: #60a5fa;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #14b8a6;
+      --accent-hover: #2dd4bf;
+      --accent-text: #042f2e;
+      --accent-subtle: rgba(20, 184, 166, 0.12);
+      --chip-bg: #1e293b;
+      --chip-text: #cbd5e1;
+      --fit-high-bg: rgba(74, 222, 128, 0.14);
+      --fit-high-text: #4ade80;
+      --fit-high-border: rgba(74, 222, 128, 0.28);
+      --fit-med-bg: rgba(253, 224, 71, 0.14);
+      --fit-med-text: #fde047;
+      --fit-med-border: rgba(253, 224, 71, 0.28);
+      --fit-low-bg: rgba(248, 113, 113, 0.14);
+      --fit-low-text: #f87171;
+      --fit-low-border: rgba(248, 113, 113, 0.28);
+      --warn-bg: rgba(245, 158, 11, 0.1);
+      --warn-text: #fcd34d;
+      --warn-border: rgba(245, 158, 11, 0.25);
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+      --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.25);
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { padding: 20px 16px 0; max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 16px; }
-  nav { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
-  nav button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px;
-               font: inherit; color: var(--muted); cursor: pointer; }
-  nav button[aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
-  main { max-width: 980px; margin: 0 auto; padding: 16px; }
+  body {
+    margin: 0; background: var(--bg-app); color: var(--text-main);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.01em; -webkit-font-smoothing: antialiased;
+  }
+  header { padding: 24px 20px 0; max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; margin: 0 0 6px; }
+  .sub { color: var(--text-muted); font-size: 0.95rem; margin: 0 0 20px; line-height: 1.5; }
+  nav {
+    display: flex; gap: 6px; flex-wrap: wrap; padding: 6px;
+    background: var(--bg-elevated); border-radius: 12px; border: 1px solid var(--border-subtle);
+    margin-bottom: 24px;
+  }
+  nav button {
+    background: transparent; border: 0; border-radius: 8px; padding: 8px 14px;
+    font: inherit; font-size: 0.92rem; font-weight: 500; color: var(--text-muted); cursor: pointer;
+    transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+  }
+  nav button:hover {
+    color: var(--text-main); background: rgba(255, 255, 255, 0.05);
+  }
+  nav button[aria-selected="true"] {
+    color: var(--text-main); background: var(--bg-surface); font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .nav-count {
+    display: inline-block; font-size: 0.78rem; font-weight: 700; padding: 1px 7px;
+    border-radius: 999px; background: var(--chip-bg); color: var(--text-muted); border: 1px solid var(--border-subtle);
+  }
+  nav button[aria-selected="true"] .nav-count {
+    background: var(--accent-subtle); color: var(--accent); border-color: transparent;
+  }
+  main { max-width: 1040px; margin: 0 auto; padding: 0 20px 40px; }
   section[hidden] { display: none; }
-  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-  .btn { background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px; padding: 10px 18px;
-         font: inherit; font-weight: 600; cursor: pointer; }
-  .btn.secondary { background: var(--chip); color: var(--text); }
-  .btn.small { padding: 6px 12px; font-size: .9rem; }
-  .btn:disabled { opacity: .5; cursor: default; }
-  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .panel {
+    background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 20px; box-shadow: var(--card-shadow);
+  }
+  .panel h2 { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }
+  .btn {
+    background: var(--accent); color: var(--accent-text); border: 0; border-radius: 8px;
+    padding: 8px 16px; font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+    transition: all 0.15s ease; user-select: none;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--accent-hover); transform: translateY(-1px);
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  .btn.secondary {
+    background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-subtle);
+  }
+  .btn.secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.08); border-color: var(--border-card);
+  }
+  .btn.danger {
+    background: transparent; color: var(--fit-low-text); border: 1px solid var(--fit-low-border);
+  }
+  .btn.danger:hover:not(:disabled) {
+    background: var(--fit-low-bg);
+  }
+  .btn.small {
+    padding: 6px 12px; font-size: 0.84rem; border-radius: 6px;
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--border-focus); outline-offset: 2px;
+  }
   .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  label { display: inline-flex; gap: 6px; align-items: center; }
-  input[type=text], select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
-                             background: var(--surface); color: var(--text); }
-  input[type=text] { flex: 1 1 220px; min-width: 0; }
-  input[type=password] { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
-                         background: var(--surface); color: var(--text); flex: 1 1 220px; min-width: 0; }
-  fieldset.prov { border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px 12px; margin: 12px 0; }
-  fieldset.prov legend { font-weight: 700; padding: 0 6px; }
+  label { display: inline-flex; gap: 6px; align-items: center; font-size: 0.92rem; }
+  input[type=text], select {
+    font: inherit; font-size: 0.92rem; padding: 8px 12px; border: 1px solid var(--border-subtle);
+    border-radius: 8px; background: var(--bg-surface); color: var(--text-main); transition: border-color 0.15s;
+  }
+  input[type=text]:focus, select:focus { border-color: var(--border-focus); }
+  input[type=text] { flex: 1 1 240px; min-width: 0; }
+  input[type=password] {
+    font: inherit; font-size: 0.92rem; padding: 8px 12px; border: 1px solid var(--border-subtle);
+    border-radius: 8px; background: var(--bg-surface); color: var(--text-main); flex: 1 1 240px; min-width: 0;
+  }
+  fieldset.prov {
+    border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px 16px 14px;
+    margin: 14px 0; background: var(--bg-elevated);
+  }
+  fieldset.prov legend { font-weight: 700; padding: 0 8px; color: var(--text-main); }
   fieldset.prov .row { margin: 8px 0; }
   fieldset.prov label.lbl { min-width: 8em; font-weight: 600; }
-  .muted { color: var(--muted); }
-  pre.summary { white-space: pre-wrap; background: var(--chip); padding: 12px; border-radius: 8px; font-size: .85rem; overflow-x: auto; }
-  .error { color: var(--danger); white-space: pre-wrap; }
-  .cards { display: grid; gap: 12px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .card h3 { margin: 0 0 2px; font-size: 1.1rem; overflow-wrap: anywhere; }
-  .card .company { color: var(--muted); margin: 0 0 8px; overflow-wrap: anywhere; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-  .chip { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: .85rem; }
-  .warn { background: var(--warn-bg); color: var(--warn-text); border-radius: 8px; padding: 8px 10px; font-size: .9rem; margin-bottom: 8px; overflow-wrap: anywhere; }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .actions a { color: var(--accent); font-weight: 600; }
-  .empty { text-align: center; padding: 32px 16px; color: var(--muted); }
-  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
-  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .muted { color: var(--text-muted); }
+  pre.summary {
+    white-space: pre-wrap; background: var(--bg-elevated); padding: 14px; border-radius: 8px;
+    font-size: 0.88rem; overflow-x: auto; border: 1px solid var(--border-subtle); line-height: 1.5;
+  }
+  .error { color: var(--fit-low-text); font-weight: 500; }
+  .cards { display: grid; gap: 14px; }
+  .card {
+    background: var(--bg-surface); border: 1px solid var(--border-card); border-radius: 12px;
+    padding: 16px 20px; box-shadow: var(--card-shadow); transition: all 0.2s ease;
+  }
+  .card:hover {
+    border-color: rgba(20, 184, 166, 0.4); box-shadow: var(--card-shadow-hover);
+  }
+  .card-top {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  }
+  .card h3 {
+    margin: 0 0 3px; font-size: 1.15rem; font-weight: 700; color: var(--text-main);
+    line-height: 1.35; overflow-wrap: anywhere;
+  }
+  .card .company {
+    color: var(--text-muted); margin: 0; font-size: 0.88rem; line-height: 1.4; overflow-wrap: anywhere;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 8px; }
+  .chip {
+    background: var(--chip-bg); color: var(--chip-text); border: 1px solid var(--border-subtle);
+    border-radius: 6px; padding: 3px 9px; font-size: 0.82rem; font-weight: 500;
+  }
+  .badge-fit {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+    border-radius: 999px; font-weight: 700; font-size: 0.84rem; white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-fit::before {
+    content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  }
+  .badge-fit-high { background: var(--fit-high-bg); color: var(--fit-high-text); border: 1px solid var(--fit-high-border); }
+  .badge-fit-high::before { background: var(--fit-high-text); }
+  .badge-fit-med { background: var(--fit-med-bg); color: var(--fit-med-text); border: 1px solid var(--fit-med-border); }
+  .badge-fit-med::before { background: var(--fit-med-text); }
+  .badge-fit-low { background: var(--fit-low-bg); color: var(--fit-low-text); border: 1px solid var(--fit-low-border); }
+  .badge-fit-low::before { background: var(--fit-low-text); }
+  .screening-summary {
+    font-size: 0.92rem; color: var(--text-main); background: var(--bg-elevated);
+    border-left: 3px solid var(--accent); padding: 10px 14px; border-radius: 0 8px 8px 0;
+    margin: 10px 0 12px; line-height: 1.5;
+  }
+  .warn {
+    background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border);
+    border-radius: 8px; padding: 8px 12px; font-size: 0.88rem; margin: 8px 0; line-height: 1.45;
+  }
+  .actions {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px;
+    padding-top: 12px; border-top: 1px solid var(--border-subtle);
+  }
+  .actions a { color: var(--accent); font-weight: 600; text-decoration: none; font-size: 0.9rem; }
+  .actions a:hover { text-decoration: underline; }
+  .actions a.btn { color: var(--accent-text) !important; text-decoration: none !important; }
+  .actions a.btn.secondary { color: var(--text-main) !important; }
+  .actions .right-link { margin-left: auto; }
+  .empty {
+    text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 0.95rem;
+    background: var(--bg-surface); border: 1px dashed var(--border-subtle); border-radius: 12px;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+  th { font-weight: 600; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .tablewrap { overflow-x: auto; }
-  .spinner { display: inline-block; width: 1em; height: 1em; border: 3px solid var(--chip); border-top-color: var(--accent);
-             border-radius: 50%; animation: spin 1s linear infinite; vertical-align: -0.15em; }
+  .spinner {
+    display: inline-block; width: 1em; height: 1em; border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: -0.15em;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
-  details.answer { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
-  details.answer summary { cursor: pointer; font-weight: 600; }
-  .md { overflow-wrap: anywhere; }
-  .md h2, .md h3, .md h4 { font-size: 1.05rem; margin: 14px 0 4px; }
+  details.answer {
+    margin-top: 10px; border: 1px solid var(--border-subtle); border-radius: 8px;
+    padding: 8px 14px; background: var(--bg-elevated); transition: all 0.2s ease;
+  }
+  details.answer summary {
+    cursor: pointer; font-weight: 600; font-size: 0.9rem; color: var(--text-main);
+    padding: 4px 0; user-select: none;
+  }
+  details.answer summary:hover { color: var(--accent); }
+  .md { overflow-wrap: anywhere; font-size: 0.92rem; line-height: 1.6; margin-top: 8px; }
+  .md h2, .md h3, .md h4 { font-size: 1.05rem; margin: 14px 0 6px; font-weight: 700; }
   .md p, .md ul { margin: 6px 0; }
-  .md code { background: var(--chip); border-radius: 4px; padding: 0 4px; font-size: .9em; }
-  .md table { margin: 8px 0; }
-  .claude-status { margin: 8px 0 0; font-size: .95rem; }
+  .md code { background: var(--chip-bg); border-radius: 4px; padding: 2px 6px; font-size: 0.88em; border: 1px solid var(--border-subtle); }
+  .md table { margin: 10px 0; }
+  .letter-preview-box {
+    background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 8px;
+    padding: 14px 16px; margin: 10px 0;
+  }
+  .letter-preview-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border-subtle);
+  }
+  .letter-preview-title { font-weight: 700; font-size: 0.92rem; color: var(--text-main); }
+  .claude-status { margin: 10px 0 0; font-size: 0.92rem; font-weight: 500; }
   .ok { color: var(--accent); }
   form.perfil fieldset { border: 0; padding: 0; margin: 0 0 16px; }
-  form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; padding: 0; }
-  form.perfil .field { margin-bottom: 12px; display: block; }
-  form.perfil .field > span { display: block; font-weight: 600; margin-bottom: 4px; }
-  form.perfil input[type=text], form.perfil textarea { width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line);
-    border-radius: 8px; background: var(--surface); color: var(--text); }
-  form.perfil textarea { min-height: 4.5em; resize: vertical; }
-  form.perfil .opts { display: flex; gap: 6px 14px; flex-wrap: wrap; }
-  form.perfil .help { color: var(--muted); font-size: .85rem; margin-top: 2px; }
-  ul.files { margin: 8px 0 0; padding-left: 18px; }
-  ul.files li { margin-bottom: 4px; overflow-wrap: anywhere; }
+  form.perfil legend { font-weight: 700; font-size: 1.05rem; margin-bottom: 10px; padding: 0; }
+  form.perfil .field { margin-bottom: 14px; display: block; }
+  form.perfil .field > span { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.92rem; }
+  form.perfil input[type=text], form.perfil textarea {
+    width: 100%; font: inherit; padding: 9px 12px; border: 1px solid var(--border-subtle);
+    border-radius: 8px; background: var(--bg-surface); color: var(--text-main); font-size: 0.92rem;
+  }
+  form.perfil textarea { min-height: 4.5em; resize: vertical; line-height: 1.5; }
+  form.perfil .opts { display: flex; gap: 8px 16px; flex-wrap: wrap; }
+  form.perfil .help { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+  ul.files { margin: 10px 0 0; padding-left: 20px; }
+  ul.files li { margin-bottom: 6px; overflow-wrap: anywhere; font-size: 0.92rem; }
+  .batch-bar {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-subtle);
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .doc-grid { display: grid; gap: 12px; }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
-  .badge-fit { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-weight: 700; font-size: .85rem; }
-  .badge-fit-high { background: #134e2f; color: #4ade80; border: 1px solid #22c55e; }
-  .badge-fit-med { background: #4a3e13; color: #fde047; border: 1px solid #eab308; }
-  .badge-fit-low { background: #4a1d1d; color: #f87171; border: 1px solid #ef4444; }
-  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .screening-summary { font-size: .9rem; color: var(--text); background: var(--chip); padding: 6px 10px; border-radius: 6px; margin: 6px 0 8px; }
-  .batch-bar { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -104,9 +284,11 @@
   <nav role="tablist" aria-label="Seções">
     <button role="tab" data-tab="perfil" aria-selected="false">Meu perfil</button>
     <button role="tab" data-tab="buscar" aria-selected="true">Buscar</button>
-    <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new"></span></button>
-    <button role="tab" data-tab="interesse" aria-selected="false">Me interessam</button>
-    <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas</button>
+    <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new" class="nav-count" style="display:none;"></span></button>
+    <button role="tab" data-tab="interesse" aria-selected="false">Me interessam <span id="count-interesse" class="nav-count" style="display:none;"></span></button>
+    <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas <span id="count-candidaturas" class="nav-count" style="display:none;"></span></button>
+    <button role="tab" data-tab="documentos" aria-selected="false">Currículos e Cartas <span id="count-documentos" class="nav-count" style="display:none;"></span></button>
+    <button role="tab" data-tab="descartadas" aria-selected="false">Descartadas <span id="count-descartadas" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="config" aria-selected="false">Configurações</button>
   </nav>
 </header>
@@ -146,11 +328,13 @@
   <section id="tab-buscar" role="tabpanel">
     <div class="panel">
       <h2>Buscar vagas</h2>
-      <p class="muted">As buscas vêm do seu perfil (as linhas que o <code>/setup</code> preparou). A busca leva de 1 a 3 minutos.</p>
-      <div id="prio-box" class="row"></div>
+      <p class="muted">A busca pesquisa vagas diretamente nos portais de ATS (Gupy, LinkedIn, Remotar, Sólides, Programathor e outros) usando todos os termos e tecnologias do seu perfil. A busca leva de 1 a 3 minutos.</p>
+      <div id="search-scope-info" class="search-info" style="margin: 14px 0; padding: 12px 16px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; font-size: 0.95em;">
+        Buscando em <strong>todas as consultas e portais configurados</strong> no seu perfil.
+      </div>
       <p class="row">
         <label>Publicadas nos últimos
-          <select id="jobage"><option value="1">24 horas (1 dia)</option><option value="2">Últimos 2 dias</option><option value="3">3 dias</option><option value="7">7 dias</option><option value="14" selected>14 dias</option><option value="30">30 dias</option></select>
+          <select id="jobage"><option value="2" selected>Últimos 2 dias (Recomendado)</option><option value="1">Últimas 24 horas</option><option value="3">3 dias</option><option value="7">7 dias</option><option value="14">14 dias</option><option value="30">30 dias</option></select>
         </label>
       </p>
       <button class="btn" id="btn-search">Buscar vagas</button>
@@ -182,6 +366,7 @@
         <select id="batch-scope">
           <option value="5">Top 5 da lista filtrada</option>
           <option value="10">Top 10 da lista filtrada</option>
+          <option value="50">Top 50 da lista filtrada</option>
           <option value="all-visible">Todas as vagas filtradas</option>
           <option value="selected">Vagas selecionadas</option>
         </select>
@@ -191,6 +376,7 @@
           <option value="score-asc">Ordenar por: Maiores notas (ordem crescente)</option>
           <option value="score-desc">Ordenar por: Maiores notas (ordem decrescente)</option>
         </select>
+        <button class="btn small secondary" id="btn-clear-pending" title="Descarta da lista todas as vagas pendentes não salvas">Limpar vagas pendentes</button>
         <span id="batch-status" class="muted"></span>
       </div>
     </div>
@@ -200,16 +386,53 @@
 
   <section id="tab-interesse" role="tabpanel" hidden>
     <div class="panel">
-      <p><strong>Avaliar</strong> traz a nota de encaixe, os pontos fortes e as lacunas (com uma chave de API leva poucos segundos).
-        Depois, <strong>Fazer currículo e carta</strong> escreve e compila os dois documentos em PDF via MiKTeX e registra a candidatura.
-        O assistente trabalha numa vaga por vez e usa o seu perfil consolidado.</p>
+      <p><strong>Avaliar</strong> analisa a vaga completa em relação ao seu currículo (em português para vagas no Brasil e em inglês para vagas internacionais).
+        Você pode gerar separadamente com <strong>Gerar Currículo</strong> ou <strong>Gerar Carta</strong> (compilados em PDF via MiKTeX e listados na aba <em>Currículos e Cartas</em>).
+        Quando enviar sua candidatura, clique em <strong>Já me candidatei</strong> para movê-la para a aba <em>Candidaturas</em>.</p>
       <p id="claude-global" class="claude-status" aria-live="polite"></p>
     </div>
     <div id="interesse" class="cards"></div>
   </section>
 
   <section id="tab-candidaturas" role="tabpanel" hidden>
-    <div id="candidaturas"></div>
+    <div class="panel">
+      <h2>Minhas Candidaturas</h2>
+      <p class="muted">Vagas em que você já se candidatou. Você mantém acesso à nota, resumo da avaliação, dossiê de entrevista e pode reavaliar ou gerar currículo e carta a qualquer momento.</p>
+      <p id="claude-global-candidaturas" class="claude-status" aria-live="polite"></p>
+    </div>
+    <div id="candidaturas" class="cards"></div>
+  </section>
+
+  <section id="tab-documentos" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <h2 style="margin: 0 0 4px;">Currículos, Cartas e Dossiês Gerados</h2>
+          <p class="muted" style="margin: 0;">Todos os PDFs gerados para as suas vagas ficam salvos nas pastas <code>cv/</code>, <code>cover_letters/</code> e <code>documents/interview/</code>.</p>
+        </div>
+        <select id="f-doc-kind" aria-label="Filtrar tipo de documento">
+          <option value="">Todos os documentos</option>
+          <option value="cv">Apenas Currículos</option>
+          <option value="carta">Apenas Cartas de Apresentação</option>
+          <option value="entrevista">Apenas Dossiês de Entrevista</option>
+        </select>
+      </div>
+      <p id="claude-global-documentos" class="claude-status" aria-live="polite"></p>
+    </div>
+    <div id="documentos" class="cards"></div>
+  </section>
+
+  <section id="tab-descartadas" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="row" style="justify-content: space-between;">
+        <div>
+          <h2 style="margin: 0 0 4px;">Vagas Descartadas</h2>
+          <p class="muted" style="margin: 0;">Vagas descartadas manualmente ou pela triagem automática (nota abaixo de 40). Se quiser recuperar alguma vaga, clique em <strong>Mover para Me interessam</strong>.</p>
+        </div>
+        <input type="text" id="f-discarded-text" placeholder="Filtrar descartadas por cargo ou empresa" aria-label="Filtrar descartadas">
+      </div>
+    </div>
+    <div id="descartadas" class="cards"></div>
   </section>
 
   <section id="tab-config" role="tabpanel" hidden>
@@ -278,7 +501,8 @@ async function api(path, body) {
 }
 function warningOf(row) {
   const v = row.signals && row.signals.verdict;
-  return v && v !== "posting_signals: none" ? v.replace(/^posting_signals:\s*⚠?\s*/, "") : null;
+  if (!v || v === "posting_signals: none") return null;
+  return v.replace(/^posting_signals:\s*/, "").replace(/^[^\w\s\(\)]+/i, "").trim();
 }
 
 // ---- abas ----
@@ -292,7 +516,9 @@ function show(name) {
   if (name === "vagas") loadResults();
   if (name === "interesse") refreshClaude().then(loadSaved);
   if (name === "perfil") refreshClaude().then(() => loadProfile());
-  if (name === "candidaturas") loadApplications();
+  if (name === "candidaturas") refreshClaude().then(loadApplications);
+  if (name === "documentos") loadDocuments();
+  if (name === "descartadas") loadDiscarded();
   if (name === "config") loadSettings();
 }
 tabs.forEach((t) => t.addEventListener("click", () => show(t.dataset.tab)));
@@ -304,16 +530,12 @@ const btnSearch = document.getElementById("btn-search");
 let polling = null;
 
 function renderStatus(s) {
-  const box = document.getElementById("prio-box");
-  if (!box.dataset.done) {
-    box.dataset.done = "1";
-    if (!s.priorities.length) {
-      box.append(el("p", { class: "error", text: "Ainda não há buscas no seu perfil. Rode /setup --section search no seu assistente de IA" }));
-      btnSearch.disabled = true;
-    }
-    for (const p of s.priorities) {
-      box.append(el("label", {}, el("input", { type: "checkbox", value: p.priority, ...(p.priority <= 2 ? { checked: "" } : {}) }),
-        `Prioridade ${p.priority} (${p.queries} buscas)`));
+  const info = document.getElementById("search-scope-info");
+  if (info && !info.dataset.done) {
+    info.dataset.done = "1";
+    const totalQ = s.total_queries || (s.priorities && s.priorities.reduce((acc, p) => acc + (p.queries || 0), 0)) || 0;
+    if (totalQ > 0) {
+      info.replaceChildren("Buscando em ", el("strong", { text: `todas as ${totalQ} consultas configuradas` }), " em portais de tecnologia e ATS (Gupy, LinkedIn, Programathor, Remotar, Sólides e outros).");
     }
   }
   if (s.provider && s.provider.label) {
@@ -321,7 +543,7 @@ function renderStatus(s) {
     if (eng) eng.textContent = `[Motor: ${s.provider.label}]`;
   }
   const job = s.search;
-  btnSearch.disabled = job.running || !s.priorities.length;
+  btnSearch.disabled = job.running;
   statusEl.replaceChildren();
   if (job.running) statusEl.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` Buscando desde ${job.started.slice(11, 16)}… pode continuar usando o computador.`);
   else if (job.error) statusEl.append(el("span", { class: "error", text: "A busca não terminou: " + job.error }));
@@ -332,14 +554,39 @@ function renderStatus(s) {
 }
 async function refreshStatus() { try { renderStatus(await api("/api/status")); } catch (e) { statusEl.textContent = e.message; } }
 btnSearch.addEventListener("click", async () => {
-  const prios = [...document.querySelectorAll("#prio-box input:checked")].map((i) => Number(i.value));
-  if (!prios.length) { statusEl.textContent = "Escolha ao menos uma prioridade."; return; }
   try {
-    await api("/api/search", { priorities: prios, jobage: Number(document.getElementById("jobage").value) });
+    await api("/api/search", { all: true, jobage: Number(document.getElementById("jobage").value) });
     polling = setInterval(refreshStatus, 2000);
     refreshStatus();
   } catch (e) { statusEl.textContent = e.message; }
 });
+
+// Botão de limpar vagas pendentes não salvas
+const btnClearPending = document.getElementById("btn-clear-pending");
+if (btnClearPending) {
+  btnClearPending.addEventListener("click", async () => {
+    if (!results.length) {
+      alert("Não há vagas pendentes para limpar.");
+      return;
+    }
+    if (!confirm(`Deseja descartar as ${results.length} vagas pendentes desta lista? Elas não aparecerão mais nesta lista nem nas próximas buscas.`)) {
+      return;
+    }
+    btnClearPending.disabled = true;
+    const oldText = btnClearPending.textContent;
+    btnClearPending.textContent = "Limpando…";
+    try {
+      const res = await api("/api/clear-pending", {});
+      await loadResults();
+      alert(`${res.cleared != null ? res.cleared : results.length} vagas pendentes foram descartadas.`);
+    } catch (e) {
+      alert("Erro ao limpar vagas: " + e.message);
+    } finally {
+      btnClearPending.disabled = false;
+      btnClearPending.textContent = oldText;
+    }
+  });
+}
 
 // ---- vagas novas ----
 const filters = ["f-text", "f-model", "f-portal", "f-days", "f-score", "f-nowarn"].map((id) => document.getElementById(id));
@@ -353,7 +600,11 @@ async function loadResults() {
   sel.replaceChildren(el("option", { value: "", text: "Todos os portais" }),
     ...[...new Set(results.map((r) => r.portal))].sort().map((p) => el("option", { value: p, text: portalName(p) })));
   sel.value = current;
-  document.getElementById("count-new").textContent = results.length ? `(${results.length})` : "";
+  const cntNew = document.getElementById("count-new");
+  if (cntNew) {
+    cntNew.textContent = results.length ? String(results.length) : "";
+    cntNew.style.display = results.length ? "inline-block" : "none";
+  }
   renderResults();
 }
 
@@ -377,13 +628,19 @@ function card(row, decide) {
   let badge = null;
   let summary = null;
   if (row.screening) {
-    const sc = row.screening.score;
-    const verd = row.screening.verdict || "";
-    const bClass = sc >= 75 ? "badge-fit badge-fit-high" : (sc >= 50 ? "badge-fit badge-fit-med" : "badge-fit badge-fit-low");
-    badge = el("span", { class: bClass, text: `${sc}/100 · ${verd}` });
-    if (row.screening.summary) {
-      summary = el("p", { class: "screening-summary", text: row.screening.summary });
+    if (typeof row.screening.score === "number") {
+      const sc = row.screening.score;
+      const verd = row.screening.verdict || "";
+      const bClass = sc >= 75 ? "badge-fit badge-fit-high" : (sc >= 50 ? "badge-fit badge-fit-med" : "badge-fit badge-fit-low");
+      badge = el("span", { class: bClass, text: `${sc}/100 · ${verd}` });
+      if (row.screening.summary) {
+        summary = el("p", { class: "screening-summary", text: row.screening.summary });
+      }
+    } else if (row.screening.error) {
+      badge = el("span", { class: "badge-fit badge-fit-low", text: `[Aviso] ${row.screening.error.slice(0, 45)}…`, title: row.screening.error });
     }
+  } else if (row.screening_error) {
+    badge = el("span", { class: "badge-fit badge-fit-low", text: `[Aviso] ${row.screening_error.slice(0, 45)}…`, title: row.screening_error });
   }
 
   const check = el("input", { type: "checkbox", value: row.url, checked: selectedUrls.has(row.url), onchange: (e) => {
@@ -407,10 +664,10 @@ function card(row, decide) {
     chips,
     warn ? el("div", { class: "warn", text: "[Aviso] " + warn }) : null,
     el("div", { class: "actions" },
-      url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-      full ? el("a", { href: full, target: "_blank", rel: "noopener noreferrer", text: "Vaga completa na empresa" }) : null,
       decide ? el("button", { class: "btn small", onclick: () => decide(row, "interesse"), text: "Me interessa" }) : null,
-      decide ? el("button", { class: "btn small secondary", onclick: () => decide(row, "descartar"), text: "Descartar" }) : null));
+      decide ? el("button", { class: "btn small secondary", onclick: () => decide(row, "descartar"), text: "Descartar" }) : null,
+      full ? el("a", { class: "btn small secondary", href: full, target: "_blank", rel: "noopener noreferrer", text: "Vaga na empresa" }) : null,
+      url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null));
 }
 
 function renderResults() {
@@ -483,13 +740,37 @@ async function checkBatchStatus() {
       if (st.results && Object.keys(st.results).length > 0) {
         let hasNew = false;
         for (const [u, screenData] of Object.entries(st.results)) {
-          const row = results.find((r) => r.url === u);
-          if (row && (!row.screening || row.screening.score !== screenData.score)) {
-            row.screening = screenData;
-            hasNew = true;
+          if (screenData.score < 40 || screenData.discarded || screenData.score >= 65 || screenData.interested) {
+            const idx = results.findIndex((r) => r.url === u);
+            if (idx !== -1) {
+              results.splice(idx, 1);
+              selectedUrls.delete(u);
+              hasNew = true;
+            }
+            if (screenData.score >= 65 || screenData.interested) {
+              loadSaved();
+            }
+          } else {
+            const row = results.find((r) => r.url === u);
+            if (row && (!row.screening || row.screening.score !== screenData.score || row.screening.error !== screenData.error)) {
+              row.screening = screenData;
+              hasNew = true;
+            }
           }
         }
-        if (hasNew) renderResults();
+        if (st.errors && st.errors.length) {
+          for (const err of st.errors) {
+            const row = results.find((r) => r.url === err.url);
+            if (row && row.screening_error !== err.error) {
+              row.screening_error = err.error;
+              hasNew = true;
+            }
+          }
+        }
+        if (hasNew) {
+          document.getElementById("count-new").textContent = results.length ? `(${results.length})` : "";
+          renderResults();
+        }
       }
     } else {
       if (batchPolling) { clearInterval(batchPolling); batchPolling = null; }
@@ -596,8 +877,15 @@ function markdown(text) {
   return root;
 }
 
-// ---- me interessam ----
-const PASSOS = { avaliar: "avaliando a vaga", redigir: "escrevendo currículo e carta", entrevista: "preparando o dossiê de entrevista", perfil: "montando o seu perfil" };
+// ---- me interessam & candidaturas (cards ricos) ----
+const PASSOS = {
+  avaliar: "avaliando a vaga",
+  curriculo: "gerando e compilando o currículo em PDF",
+  carta: "gerando e compilando a carta de apresentação em PDF",
+  redigir: "escrevendo currículo e carta",
+  entrevista: "preparando o dossiê de entrevista",
+  perfil: "montando o seu perfil",
+};
 let claude = { available: true, running: false };
 let claudePolling = null;
 
@@ -605,7 +893,7 @@ async function runClaude(s, step) {
   try {
     await api("/api/claude", { url: s.url, step });
     await refreshClaude();
-    if (!claudePolling) claudePolling = setInterval(refreshClaude, 5000);
+    if (!claudePolling) claudePolling = setInterval(refreshClaude, 3000);
   } catch (e) { alert("Não consegui chamar a IA: " + e.message); }
 }
 async function refreshClaude() {
@@ -614,54 +902,128 @@ async function refreshClaude() {
     const s = await api("/api/status");
     claude = s.agent || s.claude;
   } catch { return; }
-  const g = document.getElementById("claude-global");
-  g.replaceChildren();
-  const pName = claude.name || "IA";
-  if (!claude.available) {
-    g.append(el("span", { class: "error", text: "Nenhuma IA configurada. Abra a aba Configurações e escolha o provedor (Gemini, ChatGPT ou Claude)." }));
-  } else if (claude.running) {
-    const modelInfo = claude.model && claude.model !== "cli" ? ` (${claude.model})` : "";
-    g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName}${modelInfo} está ${PASSOS[claude.step]} desde ${claude.started.slice(11, 16)}…`);
-  } else if (claude.error) {
-    g.append(el("span", { class: "error", text: `O ${pName} não terminou: ` + claude.error }));
+  for (const gid of ["claude-global", "claude-global-candidaturas", "claude-global-documentos"]) {
+    const g = document.getElementById(gid);
+    if (!g) continue;
+    g.replaceChildren();
+    const pName = claude.name || "IA";
+    if (!claude.available) {
+      g.append(el("span", { class: "error", text: "Nenhuma IA configurada. Abra a aba Configurações e escolha o provedor (Gemini, ChatGPT ou Claude)." }));
+    } else if (claude.running) {
+      const modelInfo = claude.model && claude.model !== "cli" ? ` (${claude.model})` : "";
+      g.append(el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName}${modelInfo} está ${PASSOS[claude.step] || "processando"} desde ${claude.started.slice(11, 16)}…`);
+    } else if (claude.error) {
+      g.append(el("span", { class: "error", text: `O ${pName} não terminou: ` + claude.error }));
+    }
   }
   if (!claude.running && claudePolling) { clearInterval(claudePolling); claudePolling = null; }
-  if (was !== claude.running) { loadSaved(); if (!document.getElementById("tab-perfil").hidden) loadProfile(); }
+  if (was !== claude.running) {
+    loadSaved();
+    loadApplications();
+    loadDocuments();
+    if (!document.getElementById("tab-perfil").hidden) loadProfile();
+  }
   renderPerfilStatus();
+}
+
+function answerCarta(text) {
+  if (!text) return null;
+  const copyBtn = el("button", {
+    class: "btn small",
+    onclick: (e) => copyLetter(text, e.currentTarget),
+    text: "Copiar texto da carta",
+    title: "Copia o texto da carta de apresentação para a área de transferência"
+  });
+  const previewBar = el("div", { class: "letter-preview-header" },
+    el("span", { class: "letter-preview-title", text: "Texto da Carta de Apresentação" }),
+    copyBtn);
+
+  const previewBox = el("div", { class: "letter-preview-box" },
+    previewBar,
+    markdown(text));
+
+  return el("details", { class: "answer", open: "" },
+    el("summary", { text: "Carta de apresentação (pronta para copiar)" }),
+    previewBox);
+}
+
+function renderRichJobCard(s, mode) {
+  const url = safeUrl(s.url || s.source);
+  const ans = s.claude || {};
+  const busy = claude.running && claude.url === (s.url || s.source);
+  const off = !url || !claude.available || claude.running;
+  const answer = (title, text, open) => text ? el("details", { class: "answer", ...(open ? { open: "" } : {}) },
+    el("summary", { text: title }), markdown(text)) : null;
+  const pName = claude.name || "IA";
+  const evalText = ans.avaliar ? "Avaliar de novo" : `Avaliar com o ${pName}`;
+
+  let badge = null;
+  let summaryNode = null;
+  if (s.screening && typeof s.screening.score === "number") {
+    const sc = s.screening.score;
+    const verd = s.screening.verdict || "";
+    const bClass = sc >= 75 ? "badge-fit badge-fit-high" : (sc >= 50 ? "badge-fit badge-fit-med" : "badge-fit badge-fit-low");
+    badge = el("span", { class: bClass, text: `${sc}/100 · ${verd}` });
+    if (s.screening.summary) {
+      summaryNode = el("p", { class: "screening-summary", text: s.screening.summary });
+    }
+  }
+
+  const dateLabel = mode === "applied"
+    ? `candidatura em ${((s.date || s.first_seen || "")).split("-").reverse().join("/")}`
+    : `marcada em ${((s.first_seen || "")).split("-").reverse().join("/")}`;
+  const statusChip = mode === "applied"
+    ? el("span", { class: "chip", text: "" + (STATUS[(s.status || "").toLowerCase()] || s.status || "Enviada") })
+    : null;
+
+  const topRow = el("div", { class: "card-top" },
+    el("div", {},
+      el("h3", { text: s.title || s.role || "(sem título)" }),
+      el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal || s.channel)} · ${dateLabel}` })),
+    el("div", { style: "display: flex; gap: 6px; align-items: center; flex-wrap: wrap;" }, statusChip, badge));
+
+  return el("article", { class: "card" },
+    topRow,
+    summaryNode,
+    el("div", { class: "actions" },
+      el("button", { class: "btn small", onclick: () => runClaude({ ...s, url }, "avaliar"), text: evalText,
+        ...(off ? { disabled: "" } : {}) }),
+      el("button", { class: "btn small", onclick: () => runClaude({ ...s, url }, "curriculo"),
+        text: (ans.curriculo || s.pdf_cv) ? "Refazer Currículo" : "Gerar Currículo",
+        title: "Adapta e compila o currículo em PDF para esta vaga", ...(off ? { disabled: "" } : {}) }),
+      el("button", { class: "btn small", onclick: () => runClaude({ ...s, url }, "carta"),
+        text: (ans.carta || s.pdf_carta) ? "Refazer Carta" : "Gerar Carta",
+        title: "Redige a carta de apresentação e compila o PDF para esta vaga", ...(off ? { disabled: "" } : {}) }),
+      el("button", { class: "btn small secondary", onclick: () => runClaude({ ...s, url }, "entrevista"),
+        text: (ans.entrevista || s.pdf_entrevista) ? "Atualizar Entrevista" : `Preparar entrevista com o ${pName}`,
+        title: "Gera pitch, perguntas técnicas prováveis, casos STAR e PDF via MiKTeX", ...(off ? { disabled: "" } : {}) }),
+      s.pdf_cv ? el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(s.pdf_cv)}`, target: "_blank", rel: "noopener noreferrer", text: "Currículo (PDF)" }) : null,
+      s.pdf_carta ? el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(s.pdf_carta)}`, target: "_blank", rel: "noopener noreferrer", text: "Carta (PDF)" }) : null,
+      ans.carta ? el("button", { class: "btn small", onclick: (e) => copyLetter(ans.carta, e.currentTarget), text: "Copiar texto da carta", title: "Copia o texto da carta para colar no formulário do site" }) : null,
+      s.pdf_entrevista ? el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(s.pdf_entrevista)}`, target: "_blank", rel: "noopener noreferrer", text: "Dossiê (PDF)" }) : null,
+      mode === "saved" ? el("button", { class: "btn small secondary", onclick: () => applyJob(s), text: "Já me candidatei", title: "Registra a candidatura e move esta vaga para a aba Candidaturas" }) : null,
+      mode === "saved" ? el("button", { class: "btn small secondary", onclick: () => discardSavedJob(s), text: "Descartar", title: "Move esta vaga para a aba Descartadas" }) : null,
+      mode === "applied" ? el("button", { class: "btn small danger", onclick: () => removeApplication(s), text: "Remover candidatura", title: "Remove esta vaga da lista de candidaturas e move para Descartadas" }) : null,
+      url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null),
+    busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está ${PASSOS[claude.step] || "processando"}…`) : null,
+    answer(`Avaliação do ${pName}`, ans.avaliar, !(ans.curriculo || ans.carta || ans.redigir)),
+    answer("Currículo adaptado", ans.curriculo, true),
+    answerCarta(ans.carta),
+    answer("Currículo e carta: relatório", ans.redigir, false),
+    answer("Dossiê de Preparação para Entrevista", ans.entrevista, false));
 }
 
 async function loadSaved() {
   const { saved } = await api("/api/saved");
+  const countSpan = document.getElementById("count-interesse");
+  if (countSpan) {
+    countSpan.textContent = saved.length ? String(saved.length) : "";
+    countSpan.style.display = saved.length ? "inline-block" : "none";
+  }
   const box = document.getElementById("interesse");
-  box.replaceChildren(...(saved.length ? saved.map((s) => {
-    const url = safeUrl(s.url);
-    const cmd = url ? `/apply ${url}` : null;
-    const ans = s.claude || {};
-    const busy = claude.running && claude.url === s.url;
-    const off = !url || !claude.available || claude.running;
-    const answer = (title, text, open) => text ? el("details", { class: "answer", ...(open ? { open: "" } : {}) },
-      el("summary", { text: title }), markdown(text)) : null;
-      const pName = claude.name || "IA";
-      const evalText = ans.avaliar ? "Avaliar de novo" : `Avaliar com o ${pName}`;
-      return el("article", { class: "card" },
-        el("h3", { text: s.title || "(sem título)" }),
-        el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal)} · marcada em ${(s.first_seen || "").split("-").reverse().join("/")}` }),
-        el("div", { class: "actions" },
-          url ? el("a", { href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver vaga" }) : null,
-          el("button", { class: "btn small", onclick: () => runClaude(s, "avaliar"), text: evalText,
-            ...(off ? { disabled: "" } : {}) }),
-          el("button", { class: "btn small", onclick: () => runClaude(s, "redigir"),
-            text: ans.redigir ? "Refazer currículo e carta" : "Fazer currículo e carta",
-            title: ans.avaliar ? "" : "Avalie a vaga primeiro", ...(off || !ans.avaliar ? { disabled: "" } : {}) }),
-          el("button", { class: "btn small secondary", onclick: () => runClaude(s, "entrevista"),
-            text: ans.entrevista ? "Atualizar Entrevista" : `Preparar entrevista com o ${pName}`,
-            title: "Gera pitch, perguntas técnicas prováveis, casos STAR e PDF via MiKTeX", ...(off ? { disabled: "" } : {}) }),
-          s.pdf_entrevista ? el("a", { class: "btn small", href: `/api/file?path=${s.pdf_entrevista}`, target: "_blank", text: "Baixar Dossiê (PDF)" }) : null),
-        busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está ${PASSOS[claude.step] || "processando"}…`) : null,
-        answer(`Avaliação do ${pName}`, ans.avaliar, !ans.redigir),
-        answer("Currículo e carta: relatório", ans.redigir, true),
-        answer("Dossiê de Preparação para Entrevista", ans.entrevista, true));
-  }) : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
+  box.replaceChildren(...(saved.length
+    ? saved.map((s) => renderRichJobCard(s, "saved"))
+    : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
 }
 
 // ---- meu perfil ----
@@ -898,25 +1260,262 @@ document.getElementById("btn-cfg-save").addEventListener("click", saveSettings);
 const STATUS = { drafted: "Rascunho", applied: "Enviada", interview: "Entrevista", offer: "Proposta", hired: "Contratação",
   rejected: "Não seguiu", no_response: "Sem resposta", "no response": "Sem resposta", offer_declined: "Proposta recusada",
   "offer declined": "Proposta recusada", withdrawn: "Desisti" };
+async function applyJob(s) {
+  if (!confirm(`Registrar que já se candidatou à vaga "${s.title || 'Vaga'}" na ${s.company || 'empresa'}?\n\nEla será movida para a aba Candidaturas.`)) return;
+  try {
+    await api("/api/applied", { url: s.url, company: s.company, role: s.title, portal: s.portal });
+    await loadSaved();
+    show("candidaturas");
+  } catch (err) {
+    alert("Não consegui registrar candidatura: " + err.message);
+  }
+}
+
+async function removeApplication(s) {
+  const roleName = s.title || s.role || "esta vaga";
+  const compName = s.company ? ` na ${s.company}` : "";
+  if (!confirm(`Remover "${roleName}"${compName} da lista de Candidaturas?\n\nEla será retirada do histórico e movida para a aba Descartadas.`)) return;
+  try {
+    await api("/api/remove-application", { url: s.url || s.source });
+    await loadApplications();
+    await loadDiscarded();
+  } catch (err) {
+    alert("Não consegui remover candidatura: " + err.message);
+  }
+}
+
+async function copyLetter(content, btn) {
+  if (!content) return;
+  let text = content;
+  const m = content.match(/###\s*Texto da Carta[^\n]*\n+([\s\S]*?)(?=\n---|### Detalhes|$)/i);
+  if (m && m[1].trim()) {
+    text = m[1].trim();
+  } else {
+    text = content.replace(/^#+.*$/gm, "").replace(/^-\s+\*\*.*$/gm, "").replace(/```(?:latex|text)?[\s\S]*?```/gi, "").trim();
+  }
+  text = text.replace(/^>\s?/gm, "").trim();
+
+  let ok = false;
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      ok = true;
+    }
+  } catch {}
+  if (!ok) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+    } catch {}
+  }
+  if (btn) {
+    const old = btn.textContent;
+    btn.textContent = "Carta copiada com sucesso!";
+    setTimeout(() => { btn.textContent = old; }, 2500);
+  }
+}
+
 async function loadApplications() {
   const { applications } = await api("/api/applications");
+  const countAppSpan = document.getElementById("count-candidaturas");
+  if (countAppSpan) {
+    countAppSpan.textContent = applications && applications.length ? String(applications.length) : "";
+    countAppSpan.style.display = applications && applications.length ? "inline-block" : "none";
+  }
   const box = document.getElementById("candidaturas");
-  if (!applications.length) {
-    box.replaceChildren(el("p", { class: "empty", text: "Nenhuma candidatura registrada ainda. Elas aparecem aqui depois do /apply." }));
+  if (!applications || !applications.length) {
+    box.replaceChildren(el("p", { class: "empty", text: "Nenhuma candidatura registrada ainda. Marque \"Já me candidatei\" nas vagas de Me interessam para acompanhar aqui." }));
     return;
   }
-  const head = el("tr", {}, ...["Data", "Empresa", "Cargo", "Situação", "Encaixe"].map((h) => el("th", { text: h })));
-  const rows = applications.slice().reverse().map((a) => el("tr", {},
-    el("td", { text: (a.date || "").split("-").reverse().join("/") }), el("td", { text: a.company || "" }),
-    el("td", { text: a.role || "" }), el("td", { text: STATUS[(a.status || "").toLowerCase()] || a.status || "" }),
-    el("td", { text: a.fit_rating || "" })));
-  box.replaceChildren(el("div", { class: "panel tablewrap" }, el("table", {}, el("thead", {}, head), el("tbody", {}, ...rows))));
+  box.replaceChildren(...applications.map((a) => renderRichJobCard(a, "applied")));
 }
+
+// ---- currículos e cartas ----
+let allDocuments = [];
+const DOC_BADGES = {
+  cv: ["badge-fit badge-fit-high", "Currículo"],
+  carta: ["badge-fit badge-fit-med", "Carta de Apresentação"],
+  entrevista: ["chip", "Dossiê de Entrevista"],
+};
+
+async function loadDocuments() {
+  try {
+    const { documents } = await api("/api/documents");
+    allDocuments = documents || [];
+    const countSpan = document.getElementById("count-documentos");
+    if (countSpan) {
+      countSpan.textContent = allDocuments.length ? String(allDocuments.length) : "";
+      countSpan.style.display = allDocuments.length ? "inline-block" : "none";
+    }
+    renderDocuments();
+  } catch {}
+}
+
+function renderDocuments() {
+  const kindFilter = (document.getElementById("f-doc-kind") || {}).value || "";
+  const rows = allDocuments.filter((d) => !kindFilter || d.kind === kindFilter);
+  const box = document.getElementById("documentos");
+  if (!box) return;
+  if (!rows.length) {
+    box.replaceChildren(el("p", { class: "empty", text: "Nenhum documento gerado ainda. Use os botões \"Gerar Currículo\" ou \"Gerar Carta\" nas abas Me interessam ou Candidaturas." }));
+    return;
+  }
+  const pName = claude.name || "IA";
+  const off = !claude.available || claude.running;
+
+  box.replaceChildren(...rows.map((d) => {
+    const [bClass, bText] = DOC_BADGES[d.kind] || ["chip", d.label || "Documento"];
+    const titleText = d.company && d.role ? `${d.role} — ${d.company}` : (d.company || d.name);
+    const url = safeUrl(d.url);
+    const busy = claude.running && claude.url === d.url;
+
+    // Ação para Carta de Apresentação
+    let cartaAction = null;
+    if (d.pdf_carta) {
+      if (d.kind !== "carta") {
+        cartaAction = el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(d.pdf_carta)}`, target: "_blank", rel: "noopener noreferrer", text: "Carta (PDF)" });
+      }
+    } else if (url) {
+      cartaAction = el("button", { class: "btn small", onclick: () => runClaude({ url }, "carta"), text: "Gerar Carta",
+        title: "Redige a carta de apresentação e compila o PDF para esta vaga", ...(off ? { disabled: "" } : {}) });
+    }
+
+    // Ação para Currículo
+    let cvAction = null;
+    if (d.pdf_cv) {
+      if (d.kind !== "cv") {
+        cvAction = el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(d.pdf_cv)}`, target: "_blank", rel: "noopener noreferrer", text: "Currículo (PDF)" });
+      }
+    } else if (url) {
+      cvAction = el("button", { class: "btn small", onclick: () => runClaude({ url }, "curriculo"), text: "Gerar Currículo",
+        title: "Adapta e compila o currículo em PDF para esta vaga", ...(off ? { disabled: "" } : {}) });
+    }
+
+    // Ação para Dossiê de Entrevista
+    let prepAction = null;
+    if (d.pdf_entrevista) {
+      if (d.kind !== "entrevista") {
+        prepAction = el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(d.pdf_entrevista)}`, target: "_blank", rel: "noopener noreferrer", text: "Dossiê (PDF)" });
+      }
+    } else if (url) {
+      prepAction = el("button", { class: "btn small secondary", onclick: () => runClaude({ url }, "entrevista"),
+        text: `Preparar entrevista com o ${pName}`, title: "Gera pitch, perguntas técnicas prováveis, casos STAR e PDF via MiKTeX",
+        ...(off ? { disabled: "" } : {}) });
+    }
+
+    const openPdfLabel = d.kind === "cv" ? "Abrir Currículo (PDF)" : (d.kind === "carta" ? "Abrir Carta (PDF)" : "Abrir Dossiê (PDF)");
+
+    const actions = el("div", { class: "actions" },
+      el("a", { class: "btn small", href: `/api/file?path=${encodeURIComponent(d.path)}`, target: "_blank", rel: "noopener noreferrer", text: openPdfLabel }),
+      cartaAction,
+      d.letter_text ? el("button", { class: "btn small secondary", onclick: (e) => copyLetter(d.letter_text, e.currentTarget), text: "Copiar texto da carta", title: "Copia o texto da carta para colar no formulário do site" }) : null,
+      cvAction,
+      prepAction,
+      url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null);
+
+    return el("article", { class: "card" },
+      el("div", { class: "card-top" },
+        el("div", {},
+          el("h3", { text: titleText }),
+          el("p", { class: "company", text: `${d.path} · gerado em ${d.date} · ${d.size_kb} KB` })),
+        el("span", { class: bClass, text: bText })),
+      actions,
+      busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está ${PASSOS[claude.step] || "processando"}…`) : null,
+      d.letter_text ? answerCarta(d.letter_text) : null);
+  }));
+}
+
+document.getElementById("f-doc-kind") && document.getElementById("f-doc-kind").addEventListener("change", renderDocuments);
+
+// ---- descartadas ----
+let allDiscarded = [];
+
+async function loadDiscarded() {
+  try {
+    const { discarded } = await api("/api/discarded");
+    allDiscarded = discarded || [];
+    const countSpan = document.getElementById("count-descartadas");
+    if (countSpan) {
+      countSpan.textContent = allDiscarded.length ? String(allDiscarded.length) : "";
+      countSpan.style.display = allDiscarded.length ? "inline-block" : "none";
+    }
+    renderDiscarded();
+  } catch {}
+}
+
+async function restoreJob(d) {
+  try {
+    await api("/api/restore", { url: d.url });
+    await loadDiscarded();
+    await loadSaved();
+  } catch (e) {
+    alert("Não consegui restaurar a vaga: " + e.message);
+  }
+}
+
+async function discardSavedJob(s) {
+  try {
+    await api("/api/discard", { url: s.url });
+    await loadSaved();
+    await loadDiscarded();
+  } catch (e) {
+    alert("Não consegui descartar a vaga: " + e.message);
+  }
+}
+
+function renderDiscarded() {
+  const q = ((document.getElementById("f-discarded-text") || {}).value || "").toLowerCase();
+  const fold = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const rows = allDiscarded.filter((d) => !q || fold(`${d.title} ${d.company}`).includes(fold(q)));
+  const box = document.getElementById("descartadas");
+  if (!box) return;
+  if (!rows.length) {
+    box.replaceChildren(el("p", { class: "empty", text: allDiscarded.length ? "Nenhuma vaga descartada com esse filtro." : "Nenhuma vaga descartada." }));
+    return;
+  }
+  box.replaceChildren(...rows.map((d) => {
+    const url = safeUrl(d.url);
+    let badge = null;
+    let summaryNode = null;
+    if (d.screening && typeof d.screening.score === "number") {
+      const sc = d.screening.score;
+      const verd = d.screening.verdict || "";
+      const bClass = sc >= 75 ? "badge-fit badge-fit-high" : (sc >= 50 ? "badge-fit badge-fit-med" : "badge-fit badge-fit-low");
+      badge = el("span", { class: bClass, text: `${sc}/100 · ${verd}` });
+      if (d.screening.summary) {
+        summaryNode = el("p", { class: "screening-summary", text: d.screening.summary });
+      }
+    }
+    return el("article", { class: "card" },
+      el("div", { class: "card-top" },
+        el("div", {},
+          el("h3", { text: d.title || "(sem título)" }),
+          el("p", { class: "company", text: `${d.company || "Empresa não informada"} · ${portalName(d.portal)} · descartada em ${(d.first_seen || "").split("-").reverse().join("/")}` })),
+        badge),
+      summaryNode,
+      el("div", { class: "actions" },
+        el("button", { class: "btn small secondary", onclick: () => restoreJob(d), text: "Mover para Me interessam" }),
+        url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null));
+  }));
+}
+
+document.getElementById("f-discarded-text") && document.getElementById("f-discarded-text").addEventListener("input", renderDiscarded);
 
 refreshStatus().then(() => api("/api/status")).then((s) => {
   if (s.search.running) polling = setInterval(refreshStatus, 2000);
   claude = s.claude;
-  if (claude.running) claudePolling = setInterval(refreshClaude, 5000);
+  if (claude.running) claudePolling = setInterval(refreshClaude, 3000);
+  loadSaved();
+  loadApplications();
+  loadDocuments();
+  loadDiscarded();
   return api("/api/profile");
 }).then((p) => { if (p && !p.ready) show("perfil"); });
 </script>

@@ -58,6 +58,16 @@ class Data(unittest.TestCase):
         self.assertEqual(painel.unseen(RESULTS, self.seen, self.tracker)["new"], [])
         self.assertEqual([s["title"] for s in painel.saved(self.seen)], ["Product Manager"])
         self.assertEqual(painel.unseen(None, self.seen, self.tracker), {"meta": None, "new": []})
+        self.assertEqual([d["title"] for d in painel.discarded(self.seen)], ["Product Owner"])
+        painel.restore_job("https://remotar.com.br/job/2", self.seen)
+        self.assertEqual(painel.discarded(self.seen), [])
+        self.assertEqual(len(painel.saved(self.seen)), 2)
+        painel.record_applied("https://zeta.gupy.io/jobs/1", "Zeta", "Product Manager", "gupy-search", self.tracker, self.seen)
+        self.assertEqual([s["title"] for s in painel.saved(self.seen)], ["Product Owner"])
+        self.assertEqual(len(painel.enriched_applications(self.tracker, self.seen, self.dir)), 1)
+        painel.remove_application("https://zeta.gupy.io/jobs/1", "skipped", self.tracker, self.seen)
+        self.assertEqual(len(painel.enriched_applications(self.tracker, self.seen, self.dir)), 0)
+        self.assertEqual([d["title"] for d in painel.discarded(self.seen)], ["Product Manager"])
 
     def test_applications_read_the_tracker(self):
         self.tracker.write_text("date,company,role,status\n2026-10-01,Zeta,PM,applied\n", encoding="utf-8")
@@ -88,7 +98,7 @@ class Data(unittest.TestCase):
         self.assertIn("<AVALIACAO>\n## Avaliação\nNota 63\n</AVALIACAO>", drafting)
         self.assertIn(f"`{painel.PYTHON} tools/compile_doc.py", drafting)
         self.assertNotIn("{python}", drafting)
-        self.assertEqual(painel.claude_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "redigir": None, "entrevista": None})
+        self.assertEqual(painel.claude_answers(url, self.dir), {"avaliar": "## Avaliação\nNota 63", "curriculo": None, "carta": None, "redigir": None, "entrevista": None})
 
     def test_profile_prompt_needs_a_document_and_carries_the_form_as_data(self):
         docs, answers = self.dir / "documents", self.dir / "respostas.json"
@@ -203,6 +213,20 @@ class Server(unittest.TestCase):
     def test_results_empty_before_a_search(self):
         status, data, _ = self.request("GET", "/api/results")
         self.assertEqual((status, json.loads(data)), (200, {"meta": None, "new": []}))
+
+    def test_clear_pending_and_search_all(self):
+        h = {"X-Painel-Token": self.token, "Content-Type": "application/json"}
+        status, data, _ = self.request("POST", "/api/clear-pending", {}, h)
+        self.assertEqual(status, 200)
+        self.assertIn("cleared", json.loads(data))
+        status, data, _ = self.request("POST", "/api/search", {"all": True, "jobage": 2}, h)
+        self.assertEqual(status, 202)
+        status, data, _ = self.request("GET", "/api/discarded")
+        self.assertEqual(status, 200)
+        self.assertIn("discarded", json.loads(data))
+        status, data, _ = self.request("GET", "/api/documents")
+        self.assertEqual(status, 200)
+        self.assertIn("documents", json.loads(data))
 
 
 class Page(unittest.TestCase):

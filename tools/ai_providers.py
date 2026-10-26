@@ -29,6 +29,11 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
+# No Windows, garante que a pasta de ferramentas do usuário fique no PATH do processo
+_local_gemini = Path.home() / ".gemini" / "bin"
+if _local_gemini.is_dir() and str(_local_gemini) not in os.environ.get("PATH", ""):
+    os.environ["PATH"] = f"{_local_gemini}{os.pathsep}{os.environ.get('PATH', '')}"
+
 ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT / ".env"
 
@@ -50,7 +55,7 @@ SPECS: dict[str, dict[str, Any]] = {
     "gemini": {
         "label": "Google Gemini", "short": "Gemini", "aliases": ("google",),
         "key_var": "GEMINI_API_KEY", "model_var": "GEMINI_MODEL", "default_model": "gemini-3.8-flash",
-        "suggested": ["gemini-3.8-flash", "gemini-3.8-pro", "gemini-3.8-flash-lite", "gemini-2.5-flash"],
+        "suggested": ["gemini-3.8-flash-high", "gemini-3.8-flash-medium", "gemini-4-argon-high", "gemini-4-argon-medium", "gemini-3.8-flash", "gemini-2.5-flash"],
         "cli": "Antigravity (agy)", "key_url": "https://aistudio.google.com/app/apikey",
     },
     "claude": {
@@ -278,7 +283,10 @@ class Provider:
                 raise ProviderError(
                     "o pedido é grande demais para o Antigravity CLI (ele só aceita texto na linha de comando); "
                     "informe uma GEMINI_API_KEY em Configurações para usar a API")
-            cmd, stdin = [self.cli_bin, f"--print={full}"], None
+            model_arg = self.model or "gemini-3.8-flash-high"
+            if model_arg == "gemini-3.8-flash":
+                model_arg = "gemini-3.8-flash-high"
+            cmd, stdin = [self.cli_bin, f"--model={model_arg}", f"--print={full}"], None
         elif self.name == "openai":
             cmd = [self.cli_bin, "exec", "--skip-git-repo-check", "-"]
         else:
@@ -289,6 +297,21 @@ class Provider:
             try:
                 proc = subprocess.run(cmd, input=stdin, capture_output=True, cwd=cwd, timeout=timeout,
                                       env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+                if self.name == "gemini" and proc.returncode != 0:
+                    err_txt = proc.stderr.decode("utf-8", errors="replace")
+                    if "permission" in err_txt or "no output produced" in err_txt:
+                        retry_full = (
+                            "REGRA DE SISTEMA CRÍTICA (MODO SOMENTE TEXTO): Você NÃO tem permissão para executar "
+                            "comandos (command), ler arquivos ou usar ferramentas. NÃO invoque nenhuma tool. "
+                            "Responda IMEDIATAMENTE apenas com texto puro baseado nas informações já fornecidas:\n\n"
+                            + full
+                        )
+                        if len(retry_full) <= MAX_ARGV_CHARS:
+                            proc = subprocess.run(
+                                [self.cli_bin, f"--model={model_arg}", f"--print={retry_full}"],
+                                input=None, capture_output=True, cwd=cwd, timeout=timeout,
+                                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                            )
             except subprocess.TimeoutExpired:
                 raise ProviderError(f"o {self.spec['cli']} passou do tempo limite ({timeout}s)") from None
             except OSError as exc:

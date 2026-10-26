@@ -164,3 +164,9 @@ company_research/*.json
 
 # Local specification and planning notes
 spec/
+
+# Temporary scratch files and debugging scripts
+scratch/
+scratchpad/
+*.tmp
+*.bak
