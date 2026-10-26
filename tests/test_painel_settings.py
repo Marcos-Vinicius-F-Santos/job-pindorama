@@ -112,9 +112,10 @@ class SettingsServer(unittest.TestCase):
         self.assertFalse(s["claude"]["available"])
         self.assertEqual(s["claude"]["mode"], "none")
         self.assertEqual(s["provider"]["mode"], "none")
-        self.assertEqual(s["provider"]["label"], "Nenhuma IA configurada")
+        self.assertEqual(s["provider"]["label"], "Codex / OpenAI (não configurado)")
 
         # Cenário 3: POST /api/batch-screen sem configuração retorna 400 amigável
+        self.assertEqual(self.request("POST", "/api/settings", {"consent": True})[0], 200)
         status, data, _ = self.request("POST", "/api/batch-screen", {"urls": ["https://remotar.com.br/job/1"]})
         self.assertEqual(status, 400)
         self.assertIn("Nenhum provedor de IA configurado", json.loads(data)["error"])

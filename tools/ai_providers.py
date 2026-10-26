@@ -38,6 +38,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT / ".env"
 
 AUTO = "auto"
+DEFAULT_PROVIDER = "openai"  # Codex CLI / OpenAI é o motor principal deste projeto.
 OPENAI_DEFAULT_BASE = "https://api.openai.com/v1"
 MAX_OUTPUT_TOKENS = 8192
 RETRY_DELAYS = (2, 6)  # segundos antes da 2ª e da 3ª tentativa (429 e 5xx)
@@ -46,7 +47,7 @@ MAX_ARGV_CHARS = 28_000 if os.name == "nt" else 120_000
 
 SPECS: dict[str, dict[str, Any]] = {
     "openai": {
-        "label": "OpenAI (ChatGPT)", "short": "ChatGPT", "aliases": ("gpt", "codex", "chatgpt"),
+        "label": "Codex / OpenAI", "short": "Codex", "aliases": ("gpt", "codex", "chatgpt"),
         "key_var": "OPENAI_API_KEY", "model_var": "OPENAI_MODEL", "default_model": "gpt-4o-mini",
         "base_var": "OPENAI_BASE_URL",
         "suggested": ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "o3-mini"],
@@ -263,8 +264,8 @@ class Provider:
         mode = self.mode
         if mode == "none":
             raise ProviderError(
-                f"{self.spec['label']} não está configurado: abra a aba Configurações e informe a chave de API, "
-                f"ou instale e entre no {self.spec['cli']}.")
+                f"{self.spec['label']} não está configurado: copie .env.example para .env, abra a aba "
+                f"Configurações e informe a chave de API, ou instale e entre no {self.spec['cli']}.")
         if mode == "cli":
             return self._generate_cli(prompt, system_instruction, timeout)
         if not MODEL_RE.match(self.model):
@@ -390,16 +391,19 @@ def normalize_provider(value: str | None) -> str:
 
 
 def get_ai_provider(env: dict[str, str] | None = None) -> Provider | UnconfiguredProvider:
-    """O provedor escolhido em Configurações; no automático, o primeiro com chave, depois com CLI."""
+    """O provedor escolhido em Configurações; sem escolha, Codex/OpenAI é o padrão."""
     env = load_env_file() if env is None else env
     providers = {pid: Provider(pid, env) for pid in PROVIDER_IDS}
-    requested = normalize_provider(_setting(env, "AI_PROVIDER"))
+    configured = _setting(env, "AI_PROVIDER")
+    requested = normalize_provider(configured) if configured else DEFAULT_PROVIDER
     if requested != AUTO:
         return providers[requested]
-    for pid in PROVIDER_IDS:
-        if providers[pid].mode == "api_key":
+    # Mesmo no modo automático, priorize o Codex/OpenAI sobre outras chaves ou CLIs.
+    auto_order = (DEFAULT_PROVIDER,) + tuple(pid for pid in PROVIDER_IDS if pid != DEFAULT_PROVIDER)
+    for pid in auto_order:
+        if providers[pid].mode != "none":
             return providers[pid]
-    for pid in PROVIDER_IDS:
+    for pid in auto_order:
         if providers[pid].is_available():
             return providers[pid]
     return UnconfiguredProvider(env)
@@ -429,7 +433,7 @@ def public_settings(env: dict[str, str] | None = None) -> dict:
             "supports_base_url": "base_var" in p.spec,
         })
     return {
-        "provider": normalize_provider(_setting(env, "AI_PROVIDER")),
+        "provider": normalize_provider(_setting(env, "AI_PROVIDER")) if _setting(env, "AI_PROVIDER") else DEFAULT_PROVIDER,
         "consent": _setting(env, "AI_DATA_CONSENT").lower() in ("1", "true", "yes", "sim"),
         "active": active.get_info(),
         "providers": rows,

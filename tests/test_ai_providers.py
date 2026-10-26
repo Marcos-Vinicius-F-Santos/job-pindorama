@@ -95,8 +95,8 @@ class Choosing(Isolated):
         self.assertFalse(p.is_available())
         info = p.get_info()
         self.assertEqual(info["mode"], "none")
-        self.assertEqual(info["provider"], "none")
-        self.assertEqual(info["label"], "Nenhuma IA configurada")
+        self.assertEqual(info["provider"], "openai")
+        self.assertEqual(info["label"], "Codex / OpenAI (não configurado)")
         with self.assertRaises(ai.ProviderError) as cm:
             p.generate("oi")
         self.assertIn(".env.example", str(cm.exception))
@@ -104,6 +104,12 @@ class Choosing(Isolated):
     def test_a_cli_is_enough_when_there_is_no_key(self):
         with mock.patch.object(ai.shutil, "which", side_effect=lambda cmd: "/usr/bin/" + cmd):
             self.assertEqual(ai.get_ai_provider({}).get_info()["mode"], "cli")
+
+    def test_auto_prefers_codex_before_other_provider_keys(self):
+        with mock.patch.object(ai.shutil, "which", side_effect=lambda cmd: "/usr/bin/codex" if cmd == "codex" else None):
+            provider = ai.get_ai_provider({"AI_PROVIDER": "auto", "ANTHROPIC_API_KEY": OTHER_KEY})
+        self.assertEqual(provider.name, "openai")
+        self.assertEqual(provider.mode, "cli")
 
     def test_find_cli_is_symmetric_and_strictly_checks_path(self):
         with mock.patch.object(ai.shutil, "which", side_effect=lambda cmd: f"/bin/{cmd}" if cmd == "codex" else None) as mock_which:

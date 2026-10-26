@@ -116,15 +116,9 @@ class Data(unittest.TestCase):
         self.assertEqual(f.parent, self.dir)
         self.assertRegex(f.name, r"^[0-9a-f]{16}_avaliacao\.md$")
 
-    def test_claude_command_keeps_the_prompt_off_the_command_line(self):
-        cmd = painel.claude_command("claude", "avaliar")
-        self.assertEqual(cmd[:2], ["claude", "-p"])
-        self.assertTrue(all("http" not in part for part in cmd))
-        self.assertIn(str(painel.CLAUDE_SETTINGS_PERFIL), painel.claude_command("claude", "perfil"))
-        settings = json.loads(painel.CLAUDE_SETTINGS.read_text(encoding="utf-8"))
-        bash = [r for r in settings["permissions"]["allow"] if r.startswith("Bash")]
-        self.assertTrue(bash)
-        self.assertTrue(all("tools/compile_doc.py:*)" in r for r in bash), bash)
+    def test_default_panel_provider_is_codex_openai(self):
+        provider = painel.ai_providers.get_ai_provider({})
+        self.assertEqual(provider.name, "openai")
 
 
 class Server(unittest.TestCase):

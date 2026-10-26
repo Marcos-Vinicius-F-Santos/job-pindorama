@@ -392,7 +392,7 @@ Este fork recebe contribuições para a adaptação ao Brasil (portais brasileir
 
 - [Mads Lorentzen](https://github.com/MadsLorentzen), autor do [ai-job-search](https://github.com/MadsLorentzen/ai-job-search), de onde este projeto deriva
 - [Mikkel Krogholm](https://github.com/mikkelkrogsholm) ([repositório de skills](https://github.com/mikkelkrogsholm/skills)), pelas skills originais de CLI de busca de vagas
-- Feito com o [Claude Code](https://claude.com/claude-code), da [Anthropic](https://anthropic.com)
+- Feito com o [Codex CLI](https://developers.openai.com/codex/cli/), da [OpenAI](https://openai.com)
 
 ## Licença
 

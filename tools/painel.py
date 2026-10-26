@@ -18,12 +18,8 @@ próprio computador (127.0.0.1), abre uma página no navegador com
                     API ou pela CLI já instalada), o modelo e as chaves, gravados no
                     .env (fora do git; a página nunca recebe a chave de volta).
 
-Com o Claude Code como provedor, ele roda com as permissões do projeto mais as de
-tools/painel/claude-settings.json (gravar só em cv/, cover_letters/,
-company_research/, documents/applications/ e no tracker, e compilar só pelo
-tools/compile_doc.py); o que não estiver liberado é negado, porque não há
-ninguém para aprovar. O tools/security_guards.py confere esse arquivo. Os demais
-provedores rodam as tarefas de tools/painel_ia.py. As respostas ficam em
+O provedor ativo roda as tarefas de `tools/painel_ia.py`; o Codex é o padrão e os
+demais provedores são alternativas configuráveis. As respostas ficam em
 documents/applications/_painel/ (fora do git), uma vaga por vez.
 
 Segurança: só escuta em 127.0.0.1; cada execução gera um token, embutido na
@@ -682,8 +678,8 @@ class SearchJob:
 class AgentJob:
     """Um pedido ao assistente de IA por vez, pelo provedor escolhido em Configurações.
 
-    Claude Code (CLI) roda o /apply de verdade, com as permissões de tools/painel/claude-settings*.json.
-    Os demais caminhos (Gemini, ChatGPT/OpenAI, Claude por API) rodam as tarefas de tools/painel_ia.py.
+    Todos os provedores, incluindo o Codex CLI, rodam as tarefas de tools/painel_ia.py.
+    O processo recebe apenas o prompt preparado pelo painel e não acessa o workspace.
     """
 
     def __init__(self, base: Path = CLAUDE_DIR, claude_bin: str | None = None,
@@ -695,11 +691,9 @@ class AgentJob:
         self.url = self.step = self.started = self.error = None
 
     def route(self) -> tuple[str, dict]:
-        """('claude_cli' | 'direct' | 'none', dados do provedor ativo)."""
+        """('direct' | 'none', dados do provedor ativo)."""
         provider = ai_providers.get_ai_provider()
         info = provider.get_info()
-        if provider.name == "claude" and provider.mode == "cli" and self.claude_bin:
-            return "claude_cli", info
         return ("direct" if provider.is_available() else "none"), info
 
     def status(self) -> dict:
@@ -1210,11 +1204,11 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 urls = [u for u in body.get("urls", []) if isinstance(u, str)]
                 if not urls:
                     return self._send(400, {"error": "escolha ao menos uma vaga para triagem"})
+                if not ai_providers.has_consent():
+                    return self._send(400, {"error": "Confirme o aviso de privacidade em Configurações antes de usar a IA."})
                 route, _ = claude.route()
                 if route == "none":
                     return self._send(400, {"error": "Nenhum provedor de IA configurado. Copie .env.example para .env e defina suas credenciais, ou configure na aba Configurações."})
-                if not ai_providers.has_consent():
-                    return self._send(400, {"error": "Confirme o aviso de privacidade em Configurações antes de usar a IA."})
                 if not batch.start(urls):
                     return self._send(409, {"error": "já há uma triagem em lote em andamento (ou nenhum endereço válido)"})
                 return self._send(202, {"started": True, "total": min(len(set(urls)), MAX_BATCH)})
