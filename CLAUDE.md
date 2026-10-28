@@ -1,10 +1,10 @@
-# Assistente de candidaturas de [YOUR_NAME]
+# Assistente de candidaturas de Marcos Santos
 
 <!-- SETUP: este arquivo é preenchido pelo /setup -->
 <!-- Depois do /setup, todos os marcadores [PLACEHOLDER] serão trocados pelas suas informações reais -->
 
 ## Papel
-Este repositório é um espaço de trabalho para candidaturas a vagas, adaptado ao mercado brasileiro. O Claude atua como conselheiro de carreira e assistente de candidaturas de [YOUR_NAME], ajudando com:
+Este repositório é um espaço de trabalho para candidaturas a vagas, adaptado ao mercado brasileiro. O Claude atua como conselheiro de carreira e assistente de candidaturas de Marcos Santos, ajudando com:
 1. **Avaliação de encaixe** - Avaliar vagas contra o seu perfil (competências, experiência, perfil comportamental, regime de contratação)
 2. **Personalização do currículo** - Adaptar os modelos de currículo (LaTeX/moderncv) para vagas específicas, nas convenções brasileiras
 3. **Cartas de apresentação** - Redigir cartas direcionadas com os modelos existentes (LaTeX)
@@ -18,47 +18,59 @@ Converse em **português do Brasil**, a menos que a pessoa escreva em outro idio
 <!-- Esta seção é preenchida pelo /setup. Você também pode preencher à mão. -->
 
 ### Identidade (Identity)
-- **Nome:** [YOUR_NAME]
-- **Local:** [YOUR_CITY], [YOUR_COUNTRY] ([YOUR_COMMUTE_CONSTRAINTS])
-- **Gênero gramatical nos textos:** [YOUR_GRAMMATICAL_GENDER] <!-- feminino, masculino ou neutro; o /setup pergunta, nunca deduz pelo nome -->
+- **Nome:** Marcos Santos
+- **Local:** Lagoa da Prata - MG, Brasil (base local; remoto no Brasil; remoto internacional somente quando a empresa aceita contratação a partir do Brasil/LATAM via contractor, EOR ou equivalente; híbrido ou presencial somente com deslocamento viável ou mudança previamente acordada)
+- **Gênero gramatical nos textos:** masculino <!-- feminino, masculino ou neutro; o /setup pergunta, nunca deduz pelo nome -->
 - **Idiomas:**
   | Idioma | Nível |
   |--------|-------|
-  | [LANGUAGE] | [LEVEL] |
+  | Português | Nativo |
+  | Inglês | C1/C2 |
+  | Francês | A1 |
   <!-- Todo idioma em que você trabalha profissionalmente, com o seu nível (CEFR, "nativo",
   "avançado", "intermediário", o que o seu currículo ou LinkedIn usar - não precisa forçar uma
   escala única). Um idioma não declarado é eliminatório quando a vaga o exige; um idioma
   declarado num nível abaixo do pedido é sinalizado para você decidir, não rejeitado
   automaticamente. Veja o filtro de idioma (Language Gate) em 04-job-evaluation.md. -->
-- **CV language:** [YOUR_CV_LANGUAGE] <!-- idioma do currículo: português por padrão para vagas no Brasil; o /setup pergunta -->
+- **CV language:** português para vagas brasileiras; inglês para vagas internacionais publicadas em inglês <!-- o /setup pergunta -->
 
-- **Situação:** [YOUR_EMPLOYMENT_STATUS]
-- **Senioridade-alvo:** [YOUR_TARGET_SENIORITY] <!-- níveis que fazem sentido buscar, em códigos: estagio, junior, pleno, senior, especialista, staff, lead, gestao (ex.: "pleno, senior, especialista"). O /scrape e o /rank passam isto ao tools/posting_signals.py --accept; um título com nível fora da lista é sinalizado, nunca excluído. -->
+- **Situação:** Disponível para nova oportunidade
+- **Senioridade-alvo:** junior, pleno <!-- níveis que fazem sentido buscar, em códigos: estagio, junior, pleno, senior, especialista, staff, lead, gestao (ex.: "pleno, senior, especialista"). O /scrape e o /rank passam isto ao tools/posting_signals.py --accept; um título com nível fora da lista é sinalizado, nunca excluído. -->
 
 - **Título do LinkedIn:** "[YOUR_LINKEDIN_HEADLINE]"
 
 ### Formação
 <!-- Liste os seus cursos, do mais recente para o mais antigo -->
-- **[DEGREE_LEVEL] em [FIELD]** ([YEAR_START]-[YEAR_END]) - [INSTITUTION]
+- **Tecnólogo em Design Gráfico** (2022-2023) - Unopar
+  - TCC / dissertação / tese: "[THESIS_TITLE]"
+  - Temas: [KEY_TOPICS]
+- **Pós-graduação lato sensu em Business Intelligence, Big Data e Analytics, com ênfase em Ciência de Dados** (2023-2024) - Unopar Anhanguera
+  - TCC / dissertação / tese: "[THESIS_TITLE]"
+  - Temas: [KEY_TOPICS]
+- **Pós-graduação lato sensu em Estatística Aplicada** (2023-2024) - Unopar Anhanguera
   - TCC / dissertação / tese: "[THESIS_TITLE]"
   - Temas: [KEY_TOPICS]
 
 ### Experiência profissional
 <!-- Liste os seus cargos, do mais recente para o mais antigo -->
-- **[JOB_TITLE]** ([START_DATE] - [END_DATE]) - **[COMPANY]** ([LOCATION])
-  - [KEY_RESPONSIBILITY_1]
-  - [KEY_RESPONSIBILITY_2]
-  - [KEY_ACHIEVEMENT]
+- **Junior Software Engineer** (mai/2025 - mar/2026) - **Alvoar Lácteos** ([LOCATION])
+  - Aplicação corporativa crítica de onboarding, com atuação em negócio, modelagem de dados, frontend, backend e integrações.
+  - Java 17/21, REST APIs, SAP RFC/BAPI/JCo, MySQL/PostgreSQL, Git, code review, Scrum/Kanban e Grafana.
+  - Redução de 8-10 para 3-5 etapas manuais, onboarding de dias para horas e atendimento a mais de 2.000 usuários mensais; componente JSON reduziu o esforço de mapeamento em aproximadamente 50%.
+- **Software Developer** (dez/2023 - mai/2025) - **Alvoar Lácteos** ([LOCATION])
+  - Aplicações internas em OutSystems e componentes customizados com React/JavaScript.
+  - Formulários dinâmicos, contato direto com usuários e validação de entregas em transformação digital.
+  - Redução de 30% no tempo de conclusão de tarefas e de 25% nos pedidos de modificação.
 
 ### Competências técnicas
-- **Principais:** [YOUR_PRIMARY_SKILLS]
-- **Secundárias:** [YOUR_SECONDARY_SKILLS]
-- **Domínio:** [YOUR_DOMAIN_EXPERTISE]
-- **Softwares:** [YOUR_TOOLS_AND_SOFTWARE]
+- **Principais:** Java 17/21, Spring Boot, REST APIs, SQL/PostgreSQL, integrações SAP, Docker, Maven, Flyway, testes automatizados.
+- **Secundárias:** React, Angular, TypeScript, MySQL, Gradle, Grafana, OutSystems, Mendix, AWS Fundamentals e microsserviços em projetos pessoais.
+- **Domínio:** aplicações corporativas, software corporativo e transformação digital, indústria de alimentos e laticínios, agronegócio e integrações empresariais.
+- **Softwares:** Git, code review, Docker Compose, JUnit, Mockito, Testcontainers, ABAP, SMTP, AWS ECS e Auto Scaling em estudo.
 
 ### Certificações
 <!-- Liste as certificações relevantes, com datas -->
-- **[CERTIFICATION_NAME]** - [HOURS]h - concluída em [DATE]
+- **Cursos complementares:** Java, padrões de projeto/microsserviços, Git e GitHub, engenharia de requisitos, UML e BPMN, todos pela Alura, conforme currículo. Datas e carga horária detalhadas: [DATE/HOURS]
 
 ### Publicações
 <!-- Liste publicações revisadas por pares, se houver -->
@@ -70,27 +82,29 @@ Converse em **português do Brasil**, a menos que a pessoa escreva em outro idio
 
 ### Perfil comportamental
 <!-- Resultados da sua avaliação comportamental (PI, DISC, MBTI, teste de perfil da Gupy ou autoavaliação) -->
-- **[TRAIT_1]** - [DESCRIPTION]
-- **[TRAIT_2]** - [DESCRIPTION]
+- **[Inferido do currículo - revise antes de confiar nisto] Atuação ponta a ponta** - participação em levantamento, modelagem, frontend, backend e integrações.
+- **[Inferido do currículo - revise antes de confiar nisto] Colaboração entre negócio e tecnologia** - contato com áreas de negócio e usuários, além de code review e trabalho multidisciplinar.
 - **Pontos fortes:** [YOUR_STRENGTHS]
 - **Pontos de desenvolvimento:** [YOUR_GROWTH_AREAS]
 - **Rende melhor em:** [YOUR_IDEAL_ENVIRONMENT]
 
 ### O que te motiva
 <!-- O que te motiva profissionalmente -->
-- [PASSION_1]
-- [PASSION_2]
+- Construir e evoluir soluções de software que resolvam problemas reais de negócio, com foco em backend, integrações, qualidade, automação, aprendizado contínuo e colaboração com o time.
 
 ### Setores-alvo
 <!-- Setores e empresas que você quer -->
-- [SECTOR_1]: [EXAMPLE_COMPANIES]
-- [SECTOR_2]: [EXAMPLE_COMPANIES]
+- Tecnologia e desenvolvimento de software; software corporativo e transformação digital.
+- Indústria de alimentos e laticínios; agronegócio e integrações empresariais. Empresa para acompanhar: Alvoar Lácteos.
 
 ### Deal-breakers
 <!-- Restrições eliminatórias da busca. Exigências de idioma são tratadas à parte, automaticamente,
 pela tabela de Idiomas acima - não repita aqui. Regimes não aceitos (ex.: "não aceito PJ") entram aqui. -->
-- [DEALBREAKER_1]
-- [DEALBREAKER_2]
+- Não aceitar presencial ou híbrido sem deslocamento viável a partir de Lagoa da Prata - MG ou sem acordo prévio de mudança.
+- Não aceitar remuneração incompatível com o escopo e o regime; referência CLT de R$ 6.000 a R$ 8.000 brutos/mês e PJ de R$ 8.500 a R$ 11.000/mês, conforme escopo, benefícios e compensação.
+- Não publicar dados pessoais em repositório público.
+- **Modelos aceitos:** remoto, híbrido e presencial, condicionados às restrições de deslocamento acima.
+- **Regimes aceitos:** CLT e PJ; contractor/EOR somente quando a vaga internacional aceitar contratação a partir do Brasil. Contratos internacionais exigem revisão tributária e jurídica antes da aceitação.
 
 ## Estrutura do repositório
 - `cv/` - Variantes de currículo em LaTeX (modelo moderncv, estilo banking)

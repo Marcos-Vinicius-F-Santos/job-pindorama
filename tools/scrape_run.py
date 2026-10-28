@@ -307,6 +307,7 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
             continue
         st["ok"] += 1
         st["results"] += len(results)
+        visa_query = "--visa-sponsorship" in args or "--visa" in args
         for r in results:
             if not isinstance(r, dict):
                 continue
@@ -326,9 +327,13 @@ def collect(calls, portals: dict, seen: SeenIndex, accept, jobage: int, runner=r
                     twin["also_on"].append(portal)
                 if r.get("workplace_type"):
                     labels.setdefault(id(twin), {}).setdefault(portal, r["workplace_type"])
+                if visa_query or r.get("visa_sponsorship") is True:
+                    twin["visa_sponsorship"] = True
                 continue
             row = dict(r)
             row.update(portal=portal, priority=prio, query=query, also_on=[])
+            if visa_query or r.get("visa_sponsorship") is True:
+                row["visa_sponsorship"] = True
             row["signals"] = analyse(str(r.get("description") or ""), str(title or ""), str(company or ""), accept,
                                      r.get("seniority"))
             if r.get("workplace_type"):
@@ -382,7 +387,7 @@ def record(rows: list, seen_path: Path = SEEN, today: str | None = None) -> dict
         if key in state["seen"]:
             kept += 1
             continue
-        state["seen"][key] = {
+        entry = {
             "title": row.get("title"),
             "company": row.get("company"),
             "url": row.get("url"),
@@ -394,6 +399,9 @@ def record(rows: list, seen_path: Path = SEEN, today: str | None = None) -> dict
             "portal": row.get("portal"),
             "source": row.get("source") or "cli",
         }
+        if row.get("visa_sponsorship") is True:
+            entry["visa_sponsorship"] = True
+        state["seen"][key] = entry
         added += 1
     seen_path.parent.mkdir(parents=True, exist_ok=True)
     seen_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

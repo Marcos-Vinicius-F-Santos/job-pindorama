@@ -12,30 +12,47 @@ Estruture as respostas como: **Situação** (contexto), **Tarefa** (sua responsa
 
 Respostas de 1 a 2 minutos. Seja específica(o). Termine com o que aprendeu ou faria diferente.
 
-## Exemplos STAR prontos
+## Candidatos a STAR (completar à mão)
 
-<!-- Preenchidos pelo /setup a partir da sua experiência real. Abaixo, modelos mostrando o formato. -->
+### Redução do tempo e das etapas do onboarding
+**Fonte:** Currículo, Junior Software Engineer - Alvoar Lácteos
+**O que aconteceu:** Uma aplicação corporativa crítica reduziu etapas manuais de 8-10 para 3-5 e o onboarding de dias para horas, para mais de 2.000 usuários mensais.
+**Por que importa:** Perguntas sobre impacto, melhoria de processo, atuação ponta a ponta e priorização.
+**Esboço S/T/A/R:**
+- Situação:
+- Tarefa:
+- Ação:
+- Resultado:
 
-### 1. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT - o que estava acontecendo, qual era o problema]
-**T:** [YOUR RESPONSIBILITY - o que cabia especificamente a você]
-**A:** [WHAT YOU DID - ações, ferramentas e métodos específicos]
-**R:** [OUTCOME - resultados mensuráveis, adoção, impacto]
-**Use para:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+### Componente reutilizável de desserialização JSON
+**Fonte:** Currículo, Junior Software Engineer - Alvoar Lácteos
+**O que aconteceu:** Um componente reutilizável reduziu aproximadamente 50% do esforço de mapeamento.
+**Por que importa:** Perguntas sobre reutilização, qualidade de código, iniciativa e ganhos de produtividade.
+**Esboço S/T/A/R:**
+- Situação:
+- Tarefa:
+- Ação:
+- Resultado:
 
-### 2. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT]
-**T:** [YOUR RESPONSIBILITY]
-**A:** [WHAT YOU DID]
-**R:** [OUTCOME]
-**Use para:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+### Modernização de aplicações internas e formulários
+**Fonte:** Currículo, Software Developer - Alvoar Lácteos
+**O que aconteceu:** Componentes em React/JavaScript e formulários dinâmicos contribuíram para reduzir em 30% o tempo de tarefas e em 25% os pedidos de modificação.
+**Por que importa:** Perguntas sobre modernização, contato com usuários e resultados de frontend.
+**Esboço S/T/A/R:**
+- Situação:
+- Tarefa:
+- Ação:
+- Resultado:
 
-### 3. [PROJECT_NAME] ([SKILL_DEMONSTRATED])
-**S:** [CONTEXT]
-**T:** [YOUR RESPONSIBILITY]
-**A:** [WHAT YOU DID]
-**R:** [OUTCOME]
-**Use para:** "[QUESTION_TYPE_1]", "[QUESTION_TYPE_2]"
+### Arquitetura e consistência no projeto DocFlow
+**Fonte:** Currículo, projeto independente DocFlow
+**O que aconteceu:** O projeto estruturou domínio, serviços, endpoints REST, migrações, testes de integração e decisões de consistência entre PostgreSQL e object storage.
+**Por que importa:** Perguntas sobre decisões arquiteturais, trade-offs, testes e microsserviços.
+**Esboço S/T/A/R:**
+- Situação:
+- Tarefa:
+- Ação:
+- Resultado:
 
 <!-- Acrescente mais exemplos STAR se precisar. O ideal são 4 a 6, cobrindo competências diferentes. -->
 

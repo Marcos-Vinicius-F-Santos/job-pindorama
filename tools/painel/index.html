@@ -187,6 +187,10 @@
     background: var(--chip-bg); color: var(--chip-text); border: 1px solid var(--border-subtle);
     border-radius: 6px; padding: 3px 9px; font-size: 0.82rem; font-weight: 500;
   }
+  .chip-visa {
+    background: rgba(16, 185, 129, 0.14); color: #34d399; border-color: rgba(52, 211, 153, 0.55);
+    font-weight: 800; letter-spacing: 0.04em;
+  }
   .badge-fit {
     display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
     border-radius: 999px; font-weight: 700; font-size: 0.84rem; white-space: nowrap; flex-shrink: 0;
@@ -267,6 +271,31 @@
   form.perfil textarea { min-height: 4.5em; resize: vertical; line-height: 1.5; }
   form.perfil .opts { display: flex; gap: 8px 16px; flex-wrap: wrap; }
   form.perfil .help { color: var(--text-muted); font-size: 0.85rem; margin-top: 4px; }
+  input[type=date], textarea, input[type=url] {
+    font: inherit; font-size: 0.92rem; padding: 8px 12px; border: 1px solid var(--border-subtle);
+    border-radius: 8px; background: var(--bg-surface); color: var(--text-main); width: 100%;
+  }
+  textarea { min-height: 6em; resize: vertical; line-height: 1.5; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .form-grid .field { min-width: 0; }
+  .form-grid .field.full { grid-column: 1 / -1; }
+  .field > span { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem; }
+  .field small { display: block; color: var(--text-muted); margin-top: 4px; }
+  .dialog-title { margin: 0 0 5px; font-size: 1.2rem; }
+  dialog.application-dialog { width: min(920px, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--border-card); border-radius: 14px; padding: 0; background: var(--bg-surface); color: var(--text-main); box-shadow: 0 18px 60px rgba(0,0,0,.25); }
+  dialog.application-dialog::backdrop { background: rgba(15, 23, 42, .55); }
+  .dialog-content { padding: 22px; overflow: auto; max-height: calc(100vh - 32px); }
+  .dialog-content fieldset { border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px; margin: 16px 0; }
+  .dialog-content legend { font-weight: 700; padding: 0 6px; }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border-subtle); }
+  .history-item { border-left: 3px solid var(--accent); padding: 8px 12px; margin: 8px 0; background: var(--bg-elevated); border-radius: 0 8px 8px 0; }
+  .evolution-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 16px 0; }
+  .metric { background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 12px; }
+  .metric strong { display: block; font-size: 1.35rem; }
+  .metric span { color: var(--text-muted); font-size: .84rem; }
+  .evolution-list { margin: 8px 0 0; padding-left: 20px; }
+  .evolution-list li { margin: 6px 0; }
+  @media (max-width: 680px) { .form-grid { grid-template-columns: 1fr; } .form-grid .field.full { grid-column: auto; } }
   ul.files { margin: 10px 0 0; padding-left: 20px; }
   ul.files li { margin-bottom: 6px; overflow-wrap: anywhere; font-size: 0.92rem; }
   .batch-bar {
@@ -287,6 +316,7 @@
     <button role="tab" data-tab="vagas" aria-selected="false">Vagas novas <span id="count-new" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="interesse" aria-selected="false">Me interessam <span id="count-interesse" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="candidaturas" aria-selected="false">Candidaturas <span id="count-candidaturas" class="nav-count" style="display:none;"></span></button>
+    <button role="tab" data-tab="evolucao" aria-selected="false">Evolução <span id="count-evolucao" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="documentos" aria-selected="false">Currículos e Cartas <span id="count-documentos" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="descartadas" aria-selected="false">Descartadas <span id="count-descartadas" class="nav-count" style="display:none;"></span></button>
     <button role="tab" data-tab="config" aria-selected="false">Configurações</button>
@@ -359,6 +389,7 @@
           <option value="med">Notas médias ou maiores (60+)</option>
           <option value="triadas">Apenas vagas com nota</option>
         </select>
+        <label><input type="checkbox" id="f-visa"> Só com VISA</label>
         <label><input type="checkbox" id="f-nowarn"> Só sem avisos</label>
       </div>
       <div class="batch-bar">
@@ -397,10 +428,28 @@
   <section id="tab-candidaturas" role="tabpanel" hidden>
     <div class="panel">
       <h2>Minhas Candidaturas</h2>
-      <p class="muted">Vagas em que você já se candidatou. Você mantém acesso à nota, resumo da avaliação, dossiê de entrevista e pode reavaliar ou gerar currículo e carta a qualquer momento.</p>
+      <p class="muted">Vagas em que você já se candidatou. O resultado é escolhido manualmente. Você pode atualizar os detalhes da candidatura, registrar feedbacks, perguntas e respostas, além de reavaliar ou gerar documentos.</p>
       <p id="claude-global-candidaturas" class="claude-status" aria-live="polite"></p>
     </div>
     <div id="candidaturas" class="cards"></div>
+  </section>
+
+  <section id="tab-evolucao" role="tabpanel" hidden>
+    <div class="panel">
+      <div class="row" style="justify-content: space-between; align-items: flex-start;">
+        <div>
+          <h2>Evolução profissional</h2>
+          <p class="muted">Esta aba apenas visualiza o resultado consolidado. A atualização valida as candidaturas, históricos, projetos, perfil e LinkedIn disponíveis e recalcula as prioridades.</p>
+        </div>
+        <button class="btn" id="btn-atualizar-evolucao" type="button">Atualizar evolução</button>
+      </div>
+      <p id="evolucao-status" class="claude-status" aria-live="polite"></p>
+      <div id="evolucao-summary"></div>
+    </div>
+    <div class="panel" id="evolucao-gaps"></div>
+    <div class="panel" id="evolucao-actions"></div>
+    <div class="panel" id="evolucao-sources"></div>
+    <div class="panel" id="evolucao-projects"></div>
   </section>
 
   <section id="tab-documentos" role="tabpanel" hidden>
@@ -461,6 +510,48 @@
   </section>
 </main>
 
+<dialog id="application-dialog" class="application-dialog" aria-labelledby="application-dialog-title">
+  <form id="application-form" class="dialog-content" novalidate>
+    <h2 id="application-dialog-title" class="dialog-title">Registrar candidatura</h2>
+    <p id="application-dialog-help" class="muted">Confira os detalhes coletados da vaga e informe o currículo enviado.</p>
+    <input type="hidden" id="app-url">
+    <fieldset>
+      <legend>Detalhes da vaga</legend>
+      <div class="form-grid">
+        <label class="field"><span>Cargo</span><input id="app-title" type="text" readonly></label>
+        <label class="field"><span>Empresa</span><input id="app-company" type="text" readonly></label>
+        <label class="field full"><span>Link da vaga</span><input id="app-source-url" type="url" readonly></label>
+        <label class="field full"><span>Descrição e requisitos da vaga</span><textarea id="app-description"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Dados da candidatura</legend>
+      <div class="form-grid">
+        <label class="field"><span>Data da candidatura</span><input id="app-applied-date" type="date" required></label>
+        <label class="field"><span>Resultado</span><select id="app-status" required></select></label>
+        <label class="field full"><span>Currículo enviado</span><select id="app-cv-file" required></select><small>Escolha um currículo original ou um currículo especializado criado para esta vaga.</small></label>
+        <label class="field full"><span>Carta enviada <em>(opcional)</em></span><select id="app-cover-letter-file"></select><small>Deixe sem seleção quando a vaga não exigir carta.</small></label>
+        <label class="field full"><span>Observações da candidatura</span><textarea id="app-notes"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Adicionar ao histórico</legend>
+      <p class="muted">Preencha quando quiser registrar uma etapa, feedback ou pergunta. Deixe tudo em branco para apenas atualizar os dados da candidatura.</p>
+      <div id="application-history-existing"></div>
+      <div class="form-grid">
+        <label class="field"><span>Data da etapa</span><input id="app-event-date" type="date"></label>
+        <label class="field"><span>Etapa</span><input id="app-event-stage" type="text" placeholder="Ex.: entrevista técnica"></label>
+        <label class="field full"><span>Feedback recebido</span><textarea id="app-event-feedback"></textarea></label>
+        <label class="field full"><span>Perguntas e respostas</span><textarea id="app-event-questions-and-answers"></textarea></label>
+      </div>
+    </fieldset>
+    <div class="dialog-actions">
+      <button class="btn secondary" id="app-cancel" type="button">Cancelar</button>
+      <button class="btn" type="submit">Salvar candidatura</button>
+    </div>
+  </form>
+</dialog>
+
 <script>
 "use strict";
 const TOKEN = document.querySelector('meta[name="painel-token"]').content;
@@ -504,6 +595,9 @@ function warningOf(row) {
   if (!v || v === "posting_signals: none") return null;
   return v.replace(/^posting_signals:\s*/, "").replace(/^[^\w\s\(\)]+/i, "").trim();
 }
+function hasVisaSponsorship(row) {
+  return row && (row.visa_sponsorship === true || row.visa_sponsorship === "true");
+}
 
 // ---- abas ----
 const tabs = [...document.querySelectorAll('[role="tab"]')];
@@ -517,6 +611,7 @@ function show(name) {
   if (name === "interesse") refreshClaude().then(loadSaved);
   if (name === "perfil") refreshClaude().then(() => loadProfile());
   if (name === "candidaturas") refreshClaude().then(loadApplications);
+  if (name === "evolucao") loadEvolution();
   if (name === "documentos") loadDocuments();
   if (name === "descartadas") loadDiscarded();
   if (name === "config") loadSettings();
@@ -589,7 +684,7 @@ if (btnClearPending) {
 }
 
 // ---- vagas novas ----
-const filters = ["f-text", "f-model", "f-portal", "f-days", "f-score", "f-nowarn"].map((id) => document.getElementById(id));
+const filters = ["f-text", "f-model", "f-portal", "f-days", "f-score", "f-visa", "f-nowarn"].map((id) => document.getElementById(id));
 filters.forEach((f) => f.addEventListener("input", renderResults));
 
 async function loadResults() {
@@ -616,6 +711,12 @@ function card(row, decide) {
   const add = (t) => t && chips.append(el("span", { class: "chip", text: t }));
   add(row.location);
   add(MODELOS[row.workplace_type] || "Modelo não informado");
+  if (hasVisaSponsorship(row)) {
+    chips.append(el("span", {
+      class: "chip chip-visa", text: "VISA", title: "Sponsorship de visto explicitamente informado pela fonte",
+      "aria-label": "VISA: sponsorship de visto explicitamente informado pela fonte",
+    }));
+  }
   add(row.seniority);
   add(row.contract);
   add(row.salary);
@@ -671,13 +772,14 @@ function card(row, decide) {
 }
 
 function renderResults() {
-  const [text, model, portal, days, scoreFilter, nowarn] = [
+  const [text, model, portal, days, scoreFilter, visaOnly, nowarn] = [
     filters[0].value.toLowerCase(),
     filters[1].value,
     filters[2].value,
     filters[3].value,
     filters[4].value,
-    filters[5].checked
+    filters[5].checked,
+    filters[6].checked
   ];
   const maxDays = days ? Number(days) : null;
   const today = new Date();
@@ -687,6 +789,7 @@ function renderResults() {
     (!text || fold(`${r.title} ${r.company}`).includes(fold(text))) &&
     (!model || (model === "none" ? !r.workplace_type : r.workplace_type === model)) &&
     (!portal || r.portal === portal) &&
+    (!visaOnly || hasVisaSponsorship(r)) &&
     (!nowarn || !warningOf(r)) &&
     (!maxDays || (r.date && Math.floor((today - new Date(r.date + "T00:00:00")) / 86400000) <= maxDays)) &&
     (!scoreFilter || (
@@ -975,12 +1078,15 @@ function renderRichJobCard(s, mode) {
   const statusChip = mode === "applied"
     ? el("span", { class: "chip", text: "" + (STATUS[(s.status || "").toLowerCase()] || s.status || "Enviada") })
     : null;
+  const visaChip = hasVisaSponsorship(s)
+    ? el("span", { class: "chip chip-visa", text: "VISA", title: "Sponsorship de visto explicitamente informado pela fonte" })
+    : null;
 
   const topRow = el("div", { class: "card-top" },
     el("div", {},
       el("h3", { text: s.title || s.role || "(sem título)" }),
       el("p", { class: "company", text: `${s.company || "Empresa não informada"} · ${portalName(s.portal || s.channel)} · ${dateLabel}` })),
-    el("div", { style: "display: flex; gap: 6px; align-items: center; flex-wrap: wrap;" }, statusChip, badge));
+    el("div", { style: "display: flex; gap: 6px; align-items: center; flex-wrap: wrap;" }, statusChip, visaChip, badge));
 
   return el("article", { class: "card" },
     topRow,
@@ -1001,8 +1107,9 @@ function renderRichJobCard(s, mode) {
       s.pdf_carta ? el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(s.pdf_carta)}`, target: "_blank", rel: "noopener noreferrer", text: "Carta (PDF)" }) : null,
       ans.carta ? el("button", { class: "btn small", onclick: (e) => copyLetter(ans.carta, e.currentTarget), text: "Copiar texto da carta", title: "Copia o texto da carta para colar no formulário do site" }) : null,
       s.pdf_entrevista ? el("a", { class: "btn small secondary", href: `/api/file?path=${encodeURIComponent(s.pdf_entrevista)}`, target: "_blank", rel: "noopener noreferrer", text: "Dossiê (PDF)" }) : null,
-      mode === "saved" ? el("button", { class: "btn small secondary", onclick: () => applyJob(s), text: "Já me candidatei", title: "Registra a candidatura e move esta vaga para a aba Candidaturas" }) : null,
+      mode === "saved" ? el("button", { class: "btn small secondary", onclick: () => applyJob(s), text: "Já me candidatei", title: "Abre o cadastro da candidatura antes de movê-la para Candidaturas" }) : null,
       mode === "saved" ? el("button", { class: "btn small secondary", onclick: () => discardSavedJob(s), text: "Descartar", title: "Move esta vaga para a aba Descartadas" }) : null,
+      mode === "applied" ? el("button", { class: "btn small secondary", onclick: () => openApplicationForm(s), text: "Atualizar histórico", title: "Atualiza detalhes, resultado, feedbacks, perguntas e respostas" }) : null,
       mode === "applied" ? el("button", { class: "btn small danger", onclick: () => removeApplication(s), text: "Remover candidatura", title: "Remove esta vaga da lista de candidaturas e move para Descartadas" }) : null,
       url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null),
     busy ? el("p", { class: "claude-status" }, el("span", { class: "spinner", "aria-hidden": "true" }), ` O ${pName} está ${PASSOS[claude.step] || "processando"}…`) : null,
@@ -1025,6 +1132,114 @@ async function loadSaved() {
     ? saved.map((s) => renderRichJobCard(s, "saved"))
     : [el("p", { class: "empty", text: "Nenhuma vaga marcada ainda. Na aba Vagas novas, clique em \"Me interessa\"." })]));
 }
+
+// ---- cadastro da candidatura e histórico manual ----
+const applicationDialog = document.getElementById("application-dialog");
+const applicationForm = document.getElementById("application-form");
+let applicationFormMode = "new";
+let applicationAssets = { curricula: [], cartas: [] };
+
+function valueOf(id) { return (document.getElementById(id) || {}).value || ""; }
+function setValue(id, value) {
+  const node = document.getElementById(id);
+  if (node) node.value = value == null ? "" : String(value);
+}
+function renderApplicationStatusOptions(selected) {
+  const select = document.getElementById("app-status");
+  if (!select) return;
+  select.replaceChildren(...Object.entries(STATUS).map(([key, label]) => el("option", { value: key, text: label })));
+  select.value = STATUS[selected] ? selected : "applied";
+}
+async function loadApplicationAssets(url) {
+  try { applicationAssets = await api(`/api/application-assets?url=${encodeURIComponent(url || "")}`); }
+  catch { applicationAssets = { curricula: [], cartas: [] }; }
+}
+function renderAssetOptions(id, items, selected, emptyLabel) {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const options = [el("option", { value: "", text: emptyLabel })];
+  const available = Array.isArray(items) ? [...items] : [];
+  if (selected && !available.some((item) => item.value === selected)) {
+    available.unshift({ value: selected, label: `Registrado anteriormente · ${selected}` });
+  }
+  options.push(...available.map((item) => el("option", { value: item.value, text: item.label })));
+  select.replaceChildren(...options);
+  select.value = selected || "";
+}
+function renderExistingHistory(history) {
+  const box = document.getElementById("application-history-existing");
+  if (!box) return;
+  if (!Array.isArray(history) || !history.length) {
+    box.replaceChildren(el("p", { class: "muted", text: "Nenhum registro de histórico ainda." }));
+    return;
+  }
+  box.replaceChildren(...history.map((item) => {
+    const title = [item.date, item.stage].filter(Boolean).join(" · ") || "Registro sem etapa";
+    const children = [el("strong", { text: title })];
+    if (item.feedback) children.push(el("p", { text: `Feedback: ${item.feedback}` }));
+    const questionsAndAnswers = item.questions_and_answers || [item.questions, item.answers].filter(Boolean).join("\n\n");
+    if (questionsAndAnswers) children.push(el("p", { text: `Perguntas e respostas: ${questionsAndAnswers}` }));
+    return el("div", { class: "history-item" }, ...children);
+  }));
+}
+async function openApplicationForm(s) {
+  await loadApplicationAssets(s.url || "");
+  const evo = s.evolution || {};
+  const job = evo.job || s;
+  const application = evo.application || {};
+  applicationFormMode = evo.application ? "edit" : "new";
+  setValue("app-url", s.url || job.url || "");
+  setValue("app-source-url", s.url || job.url || "");
+  setValue("app-title", s.title || job.title || s.role || "");
+  setValue("app-company", s.company || job.company || "");
+  for (const key of ["portal", "location", "workplace_type", "contract", "seniority", "salary", "posted_date", "deadline"]) {
+    applicationForm.dataset[key] = s[key] || job[key] || "";
+  }
+  setValue("app-description", s.description || job.description || "");
+  setValue("app-applied-date", application.applied_date || s.date || new Date().toISOString().slice(0, 10));
+  renderApplicationStatusOptions(application.status || s.status || "applied");
+  renderAssetOptions("app-cv-file", applicationAssets.curricula, application.cv_file || s.cv_file || s.pdf_cv || "", "Selecione o currículo enviado");
+  renderAssetOptions("app-cover-letter-file", applicationAssets.cartas, application.cover_letter_file || s.cover_letter_file || s.pdf_carta || "", "Nenhuma carta enviada");
+  setValue("app-notes", application.notes || s.notes || "");
+  setValue("app-event-date", new Date().toISOString().slice(0, 10));
+  setValue("app-event-stage", "");
+  setValue("app-event-feedback", "");
+  setValue("app-event-questions-and-answers", "");
+  renderExistingHistory(evo.history || s.history || []);
+  document.getElementById("application-dialog-title").textContent = applicationFormMode === "edit" ? "Atualizar candidatura" : "Registrar candidatura";
+  document.getElementById("application-dialog-help").textContent = applicationFormMode === "edit"
+    ? "Atualize os dados ou registre uma nova etapa, feedback, pergunta e aprendizado."
+    : "Confira os detalhes coletados da vaga e informe o currículo enviado antes de registrar a candidatura.";
+  if (applicationDialog && typeof applicationDialog.showModal === "function") applicationDialog.showModal();
+}
+document.getElementById("app-cancel").addEventListener("click", () => applicationDialog.close());
+applicationForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = {
+    url: valueOf("app-url"), title: valueOf("app-title"), company: valueOf("app-company"),
+    portal: applicationForm.dataset.portal || "", location: applicationForm.dataset.location || "",
+    workplace_type: applicationForm.dataset.workplace_type || "", contract: applicationForm.dataset.contract || "",
+    seniority: applicationForm.dataset.seniority || "", salary: applicationForm.dataset.salary || "",
+    posted_date: applicationForm.dataset.posted_date || "", deadline: applicationForm.dataset.deadline || "",
+    description: valueOf("app-description"), applied_date: valueOf("app-applied-date"),
+    status: valueOf("app-status"), cv_file: valueOf("app-cv-file"), cover_letter_file: valueOf("app-cover-letter-file"),
+    notes: valueOf("app-notes"), event_date: valueOf("app-event-date"), event_stage: valueOf("app-event-stage"),
+    event_feedback: valueOf("app-event-feedback"), event_questions_and_answers: valueOf("app-event-questions-and-answers"),
+  };
+  if (!payload.cv_file) { alert("Informe o currículo enviado para a vaga."); return; }
+  const submit = applicationForm.querySelector('button[type="submit"]');
+  if (submit) submit.disabled = true;
+  try {
+    await api("/api/application", payload);
+    applicationDialog.close();
+    await Promise.all([loadSaved(), loadApplications()]);
+    if (applicationFormMode === "new") show("candidaturas");
+  } catch (err) {
+    alert("Não consegui salvar a candidatura: " + err.message);
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+});
 
 // ---- meu perfil ----
 let perfil = null;
@@ -1261,14 +1476,7 @@ const STATUS = { drafted: "Rascunho", applied: "Enviada", interview: "Entrevista
   rejected: "Não seguiu", no_response: "Sem resposta", "no response": "Sem resposta", offer_declined: "Proposta recusada",
   "offer declined": "Proposta recusada", withdrawn: "Desisti" };
 async function applyJob(s) {
-  if (!confirm(`Registrar que já se candidatou à vaga "${s.title || 'Vaga'}" na ${s.company || 'empresa'}?\n\nEla será movida para a aba Candidaturas.`)) return;
-  try {
-    await api("/api/applied", { url: s.url, company: s.company, role: s.title, portal: s.portal });
-    await loadSaved();
-    show("candidaturas");
-  } catch (err) {
-    alert("Não consegui registrar candidatura: " + err.message);
-  }
+  openApplicationForm(s);
 }
 
 async function removeApplication(s) {
@@ -1337,6 +1545,89 @@ async function loadApplications() {
   box.replaceChildren(...applications.map((a) => renderRichJobCard(a, "applied")));
 }
 
+// ---- evolução ----
+let evolutionData = null;
+function renderListPanel(id, title, items, emptyText) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  box.replaceChildren(
+    el("h2", { text: title }),
+    list.length ? el("ul", { class: "evolution-list" }, ...list.map((item) => el("li", { text: String(item) }))) : el("p", { class: "muted", text: emptyText })
+  );
+}
+function renderEvolution(data) {
+  evolutionData = data || {};
+  const result = evolutionData.evolution || {};
+  const metrics = result.metrics || {};
+  const summary = document.getElementById("evolucao-summary");
+  const metricLabels = {
+    applications: "Candidaturas",
+    applications_with_cv: "Com currículo",
+    applications_with_feedback: "Com feedback",
+    applications_with_questions: "Com perguntas e respostas",
+    projects_in_source: "Projetos na fonte",
+    linkedin_files: "Arquivos LinkedIn",
+    validation_errors: "Erros",
+    validation_warnings: "Avisos",
+  };
+  const metricNodes = Object.entries(metricLabels).filter(([key]) => metrics[key] != null)
+    .map(([key, label]) => el("div", { class: "metric" }, el("strong", { text: String(metrics[key]) }), el("span", { text: label })));
+  summary.replaceChildren(...[
+    el("p", { text: result.summary || "Ainda não há resultado consolidado." }),
+    metricNodes.length ? el("div", { class: "evolution-metrics" }, ...metricNodes) : null,
+    evolutionData.updated_at ? el("p", { class: "muted", text: `Última atualização: ${evolutionData.updated_at.replace("T", " ")}` }) : null
+  ].filter(Boolean));
+  renderListPanel("evolucao-gaps", "Lacunas registradas", evolutionData.gaps, "Nenhuma lacuna registrada.");
+  renderListPanel("evolucao-actions", "Prioridades desta atualização", result.priorities || evolutionData.actions, "Nenhuma prioridade pendente.");
+
+  const sourcesBox = document.getElementById("evolucao-sources");
+  const sources = evolutionData.validation && evolutionData.validation.sources || {};
+  const sourceRows = Object.entries(sources).filter(([name, info]) => name && info && typeof info === "object");
+  const sourceTable = el("div", { class: "tablewrap" }, el("table", {},
+    el("thead", {}, el("tr", {}, el("th", { text: "Fonte" }), el("th", { text: "Estado" }), el("th", { text: "Dados" }))),
+    el("tbody", {}, ...sourceRows.map(([name, info]) => el("tr", {},
+      el("td", { text: name }),
+      el("td", { text: info.exists ? "Encontrada" : "Não encontrada" }),
+      el("td", { text: info.files != null && info.files > 0 ? `${info.files} arquivo(s)` : (info.lines != null ? `${info.lines} linha(s)` : "—") })
+    )))
+  ));
+  const validation = evolutionData.validation || {};
+  sourcesBox.replaceChildren(...[
+    el("h2", { text: "Validação das fontes" }),
+    sourceRows.length ? sourceTable : el("p", { class: "muted", text: "Clique em Atualizar evolução para validar as fontes." }),
+    validation.errors && validation.errors.length ? el("div", { class: "warn", text: `Erros: ${validation.errors.join(" | ")}` }) : null,
+    validation.warnings && validation.warnings.length ? el("div", { class: "warn", text: `Avisos: ${validation.warnings.join(" | ")}` }) : null
+  ].filter(Boolean));
+  renderListPanel("evolucao-projects", "Projetos considerados", evolutionData.projects, "Nenhum projeto registrado.");
+  const count = document.getElementById("count-evolucao");
+  const gapCount = (evolutionData.gaps || []).length + (result.priorities || []).length;
+  if (count) { count.textContent = gapCount ? String(gapCount) : ""; count.style.display = gapCount ? "inline-block" : "none"; }
+}
+async function loadEvolution() {
+  try {
+    const { evolution } = await api("/api/evolucao");
+    renderEvolution(evolution);
+  } catch (err) {
+    document.getElementById("evolucao-status").textContent = "Não consegui carregar a evolução: " + err.message;
+  }
+}
+document.getElementById("btn-atualizar-evolucao").addEventListener("click", async () => {
+  const button = document.getElementById("btn-atualizar-evolucao");
+  const status = document.getElementById("evolucao-status");
+  button.disabled = true;
+  status.replaceChildren(el("span", { class: "spinner", "aria-hidden": "true" }), " Validando candidaturas, projetos, perfil e LinkedIn…");
+  try {
+    const { evolution } = await api("/api/evolucao/atualizar", {});
+    renderEvolution(evolution);
+    status.textContent = "Evolução atualizada.";
+  } catch (err) {
+    status.textContent = "Não consegui atualizar a evolução: " + err.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
 // ---- currículos e cartas ----
 let allDocuments = [];
 const DOC_BADGES = {
@@ -1356,6 +1647,20 @@ async function loadDocuments() {
     }
     renderDocuments();
   } catch {}
+}
+
+async function deleteGeneratedCurriculum(d) {
+  if (!d || d.kind !== "cv" || !d.path) return;
+  const label = d.company && d.role ? `${d.role} — ${d.company}` : d.name;
+  const confirmed = confirm(`Excluir definitivamente o currículo "${label}"?\n\nSerão removidos o PDF, o arquivo-fonte LaTeX e os arquivos temporários deste currículo. A candidatura, as avaliações e os demais documentos serão mantidos.`);
+  if (!confirmed) return;
+  try {
+    await api("/api/document-delete", { path: d.path });
+    await Promise.all([loadDocuments(), loadSaved(), loadApplications()]);
+    alert("Currículo excluído.");
+  } catch (e) {
+    alert("Não consegui excluir o currículo: " + e.message);
+  }
 }
 
 function renderDocuments() {
@@ -1418,6 +1723,7 @@ function renderDocuments() {
       d.letter_text ? el("button", { class: "btn small secondary", onclick: (e) => copyLetter(d.letter_text, e.currentTarget), text: "Copiar texto da carta", title: "Copia o texto da carta para colar no formulário do site" }) : null,
       cvAction,
       prepAction,
+      d.kind === "cv" ? el("button", { class: "btn small danger", onclick: () => deleteGeneratedCurriculum(d), text: "Excluir currículo", title: "Exclui o PDF, o arquivo-fonte LaTeX e os temporários deste currículo" }) : null,
       url ? el("a", { class: "right-link", href: url, target: "_blank", rel: "noopener noreferrer", text: "Ver anúncio no portal" }) : null);
 
     return el("article", { class: "card" },
@@ -1498,6 +1804,7 @@ function renderDiscarded() {
         el("div", {},
           el("h3", { text: d.title || "(sem título)" }),
           el("p", { class: "company", text: `${d.company || "Empresa não informada"} · ${portalName(d.portal)} · descartada em ${(d.first_seen || "").split("-").reverse().join("/")}` })),
+        hasVisaSponsorship(d) ? el("span", { class: "chip chip-visa", text: "VISA", title: "Sponsorship de visto explicitamente informado pela fonte" }) : null,
         badge),
       summaryNode,
       el("div", { class: "actions" },
@@ -1516,6 +1823,7 @@ refreshStatus().then(() => api("/api/status")).then((s) => {
   loadApplications();
   loadDocuments();
   loadDiscarded();
+  loadEvolution();
   return api("/api/profile");
 }).then((p) => { if (p && !p.ready) show("perfil"); });
 </script>

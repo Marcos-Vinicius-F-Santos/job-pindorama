@@ -17,7 +17,7 @@ interface Flags {
 }
 
 // Short-flag aliases.
-const ALIAS: Record<string, string> = { q: "query", n: "limit" }
+const ALIAS: Record<string, string> = { q: "query", n: "limit", visa: "visa-sponsorship" }
 
 function parseFlags(argv: string[]): Flags {
   const flags: Flags = { _: [] }
@@ -102,6 +102,7 @@ FACET FILTERS (values from freehire.me's controlled vocabularies; comma = OR)
   --company <slug>        Company slug (from a result's company_slug).
   --remote <mode>         remote | hybrid | onsite (work_mode facet).
                           A bare --remote means remote. Comma = OR. Unknown values exit 1.
+  --visa-sponsorship      Only jobs explicitly marked by the source as offering visa sponsorship.
   --facet <key=value>     Any other facet param (repeatable), e.g. --facet salary_min=100000
 
 DETAIL
@@ -178,7 +179,7 @@ function parseIntFlag(name: string, raw: string | boolean | string[]): number | 
 const KNOWN_FLAGS: Record<string, Set<string>> = {
   search: new Set([
     "query", "category", "city", "company", "country", "facet", "format", "jobage", "limit",
-    "page", "region", "remote", "seniority", "skill", "description-format", "no-description", "help", "h",
+    "page", "region", "remote", "seniority", "skill", "visa-sponsorship", "description-format", "no-description", "help", "h",
   ]),
   detail: new Set(["format", "help", "h"]),
 }
@@ -269,6 +270,20 @@ async function main(): Promise<number> {
         return 1
       }
       facets[key] = (facets[key] ?? []).concat(vals)
+    }
+
+    // Keep the common sponsorship filter discoverable and typo-resistant while
+    // preserving --facet for less common provider-specific fields.
+    if (flags["visa-sponsorship"] !== undefined) {
+      if (flags["visa-sponsorship"] !== true) {
+        process.stderr.write(
+          JSON.stringify({ error: "--visa-sponsorship is a boolean flag; do not pass a value", code: "BAD_ARG" }) + "\n",
+        )
+        return 1
+      }
+      // The named strict flag wins over a generic conflicting facet instead
+      // of accidentally widening the result with an OR.
+      facets.visa_sponsorship = ["true"]
     }
 
     const parsedRemote = parseWorkMode(flags.remote)

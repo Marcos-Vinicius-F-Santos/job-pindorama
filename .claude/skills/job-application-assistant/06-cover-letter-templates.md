@@ -86,7 +86,7 @@ O envoltório de fonte é obrigatório — se você só tirar o `\begin{itemize}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %     NOME NO TOPO
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\namesection{}{\Huge{[YOUR_NAME]}}{  \href{mailto:[YOUR_EMAIL]}{[YOUR_EMAIL]} | [YOUR_PHONE] |  \urlstyle{same}\href{[YOUR_LINKEDIN_URL]}{LinkedIn}
+\namesection{}{\Huge{Marcos Santos}}{  \href{mailto:marcossantosjdev@gmail.com}{marcossantosjdev@gmail.com} | +55 37 99829-2763 |  \urlstyle{same}\href{https://www.linkedin.com/in/marcos-santos-b9b544214/}{LinkedIn}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -119,7 +119,7 @@ O envoltório de fonte é obrigatório — se você só tirar o `\begin{itemize}
 % quebra dupla gera "! LaTeX Error: There's no line here to end."
 \closing{Atenciosamente,}
 
-\signature{[YOUR_NAME]}
+\signature{Marcos Santos}
 \end{flushright}
 \end{document}
 ```

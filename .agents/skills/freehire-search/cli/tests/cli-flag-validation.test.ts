@@ -143,6 +143,35 @@ describe("freehire CLI flag validation", () => {
       }
     });
 
+    test("--visa-sponsorship requests only explicitly sponsored jobs", async () => {
+      const requests: URL[] = [];
+      const server = Bun.serve({
+        hostname: "127.0.0.1",
+        port: 0,
+        fetch(request) {
+          requests.push(new URL(request.url));
+          return Response.json({ data: [], meta: { total: 0 } });
+        },
+      });
+      try {
+        const result = await runCLI([
+          "search", "-q", "Java", "--region", "eu", "--visa-sponsorship",
+        ], { FREEHIRE_API_URL: server.url.toString() });
+        expect(result.exitCode).toBe(0);
+        expect(requests).toHaveLength(1);
+        expect(requests[0].searchParams.getAll("visa_sponsorship")).toEqual(["true"]);
+        expect(requests[0].searchParams.getAll("regions")).toEqual(["eu"]);
+      } finally {
+        server.stop(true);
+      }
+    });
+
+    test("--visa-sponsorship rejects a value", async () => {
+      const result = await runCLI(["search", "--visa-sponsorship", "false"]);
+      expect(result.exitCode).toBe(1);
+      expect(parsedStderr(result.stderr).code).toBe("BAD_ARG");
+    });
+
     test("a facet without '=' exits 1 with BAD_ARG", async () => {
       const result = await runCLI(["search", "--facet", "novalue"]);
       expect(result.exitCode).not.toBe(0);

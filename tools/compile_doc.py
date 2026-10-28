@@ -24,6 +24,7 @@ Saída 0 = compilou (ou limpou); 1 = a compilação falhou; 2 = arquivo recusado
 """
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -37,6 +38,24 @@ TARGETS = {
     ("documents", "interview"): (("prep_",), "lualatex"),
 }
 INTERMEDIATE = (".aux", ".log", ".out", ".fls", ".fdb_latexmk", ".synctex.gz")
+
+
+def find_engine(engine: str) -> str | None:
+    """Localiza o motor TeX pelo PATH ou por uma instalação comum do MiKTeX no Windows."""
+    found = shutil.which(engine)
+    if found:
+        return found
+    if os.name != "nt":
+        return None
+    roots = []
+    for raw_root in (os.environ.get("LOCALAPPDATA"), str(Path.home() / "AppData" / "Local")):
+        if raw_root:
+            roots.append(Path(raw_root))
+    candidates = []
+    for root in dict.fromkeys(roots):
+        candidates.extend((root / "Programs" / "MiKTeX" / "miktex" / "bin" / "x64" / f"{engine}.exe",
+                           root / "MiKTeX" / "miktex" / "bin" / "x64" / f"{engine}.exe"))
+    return next((str(path) for path in candidates if path.is_file()), None)
 
 
 def target(path: str, root: Path = ROOT) -> tuple[Path, str]:
@@ -91,10 +110,11 @@ def main(argv=None) -> int:
     if args.clean:
         print("removidos: " + (", ".join(clean(tex)) or "nada"))
         return 0
-    if not shutil.which(engine):
+    engine_path = find_engine(engine)
+    if not engine_path:
         print(f"compile_doc: {engine} não encontrado no PATH", file=sys.stderr)
         return 1
-    proc = subprocess.run(command(engine, tex, no_shell_flag(engine)), cwd=tex.parent,
+    proc = subprocess.run(command(engine_path, tex, no_shell_flag(engine_path)), cwd=tex.parent,
                           capture_output=True, text=True, errors="replace")
     pdf = tex.with_suffix(".pdf")
     if proc.returncode:

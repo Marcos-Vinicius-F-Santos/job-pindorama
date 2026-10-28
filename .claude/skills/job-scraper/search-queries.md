@@ -14,7 +14,7 @@ As buscas com `site:` deste arquivo são o **plano B pelo WebSearch** — para p
 
 Principais (CLIs instaladas):
 - **Gupy** (`gupy-search`) — portal.gupy.io; filtre por `--state` (UF), `--location` (cidade), `--remote` e `--type` (clt, pj, estagio...)
-- **linkedin.com/jobs** (`linkedin-search`) — vagas do LinkedIn (filtro: [YOUR_COUNTRY] / [YOUR_CITY])
+- **linkedin.com/jobs** (`linkedin-search`) — vagas do LinkedIn (filtro: Brasil / Lagoa da Prata - MG)
 - **freehire.me** (`freehire-search`) — agregador focado em tecnologia; use `--country BR` ou `--region latam`
 - **Sólides Vagas** (`solides-search`) — empresas pequenas e médias; filtre por `--remote`, `--type` e `--seniority`
 - **VAGAS.com** (`vagas-search`) — generalista; `--remote` = 100% home office
@@ -32,7 +32,7 @@ Principais (CLIs instaladas):
 Plano B pelo WebSearch (portais brasileiros sem CLI; crie uma com `/add-portal` se usar muito):
 - **catho.com.br** — Catho, generalista
 - **br.indeed.com** — Indeed Brasil, agregador
-- **[YOUR_INDUSTRY_JOB_BOARD]** — um portal de nicho da sua área (opcional)
+- **Portal de nicho adicional** — não informado; usar apenas se surgir um portal relevante de tecnologia, integrações ou agronegócio.
 
 Secundário (páginas de carreira de empresas pelo Google):
 - Buscas diretas no Google com filtros `site:` para empresas-alvo conhecidas (muitas usam páginas `<empresa>.gupy.io` ou `<empresa>.vagas.solides.com.br`)
@@ -43,34 +43,39 @@ As buscas são agrupadas por prioridade. Escreva **cada categoria em todos os id
 
 **Organize por função, não por cargo.** O mesmo trabalho tem títulos diferentes em empresas diferentes (uma vaga de "Cientista de Dados" numa empresa pode aparecer como "Analista de Inteligência" ou "Consultor de Dados" em outra). Dê a cada categoria o nome da função que ela cobre e liste vários títulos plausíveis como variantes dentro dela, em vez de apostar uma faixa de prioridade inteira num único título exato. Lembre que vagas brasileiras costumam trazer o nível no título (júnior, pleno, sênior, "Jr", "Pl", "Sr").
 
-### Prioridade 1: [YOUR_PRIMARY_ROLE_TYPE]
+### Prioridade 1: Backend Java e desenvolvimento de software
 
 Combinam com a sua direção de carreira mais forte e mais desejada.
 
 ```
-gupy-search: -q "[YOUR_PRIMARY_JOB_TITLE_1]" --state [YOUR_REGION]
-gupy-search: -q "[YOUR_PRIMARY_JOB_TITLE_2]" --state [YOUR_REGION]
-site:catho.com.br "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_CITY]
-site:linkedin.com/jobs "[YOUR_PRIMARY_JOB_TITLE_1]" [YOUR_COUNTRY]
+gupy-search: -q "Backend Java" --state MG
+gupy-search: -q "Desenvolvedor Java Spring Boot" --state MG
+gupy-search: -q "Software Engineer" --state MG
+gupy-search: -q "Software Developer" --state MG
+site:catho.com.br "Backend Java" Lagoa da Prata
+site:linkedin.com/jobs "Java Spring Boot" Brasil Lagoa da Prata
 ```
 
-### Prioridade 2: [YOUR_DOMAIN_EXPERTISE]
+### Prioridade 2: Integrações empresariais e software corporativo
 
 Combinam com o seu conhecimento de domínio.
 
 ```
-gupy-search: -q "[YOUR_DOMAIN_KEYWORD_1]" --state [YOUR_REGION]
-site:catho.com.br [YOUR_DOMAIN_KEYWORD_1] [YOUR_CITY] OR [YOUR_REGION]
-site:linkedin.com/jobs [YOUR_DOMAIN_KEYWORD_2] [YOUR_CITY] [YOUR_COUNTRY]
+gupy-search: -q "Integration Developer" --state MG
+gupy-search: -q "Integrações SAP" --state MG
+site:catho.com.br "Integration Developer" Lagoa da Prata OR Minas Gerais
+site:linkedin.com/jobs "SAP integrations" Lagoa da Prata Brasil
 ```
 
-### Prioridade 3: [YOUR_ADJACENT_ROLE_TYPE]
+### Prioridade 3: Full stack Java/React e desenvolvimento vizinho
 
 Cargos vizinhos para onde você poderia migrar.
 
 ```
-gupy-search: -q "[YOUR_ADJACENT_TITLE_1]" --state [YOUR_REGION]
-site:catho.com.br "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
+gupy-search: -q "Full Stack Java React" --state MG
+gupy-search: -q "Software Developer React Java" --state MG
+site:catho.com.br "Full Stack Java React" Java Lagoa da Prata
+site:linkedin.com/jobs "Full Stack Java React" Brasil
 ```
 
 ### Prioridade 4: Técnico / consultoria mais amplo
@@ -78,19 +83,32 @@ site:catho.com.br "[YOUR_ADJACENT_TITLE_2]" [YOUR_KEY_SKILL] [YOUR_CITY]
 Rede maior para vagas técnicas gerais.
 
 ```
-gupy-search: -q "[YOUR_KEY_SKILL]" --remote
-site:linkedin.com/jobs "[YOUR_KEY_SKILL]" [YOUR_CITY]
-site:br.indeed.com "consultor técnico" [YOUR_DOMAIN] [YOUR_CITY]
+gupy-search: -q "Java" --remote
+site:linkedin.com/jobs "Java developer" Brasil
+site:br.indeed.com "desenvolvedor Java" integrações Lagoa da Prata
+```
+
+### Prioridade 5: Internacional com sponsorship explícito de visto
+
+Estas buscas são separadas das internacionais gerais: o filtro só aceita vagas que a fonte
+marcou explicitamente como oferecendo sponsorship de visto. A ausência da marcação não é
+interpretada como oferta. A vaga ainda precisa passar pela avaliação de elegibilidade,
+localização, idioma e regime antes de ser considerada candidatura viável.
+
+```
+freehire-search: -q "title:Java OR title:Software Engineer OR title:Backend Engineer" --region global --visa-sponsorship
+freehire-search: -q "Java Spring Boot" --region eu,uk,north_america --visa-sponsorship
+freehire-search: -q "Java" --region latam --visa-sponsorship
 ```
 
 ## Filtro de local
 
 Ao avaliar os resultados, confira se o local da vaga está a uma distância razoável de casa. Defina as áreas aceitáveis:
-- [YOUR_CITY] e arredores
-- [ACCEPTABLE_AREA_1]
-- [ACCEPTABLE_AREA_2]
-- [BORDERLINE_AREA] (limite — ~X min de transporte público)
-- [TOO_FAR_AREA] (longe demais)
+- Lagoa da Prata - MG e arredores, quando o deslocamento for viável
+- Remoto em qualquer lugar do Brasil
+- Híbrido ou presencial com deslocamento viável a partir de Lagoa da Prata - MG
+- [BORDERLINE_AREA] (limite; não informado no formulário)
+- Outras cidades sem deslocamento viável e sem acordo prévio de mudança (longe demais)
 
 Vagas remotas valem para qualquer lugar, **exceto** quando a vaga exige morar num estado ou cidade específicos ("remoto, residir em SP").
 

@@ -6,13 +6,13 @@ framework_version: 1.5.0
 
 <!-- SETUP: o resumo profissional e a ordem das seções são personalizados pelo /setup -->
 
-## Modelo: LaTeX moderncv (estilo banking)
+## Modelo: LaTeX fiel aos currículos de referência
 
-Todos os currículos usam o pacote LaTeX moderncv com o estilo "banking" e o esquema de cores "blue".
+Os currículos gerados pelo painel usam `cv/reference_template.tex`, que reproduz o layout dos PDFs de referência: papel Letter, corpo Times, títulos Helvetica em negrito, linhas horizontais, cabeçalho compacto e entradas de experiência/formação alinhadas em colunas.
 
 **Arquivo gerado:** `cv/main_<company>_<role>.tex`
 **Compilar com:** **lualatex** no MiKTeX/TeX Live. O pdflatex costuma falhar em instalações recentes do MiKTeX com erros de expansão de fonte do `fontawesome5`; o lualatex compila os mesmos arquivos sem problema.
-**Referência principal:** `cv/main_example.tex` (currículo completo, com todas as competências, experiências e conquistas — use como fonte para montar os currículos direcionados)
+**Referência principal:** `cv/reference_template.tex` (currículo completo, com todas as competências, experiências e conquistas — use como fonte para montar os currículos direcionados). `cv/main_example.tex` é legado e não deve ser usado para novas gerações.
 
 ### Comando de compilação
 
@@ -70,6 +70,8 @@ em português. Emprego atual: `03/2022 - atual`.
 
 ## Estrutura do documento
 
+A fonte executável do layout atual é `cv/reference_template.tex`; o bloco `moderncv` abaixo é uma referência histórica do template legado e não deve ser copiado para novas gerações. Preserve a classe `article` em papel Letter, as fontes Times/Helvetica, as margens e as macros do template atual.
+
 ```latex
 \documentclass[11pt,a4paper,sans]{moderncv}
 \moderncvstyle{banking}
@@ -107,7 +109,7 @@ em português. Emprego atual: `03/2022 - atual`.
     linkcolor=blue,
     filecolor=magenta,
     urlcolor=blue,
-    pdftitle={[YOUR_NAME] - CV},
+    pdftitle={Marcos Santos - CV},
     % Mantenha pdfpagemode=UseNone: este bloco roda depois do \AtEndPreamble
     % do próprio moderncv (o moderncv.cls define pdfpagemode ali), então um
     % FullScreen aqui ganharia e abriria todo currículo em tela cheia.
@@ -117,14 +119,14 @@ em português. Emprego atual: `03/2022 - atual`.
 \usepackage{import}
 
 % Dados pessoais (veja "Convenções do currículo brasileiro": sem CPF, idade ou estado civil)
-\name{[FIRST_NAME]}{[LAST_NAME]}
+\name{Marcos}{Santos}
 % Para o endereço, basta "Cidade - UF". Sem endereço a listar, APAGUE a linha
 % inteira: \address{}{}{} falha com "There's no line here to end" em todas
 % as versões do moderncv.
-\address{[YOUR_ADDRESS]}{}{}
-\phone[mobile]{[YOUR_PHONE]}
-\email{[YOUR_EMAIL]}
-\extrainfo{\href{[YOUR_LINKEDIN_URL]}{LinkedIn}, \href{[YOUR_GITHUB_URL]}{GitHub}}
+\address{Lagoa da Prata - MG}{}{}
+\phone[mobile]{+55 37 99829-2763}
+\email{marcossantosjdev@gmail.com}
+\extrainfo{\href{https://www.linkedin.com/in/marcos-santos-b9b544214/}{LinkedIn}, \href{https://github.com/Marcos-Vinicius-F-Santos}{GitHub}}
 
 \begin{document}
 \makecvtitle
@@ -191,11 +193,11 @@ Quando a vaga está fora da sua área de origem, **abra com o argumento de trans
 **Crie 2 ou 3 modelos de resumo para os seus principais tipos de vaga:**
 
 <!-- SETUP: preenchidos com base na sua trajetória -->
-**Para vagas de [YOUR_PRIMARY_ROLE_TYPE]:**
-> [YOUR_PROFILE_STATEMENT_TEMPLATE_1]
+**Para vagas de backend Java / Java com Spring Boot:**
+> Desenvolvedor de software com mais de 2 anos de experiência em aplicações corporativas, com foco em backend Java, integrações e entregas ponta a ponta. Experiência com Java 17/21, REST, SQL, SAP RFC/BAPI/JCo e Git, além de Spring Boot, testes automatizados, Flyway e Docker em projetos pessoais. Atua conectando levantamento com negócio, modelagem de dados, implementação e evolução de soluções com resultados mensuráveis.
 
-**Para vagas de [YOUR_SECONDARY_ROLE_TYPE]:**
-> [YOUR_PROFILE_STATEMENT_TEMPLATE_2]
+**Para vagas de software engineering / full stack Java/React:**
+> Software Developer com experiência em aplicações corporativas, modernização de interfaces, integrações e colaboração com usuários e times multidisciplinares. Combina backend Java, APIs REST, SQL, React, Angular, TypeScript e ferramentas de qualidade e entrega. Busca contribuir em soluções de software corporativo e transformação digital, mantendo o foco em problemas reais de negócio.
 
 Resumos marcados com *[Used for: <company>_<role>]* foram extraídos de rascunhos de candidaturas arquivadas pelo Caminho A do `/setup`. São **referência de redação, nunca fonte de fatos**: ao usar um deles, toda afirmação factual continua vindo de `01-candidate-profile.md` — um rascunho antigo não garante a própria exatidão.
 

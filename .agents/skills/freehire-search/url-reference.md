@@ -73,7 +73,8 @@ Parâmetros de consulta usados pela skill:
 | `skills` | `--skill` | Repetível; nomes canônicos de competências. |
 | `company_slug` | `--company` | Uma empresa. |
 | `work_mode` | `--remote` | `remote` \| `hybrid` \| `onsite`. |
-| qualquer parâmetro de faceta | `--facet chave=valor` | Válvula de escape para o resto (ex.: `salary_min`, `visa_sponsorship`, `employment_type`, `english_level`). |
+| sponsorship de visto | `--visa-sponsorship` | Atalho para `visa_sponsorship=true`; mantém somente vagas explicitamente marcadas como oferecendo visto. |
+| qualquer parâmetro de faceta | `--facet chave=valor` | Válvula de escape para o resto (ex.: `salary_min`, `employment_type`, `english_level`). |
 
 Parâmetros repetidos (`?seniority=senior&seniority=staff`) viram OU dentro da faceta; facetas
 diferentes viram E (a geografia vira OU num grupo de local). A paginação profunda é limitada

@@ -246,7 +246,7 @@ Os documentos cobrem competências, experiência, formação, referências e sin
 - Restrições de deslocamento ou local (se não estiverem visíveis no currículo)
 - Configuração da busca de vagas (use as perguntas da Seção 9 do Caminho C abaixo)
 
-Depois siga para o Passo 3 para preencher os arquivos que não são de perfil (`CLAUDE.md`, `cv/main_example.tex`, `.claude/skills/job-scraper/search-queries.md`). O Passo 3 vai perceber que os sete arquivos de perfil já estão preenchidos e pular esses subpassos.
+Depois siga para o Passo 3 para preencher os arquivos que não são de perfil (`CLAUDE.md`, `cv/reference_template.tex`, `.claude/skills/job-scraper/search-queries.md`). O Passo 3 vai perceber que os sete arquivos de perfil já estão preenchidos e pular esses subpassos.
 
 ---
 
@@ -384,7 +384,7 @@ Personalize a linha de contato e a assinatura dentro do modelo LaTeX do arquivo:
 ### 7. Atualizar `07-interview-prep.md` *(Caminhos B e C; pule se o Caminho A preencheu)*
 Crie exemplos STAR a partir da experiência real (pelo menos 3 ou 4). O Caminho A deixa esboços STAR em "## Candidatos a STAR (completar à mão)" em vez de exemplos completos; se houver esboços, mencione no Passo 4 para a pessoa saber que precisa completá-los.
 
-### 8. Atualizar `cv/main_example.tex`
+### 8. Atualizar `cv/reference_template.tex`
 Troque os dados pessoais de exemplo pelo nome e contatos reais, e acrescente a formação e as experiências mais recentes. Siga as convenções do currículo brasileiro (sem CPF, idade, estado civil ou foto) e o idioma de currículo escolhido, inclusive nos títulos de seção.
 
 ### 9. Gerar `.claude/skills/job-scraper/search-queries.md`
@@ -414,7 +414,7 @@ Apresente um resumo:
 > - `.claude/skills/job-application-assistant/05-cv-templates.md` - Modelos de currículo com os seus resumos e o bloco de contato
 > - `.claude/skills/job-application-assistant/06-cover-letter-templates.md` - Modelos de carta com a sua linha de contato e assinatura
 > - `.claude/skills/job-application-assistant/07-interview-prep.md` - Exemplos STAR da sua experiência
-> - `cv/main_example.tex` - O seu modelo de currículo em LaTeX
+> - `cv/reference_template.tex` - O seu modelo de currículo em LaTeX
 > - `.claude/skills/job-scraper/search-queries.md` - Buscas de vagas para o `/scrape`
 >
 > **Aviso de privacidade:** os arquivos acima agora contêm os seus dados pessoais e são *rastreados pelo git*.

@@ -22,7 +22,7 @@ Acione sempre que uma vaga ou portal pedir qualquer um destes:
 
 ## A regra que governa tudo aqui
 
-**Toda afirmação num campo de formulário precisa já ser defensável pelas mesmas fontes que sustentam o currículo e a carta** — a união de `01-candidate-profile.md`, do currículo mestre (`cv/main_example.tex`) e da seção Candidate Profile do `CLAUDE.md`; uma afirmação está fundamentada se QUALQUER um dos três a sustentar. Quem entrevista lê o formulário junto com o currículo. Campo de formulário não é lugar de introduzir afirmações novas, inflar escopo ou encher espaço — é lugar de *escolher* entre o que já é verdade e organizar para a pergunta feita.
+**Toda afirmação num campo de formulário precisa já ser defensável pelas mesmas fontes que sustentam o currículo e a carta** — a união de `01-candidate-profile.md`, do modelo de referência (`cv/reference_template.tex`) e da seção Candidate Profile do `CLAUDE.md`; uma afirmação está fundamentada se QUALQUER um dos três a sustentar. Quem entrevista lê o formulário junto com o currículo. Campo de formulário não é lugar de introduzir afirmações novas, inflar escopo ou encher espaço — é lugar de *escolher* entre o que já é verdade e organizar para a pergunta feita.
 
 Todas as regras de exatidão de `05-cv-templates.md` e `03-writing-style.md` valem sem mudança.
 
@@ -102,7 +102,7 @@ Inclua:
 
 ## Verificação antes de entregar
 
-- [ ] Toda afirmação factual vem da união de `01-candidate-profile.md`, do currículo mestre (`cv/main_example.tex`) e da seção Candidate Profile do `CLAUDE.md`
+- [ ] Toda afirmação factual vem da união de `01-candidate-profile.md`, do modelo de referência (`cv/reference_template.tex`) e da seção Candidate Profile do `CLAUDE.md`
 - [ ] Nenhuma afirmação contradiz o currículo ou a carta enviados para a mesma vaga
 - [ ] Escopo correto onde o trabalho foi de contribuição
 - [ ] Contagens de palavras e caracteres medidas, não estimadas

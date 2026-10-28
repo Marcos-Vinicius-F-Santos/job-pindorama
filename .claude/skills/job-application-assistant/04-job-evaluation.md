@@ -123,8 +123,8 @@ Quanto as competências exigidas e desejáveis batem com as da pessoa?
 | 40-59 | Encaixe parcial; exige bastante estudo |
 | 0-39 | Incompatibilidade de base |
 
-**Áreas fortes:** [YOUR_PRIMARY_SKILLS]
-**Áreas medianas:** [YOUR_SECONDARY_SKILLS]
+**Áreas fortes:** Java 17/21, Spring Boot, REST APIs, SQL/PostgreSQL, integrações SAP, Docker, Maven, Flyway e testes automatizados.
+**Áreas medianas:** React, Angular, TypeScript, MySQL, Gradle, Grafana, OutSystems, Mendix, AWS Fundamentals e microsserviços em projetos pessoais.
 **Áreas fracas:** [SKILLS_YOU_LACK]
 
 ### 2. Experiência (0-100)
@@ -140,8 +140,8 @@ definição única; leia os anos de experiência e as responsabilidades pedidas,
 | 40-59 | Experiência vizinha; seria preciso argumentar |
 | 0-39 | Experiência sem relação |
 
-**Forte:** [YOUR_DIRECT_EXPERIENCE_DOMAINS]
-**Mediana:** [YOUR_ADJACENT_EXPERIENCE]
+**Forte:** aplicações corporativas, backend Java, integrações SAP, APIs, modelagem de dados, transformação digital e entrega ponta a ponta.
+**Mediana:** frontend com React/Angular, cloud AWS, microsserviços e desenvolvimento de projetos pessoais.
 **Iniciante:** [ROLES_WITH_LIMITED_EXPERIENCE]
 
 ### 3. Encaixe comportamental e de cultura (0-100)
@@ -198,20 +198,20 @@ A vaga faz a carreira avançar e tem tarefas que dão energia?
 | 0-39 | Beco sem saída ou passo para trás |
 
 **Objetivos de carreira:**
-- [YOUR_CAREER_GOAL_1]
-- [YOUR_CAREER_GOAL_2]
-- [YOUR_CAREER_GOAL_3]
+- Buscar posições júnior ou pleno em backend Java, Java com Spring Boot, software engineering/development, full stack Java/React e integrações.
+- Construir e evoluir soluções de software que resolvam problemas reais de negócio, com foco em backend, integrações, qualidade, automação, aprendizado contínuo e colaboração.
+- Acompanhar oportunidades em tecnologia, software corporativo e transformação digital, indústria de alimentos e laticínios, agronegócio e integrações empresariais.
 
 **Filtro de motivação:** avalie não só se a pessoa *consegue* fazer as tarefas, mas se elas vão
 *dar energia*. Considere:
-- Tarefas que dão energia: [YOUR_ENERGIZING_TASKS]
+- Tarefas que dão energia: construir e evoluir software, backend, integrações, qualidade, automação, aprendizado contínuo e colaboração.
 - Tarefas que drenam: [YOUR_DRAINING_TASKS]
 - Fatores além das tarefas: estilo de liderança, cultura da área, valores da empresa, grau de autonomia
 
 **Momento de vida:** considere as restrições pessoais:
 - **Segurança:** [YOUR_FINANCIAL_SITUATION_CONTEXT]
-- **Flexibilidade:** [YOUR_SCHEDULE_CONSTRAINTS]
-- **Desenvolvimento profissional:** [YOUR_GROWTH_PRIORITIES]
+- **Flexibilidade:** Disponibilidade para nova oportunidade; aceita remoto, híbrido e presencial conforme as restrições de deslocamento ou mudança acordada.
+- **Desenvolvimento profissional:** Backend Java, integrações, qualidade, automação, aprendizado contínuo e colaboração.
 
 ### 6. Regime de contratação e remuneração total
 
@@ -273,6 +273,13 @@ faixa. Use a seção seguinte para estimar e, na candidatura, siga a orientaçã
 salarial" de `08-application-forms.md`.
 
 ### 7. Referência salarial (opcional)
+
+**Referência informada pela pessoa para vagas brasileiras:** para CLT, R$ 6.000 a R$ 8.000
+brutos por mês, conforme escopo e benefícios. Para PJ, mínimo de R$ 8.500 a R$ 11.000 por mês,
+conforme escopo e compensação pelos benefícios. CLT e PJ são regimes aceitos; compare sempre a
+remuneração total e não apenas o valor mensal. Para vagas internacionais, preserve a moeda e o
+regime originais e faça uma análise individual; não converta essa referência brasileira em um
+limite automático.
 
 Se a ferramenta de consulta salarial estiver configurada (existe `salary_data.json`), consulte a
 empresa:

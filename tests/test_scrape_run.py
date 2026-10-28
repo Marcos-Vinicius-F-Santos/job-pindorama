@@ -222,6 +222,15 @@ class Collect(unittest.TestCase):
 
 
 class Record(unittest.TestCase):
+    def test_record_keeps_explicit_visa_flag(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            seen = Path(tmp) / "job_scraper" / "seen_jobs.json"
+            rows = [{**job("1", "Backend Engineer", "Acme", "https://acme.example/jobs/1"),
+                     "visa_sponsorship": True, "fit": "high"}]
+            scrape_run.record(rows, seen, today="2026-10-20")
+            entry = json.loads(seen.read_text(encoding="utf-8"))["seen"]["acme_backend-engineer"]
+            self.assertTrue(entry["visa_sponsorship"])
+
     def test_appends_with_canonical_key_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as tmp:
             seen = Path(tmp) / "job_scraper" / "seen_jobs.json"

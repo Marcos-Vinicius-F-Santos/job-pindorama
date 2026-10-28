@@ -26,6 +26,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -74,6 +75,21 @@ KEY_RE = re.compile(r"^[A-Za-z0-9_\-.=+/]{8,400}$")
 
 class ProviderError(RuntimeError):
     """Falha ao falar com o provedor; a mensagem já é segura para mostrar na tela."""
+
+
+@contextmanager
+def _cli_tempdir():
+    """Cria uma pasta de trabalho do CLI e nunca transforma limpeza em erro de geração."""
+    path = tempfile.mkdtemp(prefix="pindorama_ia_")
+    try:
+        yield path
+    finally:
+        try:
+            shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            # No Windows, um arquivo auxiliar do CLI pode permanecer bloqueado
+            # por alguns instantes. A pasta é temporária e será limpa depois.
+            pass
 
 
 # ---------------------------------------------------------------------------
@@ -230,7 +246,42 @@ class Provider:
     def _find_cli(self) -> str | None:
         bin_names = {"openai": "codex", "claude": "claude", "gemini": "agy"}
         cmd = bin_names.get(self.name)
-        return shutil.which(cmd) if cmd else None
+        if not cmd:
+            return None
+
+        found = shutil.which(cmd)
+        if found:
+            return found
+
+        # O Codex para Windows pode estar instalado numa pasta versionada do
+        # OpenAI e essa pasta nem sempre chega ao PATH de processos iniciados
+        # por duplo clique (como abrir-painel.bat). Procure apenas os locais
+        # conhecidos, sem executar nenhum arquivo durante a descoberta.
+        if self.name != "openai":
+            return None
+        configured = _setting(self.env, "CODEX_BIN")
+        if configured and Path(configured).is_file():
+            return configured
+        if os.name != "nt":
+            return None
+
+        roots: list[Path] = []
+        for raw_root in (os.environ.get("LOCALAPPDATA"), str(Path.home() / "AppData" / "Local")):
+            if raw_root:
+                roots.append(Path(raw_root) / "OpenAI" / "Codex" / "bin")
+
+        candidates: list[Path] = []
+        for root in dict.fromkeys(roots):
+            for name in ("codex.exe", "codex.cmd"):
+                direct = root / name
+                if direct.is_file():
+                    candidates.append(direct)
+            if root.is_dir():
+                for pattern in ("*/codex.exe", "*/codex.cmd"):
+                    candidates.extend(path for path in root.glob(pattern) if path.is_file())
+        if not candidates:
+            return None
+        return str(max(candidates, key=lambda path: path.stat().st_mtime))
 
     @property
     def custom_endpoint(self) -> bool:
@@ -294,7 +345,10 @@ class Provider:
             cmd = [self.cli_bin, "-p"]
         # Pasta vazia: o agente não enxerga nem herda as permissões deste projeto. O pedido
         # contém texto de terceiros (a vaga) e não pode virar uma instrução com acesso aos arquivos.
-        with tempfile.TemporaryDirectory(prefix="pindorama_ia_") as cwd:
+        # O Codex CLI no Windows pode manter um arquivo auxiliar aberto por alguns
+        # instantes depois de devolver a resposta. A limpeza estrita da pasta
+        # temporária transformava uma resposta válida em erro WinError 5.
+        with _cli_tempdir() as cwd:
             try:
                 proc = subprocess.run(cmd, input=stdin, capture_output=True, cwd=cwd, timeout=timeout,
                                       env={**os.environ, "PYTHONIOENCODING": "utf-8"})

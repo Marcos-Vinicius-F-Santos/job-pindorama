@@ -128,6 +128,7 @@ export interface FreehireJob {
   description: string
   skills: string[]
   work_mode?: string
+  visa_sponsorship?: boolean
   regions: string[]
   countries: string[]
   cities: string[]
@@ -166,6 +167,7 @@ export interface JobResult {
   date: string | null
   url: string
   work_mode: string | null
+  visa_sponsorship?: boolean
   regions: string[]
   countries: string[]
   skills: string[]
@@ -200,7 +202,7 @@ export function contractDate(value: string | null | undefined): string | null {
 }
 
 export function toResult(j: FreehireJob): JobResult {
-  return {
+  const result: JobResult = {
     id: j.public_slug,
     title: decodeHtmlEntities(j.title || "").trim() || "(untitled)",
     company: j.company || null,
@@ -214,6 +216,8 @@ export function toResult(j: FreehireJob): JobResult {
     skills: j.skills,
     description: j.description || null,
   }
+  if (j.visa_sponsorship === true) result.visa_sponsorship = true
+  return result
 }
 
 /** Reshape a freehire job into the detail result (adds cleaned description + enrichment). */

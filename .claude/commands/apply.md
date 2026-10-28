@@ -99,7 +99,7 @@ Leia também o currículo e a carta existentes mais recentes, como referência d
 - Leia qualquer arquivo `cv/main_*<CV_EXT>` existente como referência de estrutura
 - Leia qualquer arquivo `cover_letters/cover_*<COVER_EXT>` ou `cover_letters/Cover_*<COVER_EXT>` existente como referência de estrutura
 
-*O perfil mestre (`01-candidate-profile.md`), o currículo mestre (`cv/main_example.tex`) e a seção Candidate Profile do CLAUDE.md são a única fonte de verdade para fatos; currículos personalizados anteriores podem ser lidos só pela estrutura e pela redação, nunca como fonte de afirmações.*
+*O perfil mestre (`01-candidate-profile.md`), o modelo de layout (`cv/reference_template.tex`) e a seção Candidate Profile do CLAUDE.md são a única fonte de verdade para fatos; currículos personalizados anteriores podem ser lidos só pela estrutura e pela redação, nunca como fonte de afirmações.*
 
 ### Cobertura dos requisitos (nos dois documentos)
 - **Todo requisito que a vaga declara é tratado — atendido ou admitido como lacuna, nunca omitido em silêncio.** Um requisito declarado que a pessoa não tem (uma ferramenta, um registro em conselho, anos de experiência) é reconhecido com uma ponte honesta ("ainda não faz parte do meu dia a dia; é uma extensão natural de X"), porque a omissão parece esconder algo quando quem entrevista pergunta. Monte a lista de requisitos a partir do Passo 1 e confira os dois rascunhos contra ela antes do Passo 3.
@@ -110,11 +110,11 @@ Leia também o currículo e a carta existentes mais recentes, como referência d
 
 ### Currículo (`cv/main_<company>_<role><CV_EXT>`)
 - No **idioma do currículo definido no perfil** (a linha `CV language:` na seção Identity do CLAUDE.md). Se o perfil não definir, use **português**. Não troque de idioma a cada vaga, a menos que o perfil diga para seguir o idioma da vaga — o idioma do currículo é uma escolha do perfil, para os currículos ficarem consistentes e reutilizáveis
-- Siga o formato moderncv/banking de `05-cv-templates.md`, incluindo as **convenções do currículo brasileiro** (sem foto, CPF, idade ou estado civil; datas `MM/AAAA - MM/AAAA`; títulos de seção no idioma do currículo)
+- Siga exatamente o layout de `cv/reference_template.tex` descrito em `05-cv-templates.md`, incluindo as **convenções do currículo brasileiro** (sem foto, CPF, idade ou estado civil; datas `MM/AAAA - MM/AAAA`; títulos de seção no idioma do currículo)
 - Personalize o resumo profissional e os tópicos de experiência para a vaga
 - Reenquadre competências e conquistas para os requisitos da vaga
 - Mantenha 2 páginas
-- **Auditoria de fundamentação:** antes de gravar no disco, confira todos os tópicos personalizados contra a união de três fontes: `.claude/skills/job-application-assistant/01-candidate-profile.md` + o currículo mestre (`cv/main_example.tex`) + a seção Candidate Profile do `CLAUDE.md`, para garantir que datas, cargos e métricas batem exatamente (zero desvio do perfil ou invenção).
+- **Auditoria de fundamentação:** antes de gravar no disco, confira todos os tópicos personalizados contra a união de três fontes: `.claude/skills/job-application-assistant/01-candidate-profile.md` + o modelo de referência (`cv/reference_template.tex`) + a seção Candidate Profile do `CLAUDE.md`, para garantir que datas, cargos e métricas batem exatamente (zero desvio do perfil ou invenção).
 
 ### Carta (`cover_letters/cover_<company>_<role><COVER_EXT>`)
 - Antes, veja se a vaga pede carta ou só um campo de texto (`06-cover-letter-templates.md`, "Carta de apresentação no Brasil"); se for só campo de texto, ofereça a versão curta pelo `08-application-forms.md`
@@ -163,13 +163,13 @@ Leia estes arquivos de referência — e só estes — para fundamentar a críti
 - `.claude/skills/job-application-assistant/02-behavioral-profile.md` — use especificamente para conferir se a voz da carta combina com o registro natural da pessoa. Um perfil PI "Collaborator", por exemplo, não deve receber um tom combativo de herói solitário; um perfil "Persuader" não deve receber frases cheias de ressalvas e desculpas.
 - `.claude/skills/job-application-assistant/03-writing-style.md`
 - `.claude/skills/job-application-assistant/04-job-evaluation.md`
-- O currículo mestre de base (`cv/main_example.tex`)
+- O modelo de referência (`cv/reference_template.tex`)
 - O `CLAUDE.md` na raiz do projeto (especificamente a seção Candidate Profile)
 
 NÃO leia `05-cv-templates.md` nem `06-cover-letter-templates.md` — eles tratam da estrutura de modelo que a redação já aplicou e não são necessários para criticar conteúdo.
 
 ### 3. Auditoria de fundamentação factual
-Compare cada data, empregador, cargo e métrica numérica dos dois rascunhos com a união de três fontes: `.claude/skills/job-application-assistant/01-candidate-profile.md` + o currículo mestre de base (`cv/main_example.tex`) + a seção Candidate Profile do `CLAUDE.md`. Uma afirmação está fundamentada se QUALQUER uma dessas fontes a sustentar. Divergências entre as três fontes entre si devem ser comunicadas à pessoa como aviso de consistência do perfil, e não tratadas como desvio do rascunho. Divergências do rascunho devem virar edições da Parte A com `"reason": "grounding"`, para se distinguirem de mudanças de estilo. Mantenha a tolerância honesta: mudar a ênfase pode; mudar fatos e inflar números não.
+Compare cada data, empregador, cargo e métrica numérica dos dois rascunhos com a união de três fontes: `.claude/skills/job-application-assistant/01-candidate-profile.md` + o modelo de referência (`cv/reference_template.tex`) + a seção Candidate Profile do `CLAUDE.md`. Uma afirmação está fundamentada se QUALQUER uma dessas fontes a sustentar. Divergências entre as três fontes entre si devem ser comunicadas à pessoa como aviso de consistência do perfil, e não tratadas como desvio do rascunho. Divergências do rascunho devem virar edições da Parte A com `"reason": "grounding"`, para se distinguirem de mudanças de estilo. Mantenha a tolerância honesta: mudar a ênfase pode; mudar fatos e inflar números não.
 
 ### 4. Rascunhos para revisar
 Os dois rascunhos vêm abaixo, no próprio prompt. NÃO use a ferramenta Read nos arquivos de rascunho — use exatamente estes textos.

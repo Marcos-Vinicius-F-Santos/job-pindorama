@@ -1,0 +1,97 @@
+%% Modelo mestre de currículo - layout dos PDFs de referência
+%%
+%% O agente deve adaptar o conteúdo à vaga sem alterar o preâmbulo,
+%% as macros, o tamanho da página, as margens ou a ordem visual das seções.
+%% Compilar documentos gerados com: lualatex main_<empresa>_<cargo>.tex
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage[letterpaper,left=0.90in,right=0.45in,top=0.58in,bottom=0.60in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{mathptmx}
+\usepackage[scaled=0.95]{helvet}
+\usepackage{microtype}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\definecolor{rulegray}{RGB}{145,145,145}
+\definecolor{contextgray}{RGB}{105,105,105}
+\hypersetup{colorlinks=true,urlcolor=blue,linkcolor=blue,pdftitle={Candidate - CV},pdfpagemode=UseNone}
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+
+% O cabeçalho/títulos usam Helvetica e o texto usa Times, como nos PDFs de referência.
+\newcommand{\cvname}[1]{{\rmfamily\bfseries\fontsize{25}{28}\selectfont #1}\par\vspace{2pt}}
+\newcommand{\contactline}[1]{{\sffamily\fontsize{9.5}{12}\selectfont #1}\par\vspace{12pt}}
+\newcommand{\sectiontitle}[1]{\vspace{4pt}{\sffamily\bfseries\fontsize{15}{18}\selectfont #1}\par\vspace{1pt}{\color{rulegray}\rule{\linewidth}{0.45pt}}\par\vspace{5pt}}
+\newcommand{\skillline}[2]{{\rmfamily\fontsize{10}{12}\selectfont\textbf{#1}: #2\par}}
+\newcommand{\experienceentry}[3]{\begin{tabularx}{\linewidth}{@{}p{0.47\linewidth}@{}p{0.40\linewidth}@{}>{\raggedleft\arraybackslash}X@{}}{\rmfamily\bfseries #1} & {\rmfamily\itshape #2} & {\rmfamily #3}\\\end{tabularx}}
+\newcommand{\educationentry}[3]{\begin{tabularx}{\linewidth}{@{}>{\bfseries}p{0.48\linewidth}@{}>{\raggedleft\arraybackslash}X@{}}#1 & #2\\\end{tabularx}\par{\rmfamily #3}\par}
+\newenvironment{cvbullets}{\begin{itemize}[leftmargin=15pt,itemsep=1pt,topsep=0pt,parsep=0pt,partopsep=0pt]\rmfamily\fontsize{10}{12}\selectfont}{\end{itemize}}
+\newcommand{\contextline}[1]{{\rmfamily\itshape\color{contextgray}\fontsize{9.5}{11.5}\selectfont Contexto: #1\par}}
+\newcommand{\trainingline}[2]{{\rmfamily\fontsize{10}{12}\selectfont\textbf{#1}: #2\par}}
+
+\begin{document}
+\cvname{Candidate Name}
+\contactline{\href{https://www.linkedin.com/in/PLACEHOLDER}{LinkedIn}\enspace | \enspace\href{https://github.com/PLACEHOLDER}{GitHub}\enspace | \enspace E-mail: YOUR.EMAIL@example.com\enspace | \enspace Telefone: +55 00 00000-0000}
+
+\sectiontitle{Habilidades}
+\skillline{Linguagens}{Java 17/21, JavaScript, TypeScript}
+\skillline{Backend e APIs}{Spring Boot (projetos pessoais), REST APIs, Spring Data JPA, Flyway}
+\skillline{Frontend}{React, Angular (projetos pessoais), HTML/CSS}
+\skillline{Dados}{SQL, MySQL, PostgreSQL, modelagem de dados}
+\skillline{Testes, DevOps e colaboração}{JUnit, Mockito, Testcontainers, Git, Maven, Gradle, Docker, Grafana, code review}
+\skillline{Corporativo e integrações}{SAP (RFC, BAPI, JCo), ABAP, Mendix, OutSystems, SMTP}
+\skillline{Cloud}{AWS Fundamentals em andamento via AWS Skill Builder; ECS, Auto Scaling e serviços essenciais}
+
+\sectiontitle{Resumo}
+{\rmfamily\fontsize{10}{12}\selectfont Desenvolvedor de Software com mais de 2 anos de experiência em aplicações corporativas, com foco em backend Java, integrações e entregas full stack. Atuação ponta a ponta, do levantamento com áreas de negócio e modelagem de dados à implementação de APIs, interfaces e integrações SAP. Experiência com Java 17/21, REST, SQL e Git; Spring Boot, testes automatizados e Docker aplicados em projetos pessoais. Atualmente, busco uma nova oportunidade enquanto estudo AWS e desenvolvo projetos próprios.\par}
+
+\sectiontitle{Experiências}
+\experienceentry{Alvoar Lácteos}{Junior Software Engineer}{Mai 2025 - Mar 2026}
+\begin{cvbullets}
+\item Conduzi uma aplicação corporativa crítica de onboarding ponta a ponta, participando das conversas com negócio, levantamento de requisitos, design system, modelagem de banco, frontend, backend e integrações; a solução reduziu etapas manuais de 8-10 para 3-5 e o onboarding de dias para horas para mais de 2.000 usuários mensais.
+\item Desenvolvi integrações e componentes em Java 17/21 com REST APIs, SAP RFC/BAPI/JCo e bancos SQL (MySQL/PostgreSQL), incluindo um componente reutilizável de desserialização JSON que reduziu o esforço de mapeamento em aproximadamente 50\%.
+\item Defini estruturas de dados, APIs e módulos compartilhados, trabalhando com Git, code review, Scrum/Kanban e validações manuais de fluxos; também atuei pontualmente com Grafana para consolidação de dados.
+\end{cvbullets}
+\contextline{Atuei no desenvolvimento de uma aplicação corporativa crítica para uma empresa de grande porte em processo de transformação digital do seu cadastro de produtores. O trabalho foi realizado dentro de um time multidisciplinar responsável por arquitetura, integrações e entrega ponta a ponta do produto.}
+
+\vspace{5pt}
+\experienceentry{Alvoar Lácteos}{Software Developer}{Dez 2023 - Mai 2025}
+\begin{cvbullets}
+\item Desenvolvi aplicações internas em OutSystems e componentes customizados com React/JavaScript, modernizando interfaces legadas e contribuindo para redução de 30\% no tempo de conclusão de tarefas.
+\item Implementei formulários dinâmicos para substituir alterações recorrentes em formulários estáticos, reduzindo em 25\% os pedidos de modificação; trabalhei em contato direto com usuários para refinar requisitos e validar entregas.
+\end{cvbullets}
+\contextline{Atuei em uma empresa focada em digitalização corporativa, participando da modernização de aplicações internas e de iniciativas de transformação digital em colaboração próxima com os times de engenharia de software.}
+
+\sectiontitle{Projeto em destaque}
+{\rmfamily\fontsize{10}{12}\selectfont\textbf{DocFlow | Java 21, Spring Boot, PostgreSQL, MinIO, Flyway, Testcontainers, Docker | }\href{https://github.com/Marcos-Vinicius-F-Santos}{GitHub}\par}
+Backend para cadastro, registro, armazenamento e compartilhamento de documentos, com metadados e estado persistidos em PostgreSQL e conteúdo binário em MinIO por meio de uma abstração de armazenamento independente de provedor.
+\begin{cvbullets}
+\item Estruturei domínio, serviços e endpoints REST com Spring Web MVC, Data JPA e Validation; usei Flyway para migrações, JUnit/Testcontainers para testes de integração e Docker Compose para infraestrutura local.
+\item Documentei decisões arquiteturais com ADRs e specs, incluindo o tratamento explícito de consistência entre PostgreSQL e object storage sem assumir transação distribuída.
+\item Portfólio pessoal em desenvolvimento com Java e Angular, além de projetos de estudo em React.
+\end{cvbullets}
+
+\newpage
+\sectiontitle{Formação}
+\educationentry{Unopar}{Jan 2022 - Jun 2023}{Tecnólogo em Design Gráfico - concluído}
+\educationentry{Unopar Anhanguera}{Jul 2023 - Mai 2024}{Business Intelligence, Big Data e Analytics - Ciência de Dados - Pós-graduação Lato Sensu}
+\educationentry{Unopar Anhanguera}{Dez 2023 - Jun 2024}{Estatística Aplicada - Pós-graduação Lato Sensu}
+
+\sectiontitle{Formação complementar}
+\trainingline{Java}{Criando a sua primeira aplicação - Alura (mar/2025)}
+\trainingline{Microsserviços}{Padrões de projeto - Alura (ago/2025)}
+\trainingline{Git e GitHub}{Compartilhando e colaborando em projetos - Alura (nov/2024)}
+\trainingline{Engenharia de requisitos}{Como levantar, documentar e validar - Alura (mar/2023)}
+\trainingline{UML e BPMN}{Modelagem de soluções; mapeamento de processos com Bizagi (abr/2023)}
+
+\sectiontitle{Idiomas}
+\trainingline{Inglês}{Fluente / proficiência profissional}
+\trainingline{Francês}{Básico (A1)}
+\trainingline{Português}{Nativo}
+\end{document}

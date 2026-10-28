@@ -126,6 +126,7 @@ Filtros de faceta (os valores vêm dos vocabulários controlados do freehire; se
 - `--skill <nomes>` — competência(s) canônica(s), ex.: `--skill go,kubernetes`
 - `--company <slug>` — slug da empresa (do `company_slug` de um resultado)
 - `--remote <modo>` — `remote` | `hybrid` | `onsite` (faceta `work_mode`). `--remote` sozinho significa `remote`. Separe por vírgula para OU (`remote,hybrid`; `on-site` vira `onsite`). Um item desconhecido sai com 1 e `BAD_ARG`.
+- `--visa-sponsorship` — mantém apenas vagas explicitamente marcadas pela fonte como oferecendo sponsorship de visto (`visa_sponsorship=true`). A ausência da marcação não é interpretada como oferta.
 - `--facet <chave=valor>` — qualquer outro parâmetro de faceta (repetível), ex.: `--facet salary_min=100000`
 
 > **Local é faceta, não texto livre.** Diferente do `--location` do `linkedin-search`, o

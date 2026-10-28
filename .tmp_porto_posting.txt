@@ -1,0 +1,61 @@
+Analista de Engenharia de Software Pleno
+Porto
+São Paulo, SP
+Descrição da vaga
+A área de engenharia de software do Porto Seguro Bank, responsável pelos produtos Cartões, Adquirência Private Label, Autorizações, Loyalty e Benefícios é dedicada à concepção, implementação e manutenção de sistemas inovadores, focando em soluções eficientes, de alta disponibilidade e seguras.
+Responsabilidades e atribuições
+* Desenvolver e manter microsserviços, garantindo funcionalidade, qualidade, segurança e performance;
+* Escrever código limpo, testável e de fácil manutenção, aplicando boas práticas de desenvolvimento (Clean Code e Design Patterns);
+* Desenvolver e integrar APIs RESTful para conectar diferentes componentes da plataforma;
+* Criar e executar testes automatizados (unitários e de integração) para assegurar a estabilidade das entregas;
+* Participar ativamente das cerimônias ágeis (Dailies, Planning, Refinamento) trazendo estimativas realistas para as tarefas;
+* Auxiliar no monitoramento, diagnóstico e correção de bugs e incidentes do ambiente produtivo;
+* Apoiar na manutenção das esteiras de CI/CD para automação de deploys.
+Requisitos e qualificações
+* Experiência comprovada em desenvolvimento backend com Java (Spring Boot);
+* Experiência em Java batch / Spring batch (Focados em alta volumetria)
+* Bons conhecimentos em desenvolvimento e consumo de APIs RESTful;
+* Prática com bancos de dados relacionais (PostgreSQL, Oracle, MySQL) e/ou NoSQL/Cache (MongoDB, Redis);
+* Conhecimento prático em conceitos de microsserviços e mensageria (Kafka, SQS/SNS, RabbitMQ);
+* Vivência com uso de contêineres (Docker);
+* Experiência em escrita de testes automatizados (Junit, Mockito, Jest ou similares);
+* Conhecimentos básicos/intermediários na nuvem AWS (S3, Lambda, EC2, API Gateway);
+* Prática com controle de versão (Git) e participação em esteiras de integração contínua (CI/CD);
+* Vivência com metodologias ágeis (Scrum ou Kanban).
+Diferenciais:
+* Experiência prévia na indústria financeira, meios de pagamento, cartões ou contas digitais;
+* Noções de orquestração de contêineres com Kubernetes (EKS);
+* Conhecimento em conceitos de Observabilidade (Datadog, Prometheus, Grafana);
+* Noções sobre segurança de APIs e padrão PCI-DSS.
+Informações adicionais
+BENEFÍCIOS
+Vale Alimentação e Refeição Flexíveis;
+Plano de Saúde;
+Plano Odontológico e Odontox;
+Wellhub e TotalPass;
+Academia Bio Ritmo exclusiva para Colaboradores: no Complexo Matriz;
+Participação nos Lucros - PLR;
+Programa de Ações: Porto em Ação: complementar à PLR até 2030;
+Vale-Transporte;
+Serviços de Transporte de Vans; disponibilizadas nas principais estações de acesso à Porto (Luz, Barra Funda, Santa Cecília e Júlio Prestes);
+Licença Parental Estendida: até 40 dias para todas as configurações familiares;
+Licença Maternidade Estendida de 6 meses.;
+Auxílio creche ou babá;
+Seguro de Vida;
+Previdência Privada - PortoPrev;
+Bolsa de estudos: Reembolso para graduação, pós ou MBA;
+Reembolso para idiomas (inglês ou espanhol);
+Local de trabalho: Local (Atuamos com modelos híbridos, que serão explorados no processo seletivo);
+Na Porto, Você Importa!
+A Porto é muito mais que uma seguradora: é um ecossistema gigante que utiliza tecnologia para criar soluções, através de quatro verticais de negócio: Porto Bank, Porto Saúde, Porto Seguro e Porto Serviço. A reputação e o reconhecimento conquistados ao longo de mais de 80 anos reforçam o tamanho da Porto, uma empresa referência em negócios, feita para e por pessoas.
+Aqui, bate no peito de 13 mil colaboradores o orgulho de fazer parte de uma organização sólida e ética, que transforma sonhos em realidades fantásticas para os nossos mais de 18 milhões de clientes. São mais de 101 sucursais e escritórios regionais em todo o Brasil.
+O aprendizado faz parte do nosso DNA, e aqui, você terá incentivos, ferramentas e gente boa para você aprender e crescer, a cada dia, um ambiente de acolhimento e segurança, onde cada um possa ser e se orgulhar de quem se é, promovendo um espaço de respeito e vivendo de forma integral e com bem-estar, em uma empresa genuinamente humana.
+DIVERSIDADE & INCLUSÃO NA PORTO
+Na Porto, valorizamos a diversidade e acreditamos que um time plural é essencial para o desenvolvimento do nosso negócio, da sociedade e de cada indivíduo. Afinal, a inovação nasce de visões únicas!
+Juntos, trabalhamos diariamente para construir um espaço seguro, livre e respeitoso. Por isso, incentivamos fortemente a candidatura de mulheres, pessoas negras e indígenas, pessoas com deficiência e pessoas LGBTQIA+ em todas as nossas vagas.
+Nível de experiência
+Assistente
+Tipo de emprego
+Tempo integral
+Setores
+Seguros e previdência complementar

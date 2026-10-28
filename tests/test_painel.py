@@ -7,6 +7,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from unittest import mock
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
@@ -35,6 +36,29 @@ class Data(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_delete_generated_curriculum_removes_only_its_files(self):
+        cv = self.dir / "cv"
+        cv.mkdir()
+        for suffix in (".pdf", ".tex", ".aux", ".log"):
+            (cv / f"main_acme_backend{suffix}").write_text("x", encoding="utf-8")
+        other = cv / "main_other.pdf"
+        other.write_text("keep", encoding="utf-8")
+
+        with mock.patch.object(painel, "ROOT", self.dir):
+            result = painel.delete_generated_document("cv/main_acme_backend.pdf")
+
+        self.assertTrue(result["deleted"])
+        self.assertFalse((cv / "main_acme_backend.pdf").exists())
+        self.assertFalse((cv / "main_acme_backend.tex").exists())
+        self.assertTrue(other.exists())
+
+    def test_delete_rejects_non_curriculum_paths(self):
+        with mock.patch.object(painel, "ROOT", self.dir):
+            with self.assertRaises(ValueError):
+                painel.delete_generated_document("documents/perfil/respostas.json")
+            with self.assertRaises(ValueError):
+                painel.delete_generated_document("cv/main_example.pdf")
 
     def test_mark_uses_the_search_file_not_the_browser(self):
         out = painel.mark(RESULTS, ["https://zeta.gupy.io/jobs/1", "https://evil.example/x"], "interesse", self.seen)
@@ -69,10 +93,73 @@ class Data(unittest.TestCase):
         self.assertEqual(len(painel.enriched_applications(self.tracker, self.seen, self.dir)), 0)
         self.assertEqual([d["title"] for d in painel.discarded(self.seen)], ["Product Manager"])
 
+    def test_visa_flag_survives_marking_for_interest_and_discard(self):
+        visa_results = {
+            "new": [
+                {**RESULTS["new"][0], "visa_sponsorship": True},
+                {**RESULTS["new"][1], "visa_sponsorship": True},
+            ]
+        }
+        painel.mark(visa_results, [visa_results["new"][0]["url"]], "interesse", self.seen)
+        painel.mark(visa_results, [visa_results["new"][1]["url"]], "descartar", self.seen)
+        self.assertTrue(painel.saved(self.seen)[0]["visa_sponsorship"])
+        self.assertTrue(painel.discarded(self.seen)[0]["visa_sponsorship"])
+
     def test_applications_read_the_tracker(self):
         self.tracker.write_text("date,company,role,status\n2026-10-01,Zeta,PM,applied\n", encoding="utf-8")
         self.assertEqual(painel.applications(self.tracker), [{"date": "2026-10-01", "company": "Zeta", "role": "PM", "status": "applied"}])
         self.assertEqual(painel.applications(self.dir / "nao-existe.csv"), [])
+
+    def test_application_record_stores_job_details_and_manual_history(self):
+        evolution = self.dir / "evolucao.json"
+        record = painel.save_application_record({
+            "url": "https://zeta.gupy.io/jobs/1",
+            "company": "Zeta",
+            "title": "Product Manager",
+            "portal": "gupy-search",
+            "location": "Brasil",
+            "workplace_type": "remote",
+            "description": "Descrição da vaga",
+            "applied_date": "2026-10-27",
+            "status": "interview",
+            "cv_file": "cv/main_zeta_product_manager.pdf",
+            "event_date": "2026-10-28",
+            "event_stage": "Entrevista técnica",
+            "event_feedback": "Boa base técnica",
+            "event_questions": "Como você testa integrações?",
+            "event_answers": "Expliquei o caso da Steam.",
+        }, evolution, self.tracker, self.seen)
+        self.assertEqual(record["application"]["status"], "interview")
+        self.assertEqual(record["job"]["location"], "Brasil")
+        self.assertEqual(record["history"][0]["stage"], "Entrevista técnica")
+        stored = json.loads(evolution.read_text(encoding="utf-8"))
+        self.assertIn("https://zeta.gupy.io/jobs/1", stored["applications"])
+
+    def test_application_record_requires_controlled_status_and_cv(self):
+        base = {"url": "https://zeta.example/job", "company": "Zeta", "title": "PM"}
+        with self.assertRaisesRegex(ValueError, "resultado"):
+            painel.save_application_record({**base, "status": "qualquer coisa", "cv_file": "cv.pdf"}, self.dir / "e.json", self.tracker, self.seen)
+        with self.assertRaisesRegex(ValueError, "currículo"):
+            painel.save_application_record({**base, "status": "applied"}, self.dir / "e.json", self.tracker, self.seen)
+
+    def test_update_evolution_imports_tracker_and_counts_application_data(self):
+        self.tracker.write_text("date,company,role,status,source,cv_file\n2026-10-01,Zeta,PM,applied,https://zeta.example/job,cv.pdf\n", encoding="utf-8")
+        data = painel.update_evolution(self.dir / "evolucao.json", self.tracker, self.seen, self.dir / "documents")
+        self.assertEqual(data["evolution"]["metrics"]["applications"], 1)
+        self.assertEqual(data["evolution"]["metrics"]["applications_with_cv"], 1)
+        self.assertIn("projects", data["validation"]["sources"])
+
+    def test_application_assets_separate_original_and_vacancy_documents(self):
+        with mock.patch.object(painel.painel_perfil, "list_uploads", return_value={"cv": [{"name": "original.pdf"}]}) \
+                as uploads, mock.patch.object(painel, "list_generated_documents", return_value=[
+                    {"kind": "cv", "path": "cv/main_zeta.pdf", "name": "main_zeta.pdf", "role": "PM", "company": "Zeta", "url": "https://zeta.example/job"},
+                    {"kind": "carta", "path": "cover_letters/cover_zeta.pdf", "name": "cover_zeta.pdf", "role": "PM", "company": "Zeta", "url": "https://zeta.example/job"},
+                    {"kind": "cv", "path": "cv/main_other.pdf", "name": "main_other.pdf", "role": "Dev", "company": "Other", "url": "https://other.example/job"},
+                ]):
+            assets = painel.list_application_assets("https://zeta.example/job")
+        uploads.assert_called_once()
+        self.assertEqual([item["value"] for item in assets["curricula"]], ["documents/cv/original.pdf", "cv/main_zeta.pdf"])
+        self.assertEqual([item["value"] for item in assets["cartas"]], ["cover_letters/cover_zeta.pdf"])
 
     def test_priorities_skip_template_placeholders(self):
         q = self.dir / "q.md"

@@ -646,7 +646,7 @@ def _append_tracker(company: str, role: str, url: str, cv_rel: str = "", cl_rel:
 def redigir_curriculo(url: str, avaliacao: str) -> str:
     """Adapta o currículo em LaTeX à vaga, compila o PDF via LuaLaTeX e registra no tracker."""
     posting = fetch_posting(url)
-    cv_example = CV_DIR / "main_example.tex"
+    cv_example = CV_DIR / "reference_template.tex"
     cv_base = _read(cv_example)
 
     meta = _resolve_meta(posting)
@@ -677,6 +677,17 @@ REGRAS:
 3. Enfatize as tecnologias e conquistas mais relevantes para os requisitos da vaga.
 4. Mantenha a estrutura, o preâmbulo e os pacotes do modelo. Não use \\input, \\include, \\write nem \\read.
 5. Sem CPF, RG, idade, estado civil nem endereço completo: só cidade e país (ex: São Paulo, SP, Brasil / São Paulo, Brazil).
+6. Preserve exatamente o layout do modelo de referência: classe `article`, papel Letter, margens,
+   fontes Times/Helvetica, cabeçalho compacto, linhas horizontais, macros de seção e a ordem visual
+   Habilidades/Skills, Resumo/Summary, Experiências/Experience, Projeto em destaque/Featured project,
+   Formação/Education, Formação complementar/Additional training e Idiomas/Languages. Altere apenas
+   o conteúdo factual e a seleção de tópicos; não troque para `moderncv`, não mude o tamanho da página,
+   não crie colunas novas e não remova as macros do modelo.
+7. Quando a vaga estiver em inglês, traduza o conteúdo e os títulos das seções, mas mantenha exatamente
+   a mesma geometria, tipografia, espaçamento e hierarquia visual.
+8. Substitua todos os placeholders do cabeçalho do modelo (`Candidate Name`, `PLACEHOLDER`,
+   `YOUR.EMAIL@example.com`, `+55 00 00000-0000` e `Candidate - CV`) pelos dados correspondentes
+   do perfil; nenhum placeholder pode permanecer no arquivo final.
 
 MODELO LATEX BASE:
 {cv_base}

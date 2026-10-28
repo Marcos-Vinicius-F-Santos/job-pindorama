@@ -14,13 +14,15 @@ próprio computador (127.0.0.1), abre uma página no navegador com
                     Passos 0 e 1 do /apply, e "Fazer currículo e carta" roda o
                     resto, partindo da avaliação gravada;
   * Candidaturas  - as linhas de job_search_tracker.csv;
+  * Evolução      - valida o histórico de candidaturas, fontes e documentos e mostra lacunas;
   * Configurações - o provedor de IA (Gemini, ChatGPT/OpenAI ou Claude, por chave de
                     API ou pela CLI já instalada), o modelo e as chaves, gravados no
                     .env (fora do git; a página nunca recebe a chave de volta).
 
 O provedor ativo roda as tarefas de `tools/painel_ia.py`; o Codex é o padrão e os
 demais provedores são alternativas configuráveis. As respostas ficam em
-documents/applications/_painel/ (fora do git), uma vaga por vez.
+documents/applications/_painel/ (fora do git), uma vaga por vez. O caderno estruturado de evolução
+fica em documents/evolucao.json e é atualizado somente quando a pessoa pede a atualização na aba.
 
 Segurança: só escuta em 127.0.0.1; cada execução gera um token, embutido na
 página, que todo pedido de escrita precisa mandar; pedidos com Host de outro
@@ -71,6 +73,8 @@ DECISIONS = {
 }
 
 CLAUDE_DIR = ROOT / "documents" / "applications" / "_painel"
+EVOLUTION_PATH = ROOT / "documents" / "evolucao.json"
+WORK_CONTEXT_DIR = ROOT.parent / "work"
 CLAUDE_SETTINGS = Path(__file__).resolve().parent / "painel" / "claude-settings.json"
 CLAUDE_SETTINGS_PERFIL = Path(__file__).resolve().parent / "painel" / "claude-settings-perfil.json"
 # passo -> (sufixo do arquivo da resposta, tempo máximo em segundos, permissões)
@@ -83,6 +87,20 @@ CLAUDE_STEPS = {
     "perfil": ("perfil", 3600, CLAUDE_SETTINGS_PERFIL),
 }
 PERFIL_KEY = "perfil"  # o perfil não é de uma vaga: a resposta fica sob esta chave
+
+# O resultado da candidatura é sempre escolhido manualmente no painel. O backend
+# valida a chave para que o histórico não acumule variações livres do mesmo status.
+APPLICATION_STATUSES = {
+    "drafted": "Rascunho",
+    "applied": "Enviada",
+    "interview": "Entrevista",
+    "offer": "Proposta",
+    "hired": "Contratação",
+    "rejected": "Não seguiu",
+    "no_response": "Sem resposta",
+    "offer_declined": "Proposta recusada",
+    "withdrawn": "Desisti",
+}
 # No Windows, `python3` costuma ser só o atalho da Microsoft Store; nos outros, `python` pode faltar.
 PYTHON = "python" if os.name == "nt" else "python3"
 
@@ -183,6 +201,438 @@ def load_results(path: Path) -> dict | None:
         return None
 
 
+def _evolution_default() -> dict:
+    """Estrutura inicial do caderno de evolução, sem dados de candidatura."""
+    return {
+        "version": 1,
+        "updated_at": None,
+        "applications": {},
+        "strengths": [],
+        "gaps": [],
+        "actions": [],
+        "projects": [],
+        "evolution": {
+            "summary": "Ainda não há uma atualização da evolução.",
+            "metrics": {},
+            "priorities": [],
+        },
+        "validation": {
+            "checked_at": None,
+            "errors": [],
+            "warnings": [],
+            "sources": {},
+        },
+    }
+
+
+def load_evolution(path: Path = EVOLUTION_PATH) -> dict:
+    """Lê o JSON local de evolução e cria a estrutura se ela ainda não existir."""
+    data = _evolution_default()
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(loaded, dict):
+            data.update(loaded)
+    except (OSError, json.JSONDecodeError):
+        pass
+    if not isinstance(data.get("applications"), dict):
+        data["applications"] = {}
+    return data
+
+
+def save_evolution(data: dict, path: Path = EVOLUTION_PATH) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _clean_field(value, limit: int = 20000) -> str:
+    return str(value or "").strip()[:limit]
+
+
+def application_job_details(url: str, fallback: dict | None = None) -> dict:
+    """Retorna detalhes já coletados da vaga para preencher o formulário."""
+    merged = {}
+    try:
+        cached = painel_ia._find_cached_job(url)  # cache local, sem nova consulta externa
+        if isinstance(cached, dict):
+            merged.update(cached)
+    except Exception:
+        pass
+    if isinstance(fallback, dict):
+        merged.update({k: v for k, v in fallback.items() if v is not None})
+    keys = ("title", "company", "url", "portal", "date", "posted_date", "deadline", "location",
+            "workplace_type", "contract", "seniority", "salary", "description", "skills")
+    return {key: merged.get(key) for key in keys if merged.get(key) is not None}
+
+
+def _tracker_has_url(url: str, tracker_path: Path) -> bool:
+    return any((row.get("source") or row.get("url") or "").strip() == url.strip()
+               for row in applications(tracker_path))
+
+
+def _update_tracker_application(url: str, app: dict, tracker_path: Path = scrape_run.TRACKER) -> None:
+    """Mantém o CSV legado sincronizado com os campos principais do JSON."""
+    if not tracker_path.exists():
+        return
+    with tracker_path.open(encoding="utf-8", newline="") as fh:
+        reader = csv.DictReader(fh)
+        fieldnames = list(reader.fieldnames or painel_ia.TRACKER_FIELDS)
+        rows = [dict(row) for row in reader]
+    details = app.get("job") or {}
+    values = app.get("application") or {}
+    changed = False
+    for row in rows:
+        if (row.get("source") or row.get("url") or "").strip() != url.strip():
+            continue
+        row.update({
+            "date": values.get("applied_date") or row.get("date") or date.today().isoformat(),
+            "company": details.get("company") or row.get("company") or "",
+            "role": details.get("title") or row.get("role") or "",
+            "channel": details.get("portal") or row.get("channel") or "",
+            "status": values.get("status") or "applied",
+            "notes": values.get("notes") or row.get("notes") or "",
+            "cv_file": values.get("cv_file") or row.get("cv_file") or "",
+            "cover_letter_file": values.get("cover_letter_file") or row.get("cover_letter_file") or "",
+            "deadline": details.get("deadline") or row.get("deadline") or "",
+        })
+        changed = True
+    if changed:
+        with tracker_path.open("w", encoding="utf-8", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=fieldnames, extrasaction="ignore", restval="")
+            writer.writeheader()
+            writer.writerows(rows)
+
+
+def save_application_record(payload: dict, evolution_path: Path = EVOLUTION_PATH,
+                            tracker_path: Path = scrape_run.TRACKER,
+                            seen_path: Path = scrape_run.SEEN) -> dict:
+    """Valida e grava candidatura, detalhes da vaga e novos registros de histórico."""
+    if not isinstance(payload, dict):
+        raise ValueError("o cadastro da candidatura precisa ser um objeto")
+    url = _clean_field(payload.get("url"), 2000)
+    if not re.match(r"^https?://", url, re.IGNORECASE):
+        raise ValueError("a vaga precisa ter um endereço http ou https")
+    status = _clean_field(payload.get("status"), 40) or "applied"
+    if status not in APPLICATION_STATUSES:
+        raise ValueError("resultado da candidatura inválido")
+
+    details = {
+        "title": _clean_field(payload.get("title") or payload.get("role"), 300),
+        "company": _clean_field(payload.get("company"), 300),
+        "url": url,
+        "portal": _clean_field(payload.get("portal"), 100),
+        "date": _clean_field(payload.get("date"), 40),
+        "posted_date": _clean_field(payload.get("posted_date"), 40),
+        "deadline": _clean_field(payload.get("deadline"), 40),
+        "location": _clean_field(payload.get("location"), 300),
+        "workplace_type": _clean_field(payload.get("workplace_type"), 80),
+        "contract": _clean_field(payload.get("contract"), 120),
+        "seniority": _clean_field(payload.get("seniority"), 120),
+        "salary": _clean_field(payload.get("salary"), 200),
+        "description": _clean_field(payload.get("description"), 30000),
+        "skills": payload.get("skills") if isinstance(payload.get("skills"), list) else [],
+    }
+    values = {
+        "applied_date": _clean_field(payload.get("applied_date"), 40) or date.today().isoformat(),
+        "status": status,
+        "cv_file": _clean_field(payload.get("cv_file"), 500),
+        "cover_letter_file": _clean_field(payload.get("cover_letter_file"), 500),
+        "notes": _clean_field(payload.get("notes"), 10000),
+    }
+    if not details["company"] or not details["title"]:
+        raise ValueError("empresa e cargo são obrigatórios")
+    if not values["cv_file"]:
+        raise ValueError("informe o currículo enviado para a vaga")
+    try:
+        date.fromisoformat(values["applied_date"])
+    except ValueError as exc:
+        raise ValueError("a data da candidatura deve estar no formato AAAA-MM-DD") from exc
+
+    data = load_evolution(evolution_path)
+    current = data["applications"].get(url) or {}
+    if not current and not _tracker_has_url(url, tracker_path):
+        record_applied(url, details["company"], details["title"], details["portal"], tracker_path, seen_path)
+    previous_details = current.get("job") if isinstance(current.get("job"), dict) else {}
+    previous_values = current.get("application") if isinstance(current.get("application"), dict) else {}
+    merged_details = {**previous_details, **{k: v for k, v in details.items() if v not in ("", [], None)}}
+    merged_values = {**previous_values, **values}
+    history = current.get("history") if isinstance(current.get("history"), list) else []
+    event = {
+        "date": _clean_field(payload.get("event_date"), 40),
+        "stage": _clean_field(payload.get("event_stage"), 120),
+        "feedback": _clean_field(payload.get("event_feedback"), 12000),
+        "questions_and_answers": _clean_field(
+            payload.get("event_questions_and_answers")
+            or payload.get("event_questions")
+            or payload.get("event_answers"), 16000
+        ),
+    }
+    if any(event.values()):
+        if not event["date"]:
+            event["date"] = date.today().isoformat()
+        history.append(event)
+    record = {
+        "url": url,
+        "job": merged_details,
+        "application": merged_values,
+        "history": history,
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    data["applications"][url] = record
+    save_evolution(data, evolution_path)
+    _update_tracker_application(url, record, tracker_path)
+    return record
+
+
+def _source_info(path: Path) -> dict:
+    info = {"path": str(path), "exists": path.exists(), "readable": path.exists(), "files": 0, "lines": 0}
+    if path.is_dir():
+        files = [p for p in path.rglob("*") if p.is_file()]
+        info["files"] = len(files)
+        return info
+    if path.is_file():
+        try:
+            content = path.read_text(encoding="utf-8")
+            info["lines"] = len(content.splitlines())
+            info["bytes"] = path.stat().st_size
+        except (OSError, UnicodeError):
+            info["readable"] = False
+    return info
+
+
+def _projects_from_source(path: Path) -> list[str]:
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return []
+    collecting = False
+    projects = []
+    in_fence = False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if line.startswith("## Fila de enriquecimento"):
+            break
+        if line.startswith("## Inventário atual de projetos") or line.startswith("## Projetos locais"):
+            collecting = True
+            continue
+        if collecting and line.startswith("### "):
+            title = line[4:].strip()
+            if title and title not in projects and title != "Modelo de registro":
+                projects.append(title)
+    return projects
+
+
+def _markdown_section(path: Path, heading: str) -> list[str]:
+    """Lê uma seção Markdown sem interpretar blocos de código como dados."""
+    if not path.is_file():
+        return []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        return []
+    out, active, in_fence = [], False, False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if not in_fence and line.startswith("## "):
+            if active:
+                break
+            active = line.strip() == heading
+            continue
+        if active and not in_fence:
+            out.append(line)
+    return out
+
+
+def _unique_text(items: list[str]) -> list[str]:
+    out = []
+    for item in items:
+        value = str(item or "").strip()
+        if value and value not in out:
+            out.append(value)
+    return out
+
+
+def _context_summary(path: Path) -> tuple[list[str], list[str], list[str]]:
+    strengths_section = _markdown_section(path, "## Feedback mais recente")
+    strengths, gaps, actions = [], [], []
+    subsection = None
+    in_fence = False
+    for line in strengths_section:
+        if line.strip().startswith("```"):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        if line.startswith("### "):
+            subsection = line[4:].strip().lower()
+            continue
+        if line.startswith("- ") and subsection == "pontos fortes observados":
+            strengths.append(line[2:].strip())
+        if line.startswith("- ") and subsection == "oportunidades de melhoria":
+            gaps.append(line[2:].strip())
+
+    tracking = _markdown_section(path, "## Tracking de lacunas de evidência")
+    for line in tracking:
+        if not line.startswith("|") or line.startswith("|---"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        if cells and cells[0] and cells[0] != "Competência a demonstrar":
+            gaps.append(cells[0])
+
+    training = _markdown_section(path, "## Plano de treino")
+    for line in training:
+        if line.startswith("- [ ] "):
+            actions.append(line[6:].strip())
+    return _unique_text(strengths), _unique_text(gaps), _unique_text(actions)
+
+
+def update_evolution(evolution_path: Path = EVOLUTION_PATH,
+                     tracker_path: Path = scrape_run.TRACKER,
+                     seen_path: Path = scrape_run.SEEN,
+                     documents_path: Path = painel_ia.DOCUMENTS) -> dict:
+    """Valida fontes e candidaturas e grava o resultado derivado no JSON."""
+    data = load_evolution(evolution_path)
+    applications_data = data.setdefault("applications", {})
+    warnings, errors = [], []
+    for list_name in ("strengths", "gaps", "actions", "projects"):
+        if not isinstance(data.get(list_name), list):
+            errors.append(f"A seção {list_name} do JSON de evolução precisa ser uma lista.")
+            data[list_name] = []
+    for row in applications(tracker_path):
+        url = (row.get("source") or row.get("url") or "").strip()
+        if not url:
+            warnings.append("Há uma linha no histórico sem URL da vaga.")
+            continue
+        if url not in applications_data:
+            applications_data[url] = {
+                "url": url,
+                "job": {"title": row.get("role") or "", "company": row.get("company") or "", "portal": row.get("channel") or "", "url": url},
+                "application": {"applied_date": row.get("date") or "", "status": row.get("status") if row.get("status") in APPLICATION_STATUSES else "applied", "cv_file": row.get("cv_file") or "", "cover_letter_file": row.get("cover_letter_file") or "", "notes": row.get("notes") or ""},
+                "history": [],
+                "updated_at": None,
+                "imported_from_tracker": True,
+            }
+
+    with_feedback = with_questions = with_cv = 0
+    for url, item in applications_data.items():
+        if not isinstance(item, dict):
+            errors.append(f"Cadastro inválido para a vaga {url}.")
+            continue
+        job = item.get("job") if isinstance(item.get("job"), dict) else {}
+        app = item.get("application") if isinstance(item.get("application"), dict) else {}
+        if not re.match(r"^https?://", str(url), re.IGNORECASE):
+            errors.append(f"URL inválida no cadastro: {url}.")
+        if app.get("status") not in APPLICATION_STATUSES:
+            errors.append(f"Resultado inválido para {job.get('title') or url}.")
+        if app.get("cv_file"):
+            with_cv += 1
+        else:
+            warnings.append(f"Currículo enviado não informado: {job.get('title') or url}.")
+        history = item.get("history") if isinstance(item.get("history"), list) else []
+        if not isinstance(item.get("history"), list):
+            errors.append(f"Histórico inválido para {job.get('title') or url}.")
+        for event in history:
+            if not isinstance(event, dict):
+                errors.append(f"Há um registro de histórico inválido para {job.get('title') or url}.")
+                continue
+            for event_key in ("date", "stage", "feedback", "questions_and_answers", "questions", "answers"):
+                if event_key in event and not isinstance(event[event_key], str):
+                    errors.append(f"Campo {event_key} inválido no histórico de {job.get('title') or url}.")
+        if any((event.get("feedback") or "").strip() for event in history if isinstance(event, dict)):
+            with_feedback += 1
+        if any((event.get("questions_and_answers") or event.get("questions") or event.get("answers") or "").strip()
+               for event in history if isinstance(event, dict)):
+            with_questions += 1
+
+    context_file = WORK_CONTEXT_DIR / "contexto-entrevistas.md"
+    projects_file = WORK_CONTEXT_DIR / "fontes.md"
+    application_notes_file = WORK_CONTEXT_DIR / "vagas.md"
+    source_strengths, source_gaps, source_actions = _context_summary(context_file)
+    if source_strengths:
+        data["strengths"] = source_strengths
+    if source_gaps:
+        data["gaps"] = source_gaps
+    if source_actions:
+        data["actions"] = source_actions
+
+    sources = {
+        "applications_tracker": _source_info(tracker_path),
+        "candidate_profile": _source_info(painel_ia.PROFILE_MD),
+        "linkedin": _source_info(documents_path / "linkedin"),
+        "projects": _source_info(projects_file),
+        "interviews": _source_info(context_file),
+        "application_notes": _source_info(application_notes_file),
+        "guidance": _source_info(WORK_CONTEXT_DIR / "AGENTS.md"),
+        "usage": _source_info(WORK_CONTEXT_DIR / "usage.md"),
+    }
+    if not sources["linkedin"]["exists"] or not sources["linkedin"].get("files"):
+        warnings.append("Nenhum arquivo do LinkedIn foi encontrado em documents/linkedin.")
+    if not sources["projects"]["exists"]:
+        warnings.append("O inventário de projetos de E:\\Projects\\work não foi encontrado.")
+    if not sources["interviews"]["exists"]:
+        warnings.append("O contexto de entrevistas de E:\\Projects\\work não foi encontrado.")
+
+    project_count = 0
+    source_projects = _projects_from_source(projects_file)
+    if projects_file.is_file():
+        try:
+            project_count = len(source_projects)
+        except (OSError, UnicodeError):
+            pass
+    if source_projects:
+        data["projects"] = source_projects
+    work_application_section = []
+    for line in _markdown_section(application_notes_file, "## Registro de candidaturas"):
+        if line.startswith("### "):
+            break
+        work_application_section.append(line)
+    work_application_rows = [line for line in work_application_section
+                             if line.startswith("|") and not line.startswith("|---")
+                             and "Empresa" not in line and "---" not in line]
+    if work_application_rows and len(work_application_rows) != len(applications_data):
+        warnings.append(
+            f"O histórico do work registra {len(work_application_rows)} candidatura(s), "
+            f"mas o rastreador local contém {len(applications_data)}."
+        )
+    metrics = {
+        "applications": len(applications_data),
+        "applications_with_cv": with_cv,
+        "applications_with_feedback": with_feedback,
+        "applications_with_questions": with_questions,
+        "projects_in_source": project_count,
+        "linkedin_files": sources["linkedin"].get("files", 0),
+        "validation_errors": len(errors),
+        "validation_warnings": len(warnings),
+    }
+    priorities = []
+    if metrics["applications"] and with_cv < metrics["applications"]:
+        priorities.append("Completar o currículo enviado nas candidaturas importadas ou novas.")
+    if metrics["applications"] and with_feedback < metrics["applications"]:
+        priorities.append("Registrar feedbacks recebidos nas candidaturas.")
+    if metrics["applications"] and with_questions < metrics["applications"]:
+        priorities.append("Registrar perguntas e respostas das entrevistas.")
+    if not metrics["linkedin_files"]:
+        priorities.append("Adicionar o LinkedIn salvo em PDF para validar a fonte profissional.")
+    if not project_count:
+        priorities.append("Adicionar ou confirmar o inventário de projetos.")
+    data["updated_at"] = datetime.now().isoformat(timespec="seconds")
+    data["validation"] = {"checked_at": data["updated_at"], "errors": errors, "warnings": warnings, "sources": sources}
+    data["evolution"] = {
+        "summary": f"{metrics['applications']} candidatura(s), {project_count} projeto(s) na fonte e {len(priorities)} prioridade(s) de evolução.",
+        "metrics": metrics,
+        "priorities": priorities,
+    }
+    save_evolution(data, evolution_path)
+    return data
+
+
 def unseen(results: dict | None, seen_path: Path = scrape_run.SEEN, tracker_path: Path = scrape_run.TRACKER) -> dict:
     """O arquivo da busca sem as vagas que já foram marcadas (aqui ou no /scrape) depois dela."""
     if not results:
@@ -212,11 +662,14 @@ def mark(results: dict | None, urls: list, decision: str, seen_path: Path = scra
             painel_ia.save_job_cache(url, row)
         except Exception:
             pass
-        rows.append({
+        marked = {
             "title": row.get("title"), "company": row.get("company"), "url": row.get("url"),
             "date": row.get("date"), "deadline": row.get("deadline"), "portal": row.get("portal"),
             "source": "painel", **DECISIONS[decision],
-        })
+        }
+        if row.get("visa_sponsorship") is True:
+            marked["visa_sponsorship"] = True
+        rows.append(marked)
     out = scrape_run.record(rows, seen_path)
     out["missing"] = missing
     return out
@@ -318,6 +771,13 @@ def record_applied(url: str, company: str, role: str, portal: str = "",
     return {"applied": True, "company": company, "role": role, "url": url}
 
 
+def _stored_row(entry: dict, fields: tuple[str, ...]) -> dict:
+    row = {key: entry.get(key) for key in fields}
+    if entry.get("visa_sponsorship") is True:
+        row["visa_sponsorship"] = True
+    return row
+
+
 def saved(seen_path: Path = scrape_run.SEEN) -> list:
     """As vagas marcadas como "me interessa" no painel, mais recentes primeiro."""
     try:
@@ -325,7 +785,7 @@ def saved(seen_path: Path = scrape_run.SEEN) -> list:
     except (OSError, json.JSONDecodeError):
         return []
     rows = [
-        {k: e.get(k) for k in ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status")}
+        _stored_row(e, ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status"))
         for e in state.get("seen", {}).values()
         if isinstance(e, dict) and e.get("source") == "painel"
         and e.get("fit") != "low" and e.get("status") not in ("applied", "skipped")
@@ -340,7 +800,7 @@ def discarded(seen_path: Path = scrape_run.SEEN) -> list:
     except (OSError, json.JSONDecodeError):
         return []
     rows = [
-        {k: e.get(k) for k in ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status", "fit")}
+        _stored_row(e, ("title", "company", "url", "first_seen", "posted_date", "deadline", "portal", "status", "fit"))
         for e in state.get("seen", {}).values()
         if isinstance(e, dict) and e.get("source") == "painel"
         and (e.get("status") == "skipped" or e.get("fit") == "low")
@@ -449,6 +909,26 @@ def job_pdfs(company: str, role: str) -> dict:
     return out
 
 
+def delete_generated_document(rel_path: str) -> dict:
+    """Exclui somente um currículo gerado e os arquivos derivados do mesmo nome."""
+    rel = str(rel_path or "").replace("\\", "/").strip("/")
+    cv_root = (ROOT / "cv").resolve()
+    target = (ROOT / rel).resolve()
+    if (target.parent != cv_root or target.suffix.lower() != ".pdf"
+            or not target.name.startswith("main_") or target.name == "main_example.pdf"):
+        raise ValueError("só é permitido excluir currículos PDF gerados")
+    if not target.is_file():
+        return {"deleted": False, "path": rel, "removed": []}
+
+    removed = []
+    for suffix in (".pdf", ".tex", ".aux", ".log", ".out", ".fls", ".fdb_latexmk", ".synctex.gz"):
+        candidate = cv_root / f"{target.stem}{suffix}"
+        if candidate.is_file() and candidate.parent == cv_root:
+            candidate.unlink()
+            removed.append(str(candidate.relative_to(ROOT)).replace("\\", "/"))
+    return {"deleted": True, "path": rel, "removed": removed}
+
+
 def list_generated_documents() -> list:
     """Lista todos os PDFs gerados (currículos, cartas e dossiês de entrevista)."""
     known_jobs = []
@@ -544,6 +1024,36 @@ def list_generated_documents() -> list:
             })
     items.sort(key=lambda x: x["mtime"], reverse=True)
     return items
+
+
+def list_application_assets(url: str = "") -> dict:
+    """Lista currículos originais e documentos especializados disponíveis para seleção."""
+    curricula = []
+    letters = []
+    seen = {"cv": set(), "carta": set()}
+    for file in painel_perfil.list_uploads().get("cv", []):
+        path = f"documents/cv/{file['name']}"
+        curricula.append({"value": path, "label": f"Original · {file['name']}", "kind": "original", "path": path})
+        seen["cv"].add(path)
+    for document in list_generated_documents():
+        kind = document.get("kind")
+        if kind not in ("cv", "carta"):
+            continue
+        if url and (document.get("url") or "") != url:
+            continue
+        path = document.get("path")
+        if not path or path in seen[kind]:
+            continue
+        seen[kind].add(path)
+        job_label = " — ".join(filter(None, (document.get("role"), document.get("company"))))
+        prefix = "Especializado" if kind == "cv" else "Carta especializada"
+        label = f"{prefix} · {job_label or document.get('name') or path}"
+        item = {"value": path, "label": label, "kind": "specialized", "path": path,
+                "url": document.get("url") or ""}
+        (curricula if kind == "cv" else letters).append(item)
+    curricula.sort(key=lambda item: (item.get("kind") != "original", item["label"].lower()))
+    letters.sort(key=lambda item: item["label"].lower())
+    return {"curricula": curricula, "cartas": letters}
 
 
 def claude_file(url: str, step: str, base: Path = CLAUDE_DIR) -> Path:
@@ -830,9 +1340,12 @@ def get_cached_score(url: str, batch_results: dict | None = None) -> dict | None
 
 
 def enriched_applications(tracker_path: Path = scrape_run.TRACKER, seen_path: Path = scrape_run.SEEN,
-                          claude_base: Path = CLAUDE_DIR, batch_results: dict | None = None) -> list:
+                          claude_base: Path = CLAUDE_DIR, batch_results: dict | None = None,
+                          evolution_path: Path = EVOLUTION_PATH) -> list:
     """Enriquece as candidaturas do tracker.csv (e seen_jobs.json) com avaliação, PDFs e notas."""
     raw_rows = applications(tracker_path)
+    evolution_data = load_evolution(evolution_path)
+    evolution_apps = evolution_data.get("applications", {})
     seen_by_url = {}
     try:
         if seen_path.exists():
@@ -870,7 +1383,7 @@ def enriched_applications(tracker_path: Path = scrape_run.TRACKER, seen_path: Pa
         pdfs = job_pdfs(company, role)
         answers = claude_answers(url, claude_base) if url else {}
         screening = get_cached_score(url, batch_results) if url else None
-        out.append({
+        item = {
             **r,
             "url": url,
             "title": role,
@@ -881,7 +1394,18 @@ def enriched_applications(tracker_path: Path = scrape_run.TRACKER, seen_path: Pa
             "claude": answers,
             "screening": screening,
             **pdfs,
-        })
+        }
+        evolution_record = evolution_apps.get(url) if isinstance(evolution_apps, dict) else None
+        if isinstance(evolution_record, dict):
+            item["evolution"] = evolution_record
+            evo_app = evolution_record.get("application") if isinstance(evolution_record.get("application"), dict) else {}
+            item["status"] = evo_app.get("status") or item.get("status") or "applied"
+            item["cv_file"] = evo_app.get("cv_file") or item.get("cv_file") or ""
+            item["cover_letter_file"] = evo_app.get("cover_letter_file") or item.get("cover_letter_file") or ""
+            item["history"] = evolution_record.get("history") or []
+        if s_info.get("visa_sponsorship") is True:
+            item["visa_sponsorship"] = True
+        out.append(item)
     out.sort(key=lambda item: (
         item.get("date") or "",
         (item.get("screening") or {}).get("score", -1) if isinstance(item.get("screening"), dict) else -1,
@@ -1062,7 +1586,8 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                         answers = claude_answers(s["url"], claude.base)
                         pdfs = job_pdfs(s.get("company") or "", s.get("title") or "")
                         screening = get_cached_score(s["url"], batch.results)
-                        rows.append({**s, "claude": answers, **pdfs, "screening": screening})
+                        details = application_job_details(s["url"], s)
+                        rows.append({**s, **details, "claude": answers, **pdfs, "screening": screening})
                     else:
                         rows.append(s)
                 # Ordena inicialmente de forma decrescente: maior nota primeiro
@@ -1073,6 +1598,8 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(200, {"saved": rows})
             if path == "/api/applications":
                 return self._send(200, {"applications": enriched_applications(claude_base=claude.base, batch_results=batch.results)})
+            if path == "/api/evolucao":
+                return self._send(200, {"evolution": load_evolution()})
             if path == "/api/discarded":
                 rows = []
                 for d in discarded():
@@ -1088,6 +1615,10 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 return self._send(200, {"discarded": rows})
             if path == "/api/documents":
                 return self._send(200, {"documents": list_generated_documents()})
+            if path == "/api/application-assets":
+                query = urllib.parse.parse_qs(urllib.parse.urlsplit(self.path).query)
+                url = query.get("url", [""])[0].strip()
+                return self._send(200, list_application_assets(url))
             if path == "/api/settings":
                 return self._send(200, ai_providers.public_settings())
             if path == "/api/profile":
@@ -1145,6 +1676,19 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                     res = mark(load_results(job.out), urls, "descartar")
                     cleared_count = res.get("recorded", len(urls))
                 return self._send(200, {"cleared": cleared_count})
+            if path == "/api/application":
+                try:
+                    record = save_application_record(body, tracker_path=scrape_run.TRACKER, seen_path=scrape_run.SEEN)
+                except ValueError as exc:
+                    return self._send(400, {"error": str(exc)})
+                except OSError as exc:
+                    return self._send(500, {"error": f"não consegui gravar a candidatura: {exc}"})
+                return self._send(200, {"application": record})
+            if path == "/api/evolucao/atualizar":
+                try:
+                    return self._send(200, {"evolution": update_evolution()})
+                except (OSError, ValueError) as exc:
+                    return self._send(500, {"error": f"não consegui atualizar a evolução: {exc}"})
             if path == "/api/applied":
                 url = str(body.get("url") or "")
                 company = str(body.get("company") or "")
@@ -1189,6 +1733,13 @@ def make_handler(token: str, job: SearchJob, allowed_hosts: set, claude: ClaudeJ
                 except ValueError as exc:
                     return self._send(400, {"error": str(exc)})
                 return self._send(200, {"files": painel_perfil.list_uploads(claude.documents)})
+            if path == "/api/document-delete":
+                try:
+                    return self._send(200, delete_generated_document(str(body.get("path") or "")))
+                except ValueError as exc:
+                    return self._send(400, {"error": str(exc)})
+                except OSError as exc:
+                    return self._send(500, {"error": f"não consegui excluir o currículo: {exc}"})
             if path == "/api/profile":
                 return self._send(200, {"answers": painel_perfil.save_answers(body, claude.answers)})
             if path == "/api/settings":
